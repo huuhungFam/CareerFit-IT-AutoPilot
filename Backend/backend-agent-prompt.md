@@ -1,0 +1,433 @@
+# CareerFit IT AutoPilot - Backend Agent Prompt
+
+Bạn là một senior backend engineer.
+Nhiệm vụ của bạn là xây dựng toàn bộ backend cho `CareerFit IT AutoPilot` dựa trên các tài liệu nguồn sự thật sau:
+
+- [proposal.md](../proposal.md)
+- [architecture.md](../architecture.md)
+- [backend-implementation-guide.md](./backend-implementation-guide.md)
+- [thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md](../thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md)
+
+Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
+
+1. `proposal.md`
+2. `architecture.md`
+3. `backend-implementation-guide.md`
+4. Tài liệu thảo luận bổ sung
+
+## 1. Mục Tiêu Tuyệt Đối
+
+- Xây dựng backend monolith cho hệ thống đánh giá và gợi ý CV-JD cho ngành công nghệ thông tin.
+- Có 2 engine dùng chung một pipeline:
+  - `Matching Engine`: chấm CV theo JD khi upload.
+  - `Recommendation Engine`: gợi ý JD cho candidate theo hồ sơ mong muốn.
+- Hỗ trợ:
+  - upload CV PDF text-based
+  - nhập CV qua form
+  - nhập / quản lý Job Description
+  - scoring theo `%`
+  - nhãn `Low / Medium / High / Potential`
+  - feedback learning bằng Rocchio
+  - async processing bằng `@Async`
+  - định kỳ cập nhật bằng `@Scheduled`
+  - JWT security + role-based routing
+  - song ngữ tiếng Việt và tiếng Anh ở mức dữ liệu / pipeline / response
+
+## 2. Stack Khuyến Nghị
+
+Nếu trong repo chưa có code backend sẵn, dùng stack mặc định sau:
+
+- Java 21
+- Spring Boot 3.x
+- Spring Web
+- Spring Data JPA
+- Spring Security
+- Validation
+- PostgreSQL / Supabase
+- Flyway
+- Apache PDFBox
+- OpenAPI / Swagger
+- JUnit 5
+- Mockito
+- Testcontainers nếu cần integration test
+
+Quy tắc:
+
+- Giữ monolith, không tách microservices.
+- Dùng DTO rõ ràng, không trả entity trực tiếp ra API.
+- Dùng transaction đúng chỗ.
+- Dùng `record` khi phù hợp.
+- Không lạm dụng Lombok nếu làm code khó đọc.
+
+## 3. Kiến Trúc Bắt Buộc
+
+Chia package theo domain, tối thiểu gồm:
+
+- `auth`
+- `candidate`
+- `cv`
+- `job`
+- `matching`
+- `recommendation`
+- `application`
+- `feedback`
+- `analytics`
+- `common`
+- `config`
+
+Tầng xử lý:
+
+- Controller
+- Service
+- Repository
+- Domain / Entity
+- DTO / Request / Response
+- Mapper
+- Security
+- Async workers
+- Scheduler
+
+## 4. Domain Mô Hình
+
+### 4.1. Entity chính
+
+- `UserAccount`
+- `Candidate`
+- `CandidatePreference`
+- `CV`
+- `Job`
+- `Matching`
+- `Application`
+- `Feedback`
+- `JobTrendSnapshot`
+
+### 4.2. Quan hệ
+
+- Một `Candidate` có thể có nhiều `CV`
+- Một `Candidate` có một `CandidatePreference` chính
+- Một `Job` có nhiều `Matching`
+- Một `Matching` gắn với một `CV` và một `Job`
+- Một `Matching` có thể có `Feedback`
+- Một `Application` gắn với `Candidate`, `Job` và có thể liên kết tới `Matching`
+
+### 4.3. Trường quan trọng
+
+- `CV.rawText`
+- `CV.extractedTerms` JSONB
+- `CV.language`
+- `Job.originalText`
+- `Job.learnedProfileVector` JSONB
+- `Job.language`
+- `Matching.rawScore`
+- `Matching.normalizedScore`
+- `Matching.label`
+- `Matching.isPotential`
+- `CandidatePreference.autoApplyThreshold`
+- `CandidatePreference.autoApplyEnabled`
+- `CandidatePreference.preferredLanguage`
+- `Application.status`
+- `Application.isAutoApplied`
+
+## 5. API Contract Phải Có
+
+### 5.1. Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/me`
+
+### 5.2. Candidate
+
+- `GET /api/candidates/{candidateId}`
+- `PUT /api/candidates/{candidateId}`
+- `GET /api/candidates/{candidateId}/preferences`
+- `POST /api/candidates/{candidateId}/preferences`
+
+### 5.3. CV
+
+- `POST /api/cv/upload`
+- `POST /api/cv/manual`
+- `GET /api/cv/{cvId}`
+- `GET /api/cv/{cvId}/status`
+- `GET /api/candidates/{candidateId}/cv`
+
+### 5.4. Job
+
+- `POST /api/jobs`
+- `GET /api/jobs`
+- `GET /api/jobs/{jobId}`
+- `PUT /api/jobs/{jobId}`
+- `DELETE /api/jobs/{jobId}`
+
+### 5.5. Matching / Recommendation
+
+- `GET /api/jobs/{jobId}/ranking`
+- `GET /api/candidates/{candidateId}/recommendations`
+- `GET /api/jobs/{jobId}/applicants`
+- `GET /api/jobs/{jobId}/potential`
+
+### 5.6. Application / Invite
+
+- `POST /api/applications`
+- `GET /api/applications`
+- `GET /api/applications/{applicationId}`
+- `POST /api/applications/{applicationId}/invite`
+
+### 5.7. Feedback
+
+- `POST /api/matchings/{matchingId}/feedback`
+
+### 5.8. Analytics / Trend
+
+- `GET /api/analytics/summary`
+- `GET /api/analytics/jobs/trends`
+- `GET /api/jobs/{jobId}/trends`
+
+### 5.9. Admin / Recompute
+
+- `POST /api/jobs/{jobId}/recompute`
+- `POST /api/ranking/rebuild`
+
+Yêu cầu:
+
+- Tất cả response phải có format nhất quán.
+- Hỗ trợ pagination / sort / filter.
+- Có `lang=vi|en` hoặc `Accept-Language`.
+
+## 6. Pipeline Xử Lý Bắt Buộc
+
+### 6.1. Upload CV
+
+1. Nhận file PDF hoặc form CV.
+2. Lưu metadata và trạng thái `PENDING`.
+3. Chạy parse PDF text-based bằng PDFBox trong background.
+4. Làm sạch text theo ngôn ngữ.
+5. Trích xuất term / feature.
+6. Vector hóa bằng TF-IDF.
+7. Tính cosine similarity với các Job liên quan.
+8. Gán `rawScore`, `normalizedScore`, `label`, `isPotential`.
+9. Lưu `Matching`.
+10. Cập nhật trạng thái `SCORING_DONE` hoặc `FAILED`.
+
+### 6.2. Recommendation
+
+1. Lấy `CandidatePreference` hoặc candidate profile vector.
+2. Vector hóa hồ sơ mong muốn.
+3. So sánh với toàn bộ Job phù hợp ngành IT.
+4. Trả top `N` JD với score và nhãn.
+5. Có thể tái dùng chung pipeline với Matching Engine, chỉ khác query vector đầu vào.
+
+### 6.3. Feedback Learning
+
+1. Nhận `good` / `bad` match.
+2. Cập nhật vector hồ sơ học được bằng Rocchio.
+3. Ghi log thay đổi trọng số.
+4. Đánh dấu các Job liên quan cần recompute.
+5. Scheduler cập nhật lại ranking định kỳ.
+
+## 7. Quy Tắc Scoring
+
+- `rawScore` là cosine similarity hoặc composite score đã chuẩn hóa nội bộ.
+- `normalizedScore = rawScore * 100`.
+- Làm tròn đến 1 hoặc 2 chữ số thập phân.
+- Label khuyến nghị:
+  - `< 40` -> `LOW`
+  - `40 - 69.99` -> `MEDIUM`
+  - `70 - 89.99` -> `HIGH`
+  - `Potential` là nhãn đặc biệt khi điểm chưa cao nhưng có tín hiệu chuyển đổi tốt
+
+### 7.1. Heuristic cho `Potential`
+
+`Potential` không được đặt tùy tiện. Hãy dựa trên:
+
+- skill family overlap
+- same domain
+- transferable technologies
+- số năm kinh nghiệm liên quan
+- title similarity
+
+Có thể trả thêm:
+
+- `potentialReason`
+- `matchReasons`
+
+## 8. Bilingual Processing
+
+- Backend phải hỗ trợ tiếng Việt và tiếng Anh trong pipeline tiền xử lý.
+- Có thể dùng:
+  - language detection đơn giản
+  - hoặc language lấy từ candidate preference / job / input
+- Mỗi ngôn ngữ nên có:
+  - stopword list
+  - normalization rule
+  - tokenization rule phù hợp
+- Response code ổn định, text hiển thị có thể dịch ở frontend.
+
+## 9. Static Corpus / IDF
+
+Hệ thống phải có chiến lược IDF ổn định:
+
+- Không tính IDF ad hoc mỗi request.
+- Dùng corpus cố định hoặc corpus cập nhật có kiểm soát.
+- Có thể seed từ:
+  - bộ job chuẩn
+  - CV demo
+  - danh sách kỹ năng IT
+
+Mục tiêu:
+
+- giữ kết quả nhất quán
+- tránh score nhảy loạn
+- dễ giải thích khi bảo vệ
+
+## 10. Security
+
+- JWT authentication bắt buộc.
+- Role tối thiểu:
+  - `CANDIDATE`
+  - `RECRUITER`
+- Candidate chỉ được thao tác trên dữ liệu của mình.
+- Recruiter được xem job ranking, applicant, potential, analytics.
+- Chặn đúng `401` và `403`.
+
+## 11. Async / Scheduler
+
+### 11.1. `@Async`
+
+- Parse CV
+- Vectorize text
+- Tính matching hàng loạt
+- Auto-apply nội bộ
+
+Các tác vụ này phải chạy nền, không block request.
+
+### 11.2. `@Scheduled`
+
+- Rebuild ranking định kỳ
+- Recompute khi job vector thay đổi
+- Đồng bộ lại matching sau feedback
+
+### 11.3. Trạng thái xử lý
+
+Quản lý trạng thái rõ ràng:
+
+- `PENDING`
+- `PROCESSING`
+- `SCORING_DONE`
+- `FAILED`
+
+## 12. Database / Migration
+
+- Dùng Flyway để quản lý schema.
+- Dùng PostgreSQL / Supabase.
+- Trường vector / term phức tạp nên lưu JSONB.
+- Index các cột hay query:
+  - candidateId
+  - jobId
+  - status
+  - normalizedScore
+  - createdAt
+
+## 13. Logging / Observability
+
+- Log có `candidateId`, `cvId`, `jobId`, `matchingId`, `requestId`.
+- Mọi lỗi parse PDF, lỗi vector hóa, lỗi scoring phải có log rõ.
+- Dùng global exception handler với response thống nhất.
+- Có Swagger / OpenAPI để frontend agent bám theo.
+
+## 14. Validation
+
+- Validate upload file:
+  - PDF בלבד
+  - text-based only
+  - size limit
+- Validate request body:
+  - email
+  - title
+  - skills
+  - threshold
+  - language
+- Không cho dữ liệu rác đi sâu vào pipeline.
+
+## 15. Data Semantics Cho Frontend
+
+Backend phải trả dữ liệu đủ để frontend làm UI:
+
+- `normalizedScore`
+- `label`
+- `isPotential`
+- `matchReasons`
+- `potentialReason`
+- `status`
+- `isAutoApplied`
+- `trendPoints`
+
+## 16. Ưu Tiên Triển Khai
+
+Làm theo thứ tự:
+
+1. Dựng project, package, config, security, migration
+2. Làm entity, repository, DTO, mapper
+3. Làm CV upload/manual + parsing + status flow
+4. Làm Job CRUD + ranking API
+5. Làm candidate recommendation API
+6. Làm feedback learning bằng Rocchio
+7. Làm auto-apply và application tracking
+8. Làm analytics / trend endpoints
+9. Làm OpenAPI, logging, validation, tests
+
+## 17. Testing Bắt Buộc
+
+Phải có:
+
+- Unit test cho:
+  - text preprocessing
+  - TF-IDF
+  - cosine similarity
+  - Rocchio update
+  - label assignment
+  - potential heuristic
+- Integration test cho:
+  - upload CV
+  - ranking endpoint
+  - recommendation endpoint
+  - feedback endpoint
+  - security rules
+- Nếu có thời gian, thêm test cho scheduler và async flow.
+
+## 18. Stretch Goals Chỉ Làm Sau Khi Core Ổn
+
+Sau khi core chạy ổn, mới cân nhắc:
+
+- Redis cache
+- JavaMailSender
+- Apache POI export
+- OCR fallback
+
+Không được để các phần này làm chậm core path.
+
+## 19. Definition of Done
+
+Backend chỉ coi là xong khi:
+
+- Upload CV xong có trạng thái rõ ràng
+- Ranking job-to-candidate chạy được
+- Recommendation candidate-to-job chạy được
+- Điểm hiển thị theo %
+- Label và `Potential` đúng
+- Feedback làm thay đổi ranking
+- Auto-apply hoạt động
+- Recruiter xem được applicant, matching cao, potential
+- Có chart / analytics data
+- JWT và role-based access chạy đúng
+- Swagger / OpenAPI có tài liệu
+- Test quan trọng pass
+
+## 20. Nguyên Tắc Cuối Cùng
+
+- Đừng viết backend chỉ để CRUD.
+- Đừng làm hardcode score.
+- Đừng tạo pipeline mơ hồ không giải thích được.
+- Đừng vượt scope sang OCR / full ATS / microservices.
+- Giữ mọi thứ giải thích được, test được, và demo được.
+- Nếu phải chọn giữa “làm nhiều tính năng” và “làm core chạy chắc”, hãy ưu tiên core chạy chắc trước.
