@@ -4,6 +4,7 @@ Bạn là một senior backend engineer.
 Nhiệm vụ của bạn là xây dựng toàn bộ backend cho `CareerFit IT AutoPilot` dựa trên các tài liệu nguồn sự thật sau:
 
 - [proposal.md](../proposal.md)
+- [srs.md](../srs.md)
 - [architecture.md](../architecture.md)
 - [backend-implementation-guide.md](./backend-implementation-guide.md)
 - [thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md](../thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md)
@@ -11,13 +12,15 @@ Nhiệm vụ của bạn là xây dựng toàn bộ backend cho `CareerFit IT Au
 Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
 
 1. `proposal.md`
-2. `architecture.md`
-3. `backend-implementation-guide.md`
-4. Tài liệu thảo luận bổ sung
+2. `srs.md`
+3. `architecture.md`
+4. `backend-implementation-guide.md`
+5. Tài liệu thảo luận bổ sung
 
 ## 1. Mục Tiêu Tuyệt Đối
 
-- Xây dựng backend monolith cho hệ thống đánh giá và gợi ý CV-JD cho ngành công nghệ thông tin.
+- Xây dựng backend monolith cho `CareerFit IT AutoPilot`: job portal + CV-JD matching + job recommendation + AutoFit automation + HITL email action.
+- Backend là automation agent chính của hệ thống: nhận dữ liệu, validate, scoring, đánh giá policy, thực thi hoặc xin xác nhận, ghi audit log, học từ feedback.
 - Có 2 engine dùng chung một pipeline:
   - `Matching Engine`: chấm CV theo JD khi upload.
   - `Recommendation Engine`: gợi ý JD cho candidate theo hồ sơ mong muốn.
@@ -28,6 +31,10 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - scoring theo `%`
   - nhãn `Low / Medium / High / Potential`
   - feedback learning bằng Rocchio
+  - AutoFit policy engine
+  - actionable email + magic-link
+  - passwordless login
+  - audit log
   - async processing bằng `@Async`
   - định kỳ cập nhật bằng `@Scheduled`
   - JWT security + role-based routing
@@ -71,6 +78,9 @@ Chia package theo domain, tối thiểu gồm:
 - `recommendation`
 - `application`
 - `feedback`
+- `automation`
+- `notification`
+- `audit`
 - `analytics`
 - `common`
 - `config`
@@ -99,6 +109,11 @@ Tầng xử lý:
 - `Matching`
 - `Application`
 - `Feedback`
+- `AutomationPolicy`
+- `EmailAction`
+- `EmailToken`
+- `AuditLog`
+- `NotificationJob`
 - `JobTrendSnapshot`
 
 ### 4.2. Quan hệ
@@ -109,6 +124,9 @@ Tầng xử lý:
 - Một `Matching` gắn với một `CV` và một `Job`
 - Một `Matching` có thể có `Feedback`
 - Một `Application` gắn với `Candidate`, `Job` và có thể liên kết tới `Matching`
+- Một `AutomationPolicy` gắn với `UserAccount`
+- Một `EmailAction` gắn với recipient, target và token
+- Một `AuditLog` ghi lại action của user hoặc system
 
 ### 4.3. Trường quan trọng
 
@@ -127,6 +145,18 @@ Tầng xử lý:
 - `CandidatePreference.preferredLanguage`
 - `Application.status`
 - `Application.isAutoApplied`
+- `AutomationPolicy.autoApplyEnabled`
+- `AutomationPolicy.autoApplyThreshold`
+- `AutomationPolicy.emailActionEnabled`
+- `EmailAction.actionType`
+- `EmailAction.status`
+- `EmailToken.tokenHash`
+- `EmailToken.purpose`
+- `EmailToken.expiresAt`
+- `EmailToken.usedAt`
+- `AuditLog.actorType`
+- `AuditLog.actionType`
+- `AuditLog.sourceChannel`
 
 ## 5. API Contract Phải Có
 
@@ -134,6 +164,9 @@ Tầng xử lý:
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/passwordless/request`
+- `GET /api/auth/passwordless/verify?token=...`
+- `POST /api/auth/passwordless/verify`
 - `GET /api/me`
 
 ### 5.2. Candidate
@@ -177,14 +210,25 @@ Tầng xử lý:
 
 - `POST /api/matchings/{matchingId}/feedback`
 
-### 5.8. Analytics / Trend
+### 5.8. Automation / Email Action
+
+- `GET /api/automation/policies/me`
+- `PUT /api/automation/policies/me`
+- `POST /api/automation/email-actions`
+- `GET /api/automation/actions/confirm?token=...`
+- `POST /api/automation/actions/confirm`
+- `POST /api/automation/actions/reject`
+- `POST /api/automation/actions/feedback`
+
+### 5.9. Analytics / Trend
 
 - `GET /api/analytics/summary`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/jobs/{jobId}/trends`
 
-### 5.9. Admin / Recompute
+### 5.10. Audit / Admin / Recompute
 
+- `GET /api/audit-logs`
 - `POST /api/jobs/{jobId}/recompute`
 - `POST /api/ranking/rebuild`
 
@@ -217,13 +261,23 @@ Yêu cầu:
 4. Trả top `N` JD với score và nhãn.
 5. Có thể tái dùng chung pipeline với Matching Engine, chỉ khác query vector đầu vào.
 
-### 6.3. Feedback Learning
+### 6.3. AutoFit Automation
 
-1. Nhận `good` / `bad` match.
-2. Cập nhật vector hồ sơ học được bằng Rocchio.
-3. Ghi log thay đổi trọng số.
-4. Đánh dấu các Job liên quan cần recompute.
-5. Scheduler cập nhật lại ranking định kỳ.
+1. Nhận event từ matching/recommendation/application.
+2. Đọc automation policy của candidate/recruiter.
+3. Kiểm tra threshold, consent, role và trạng thái hiện tại.
+4. Chọn action: do nothing, notify, send email action, pending approval, auto execute.
+5. Nếu auto execute, thực thi idempotent và ghi audit log.
+6. Nếu cần HITL, tạo `EmailAction`, `EmailToken` và gửi email async.
+
+### 6.4. Feedback Learning
+
+1. Nhận feedback từ web hoặc email.
+2. Phân loại `GOOD_MATCH`, `POTENTIAL`, `BAD_MATCH`, `NOT_INTERESTED`.
+3. Cập nhật vector hồ sơ học được bằng Rocchio.
+4. Ghi audit log và log thay đổi trọng số.
+5. Đánh dấu các Job liên quan cần recompute.
+6. Scheduler cập nhật lại ranking định kỳ.
 
 ## 7. Quy Tắc Scoring
 
@@ -283,12 +337,16 @@ Mục tiêu:
 ## 10. Security
 
 - JWT authentication bắt buộc.
+- Passwordless magic-link là core auth flow phụ trợ.
 - Role tối thiểu:
   - `CANDIDATE`
   - `RECRUITER`
 - Candidate chỉ được thao tác trên dữ liệu của mình.
 - Recruiter được xem job ranking, applicant, potential, analytics.
 - Chặn đúng `401` và `403`.
+- Magic-link token phải one-time, có TTL, có purpose, lưu hash thay vì raw token.
+- GET confirm chỉ hiển thị dữ liệu, POST mới thay đổi state.
+- Mọi action từ email phải ghi audit log.
 
 ## 11. Async / Scheduler
 
@@ -298,6 +356,8 @@ Mục tiêu:
 - Vectorize text
 - Tính matching hàng loạt
 - Auto-apply nội bộ
+- Gửi email actionable
+- Tạo daily digest
 
 Các tác vụ này phải chạy nền, không block request.
 
@@ -306,6 +366,9 @@ Các tác vụ này phải chạy nền, không block request.
 - Rebuild ranking định kỳ
 - Recompute khi job vector thay đổi
 - Đồng bộ lại matching sau feedback
+- Dọn token hết hạn
+- Retry notification job lỗi tạm thời
+- Tạo daily digest
 
 ### 11.3. Trạng thái xử lý
 
@@ -321,24 +384,28 @@ Quản lý trạng thái rõ ràng:
 - Dùng Flyway để quản lý schema.
 - Dùng PostgreSQL / Supabase.
 - Trường vector / term phức tạp nên lưu JSONB.
+- Email token phải lưu hash, không lưu raw token.
+- Audit log nên append-only trong nghiệp vụ bình thường.
 - Index các cột hay query:
   - candidateId
   - jobId
   - status
   - normalizedScore
   - createdAt
+  - tokenHash
 
 ## 13. Logging / Observability
 
-- Log có `candidateId`, `cvId`, `jobId`, `matchingId`, `requestId`.
+- Log có `candidateId`, `cvId`, `jobId`, `matchingId`, `actionId`, `tokenId`, `requestId`.
 - Mọi lỗi parse PDF, lỗi vector hóa, lỗi scoring phải có log rõ.
+- Mọi lỗi email/action/token/policy phải có log rõ.
 - Dùng global exception handler với response thống nhất.
 - Có Swagger / OpenAPI để frontend agent bám theo.
 
 ## 14. Validation
 
 - Validate upload file:
-  - PDF בלבד
+  - chỉ PDF
   - text-based only
   - size limit
 - Validate request body:
@@ -361,6 +428,9 @@ Backend phải trả dữ liệu đủ để frontend làm UI:
 - `status`
 - `isAutoApplied`
 - `trendPoints`
+- `actionStatus`
+- `auditSummary`
+- `automationPolicy`
 
 ## 16. Ưu Tiên Triển Khai
 
@@ -371,10 +441,12 @@ Làm theo thứ tự:
 3. Làm CV upload/manual + parsing + status flow
 4. Làm Job CRUD + ranking API
 5. Làm candidate recommendation API
-6. Làm feedback learning bằng Rocchio
-7. Làm auto-apply và application tracking
-8. Làm analytics / trend endpoints
-9. Làm OpenAPI, logging, validation, tests
+6. Làm automation policy + audit log nền
+7. Làm actionable email + magic-link confirm
+8. Làm feedback learning bằng Rocchio
+9. Làm auto-apply và application tracking
+10. Làm analytics / trend endpoints
+11. Làm OpenAPI, logging, validation, tests
 
 ## 17. Testing Bắt Buộc
 
@@ -392,17 +464,22 @@ Phải có:
   - ranking endpoint
   - recommendation endpoint
   - feedback endpoint
+  - automation policy endpoint
+  - email action confirm
+  - passwordless login
+  - audit log write
   - security rules
 - Nếu có thời gian, thêm test cho scheduler và async flow.
 
-## 18. Stretch Goals Chỉ Làm Sau Khi Core Ổn
+## 18. Phase Sau Chỉ Làm Sau Khi Core Ổn
 
 Sau khi core chạy ổn, mới cân nhắc:
 
 - Redis cache
-- JavaMailSender
 - Apache POI export
 - OCR fallback
+- message broker cho queue lớn
+- full admin console
 
 Không được để các phần này làm chậm core path.
 
@@ -417,6 +494,10 @@ Backend chỉ coi là xong khi:
 - Label và `Potential` đúng
 - Feedback làm thay đổi ranking
 - Auto-apply hoạt động
+- AutoFit policy hoạt động
+- Actionable email + magic-link confirm hoạt động
+- Passwordless login hoạt động
+- Audit log ghi được action quan trọng
 - Recruiter xem được applicant, matching cao, potential
 - Có chart / analytics data
 - JWT và role-based access chạy đúng

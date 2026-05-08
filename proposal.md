@@ -1,169 +1,379 @@
 # ĐỀ CƯƠNG ĐỒ ÁN TỐT NGHIỆP: NỀN TẢNG TỰ ĐỘNG HÓA ĐÁNH GIÁ VÀ GỢI Ý CV-JD VỚI HUMAN-IN-THE-LOOP
 
-## 🎓 TÊN ĐỀ TÀI
+## TÊN ĐỀ TÀI
+
 * **Tên website/ứng dụng:** CareerFit IT AutoPilot
 * **Tiếng Việt:** Nền tảng tự động hóa đánh giá và gợi ý mức độ phù hợp giữa CV và Job Description cho ngành công nghệ thông tin với Human-in-the-Loop.
 * **Tiếng Anh:** Design and Implementation of a Human-in-the-Loop CV Evaluation and Job Recommendation Automation Platform for IT.
 
-## 🔎 ĐỊNH NGHĨA NHANH
+## ĐỊNH VỊ SẢN PHẨM
+
+CareerFit IT AutoPilot không chỉ là một web tìm việc và cũng không chỉ là một công cụ chấm điểm CV-JD.
+
+Hệ thống được định vị theo mô hình:
+
+```text
+Job Portal + Matching Engine + Recommendation Engine + AutoFit Automation + HITL Email Action Channel
+```
+
+Trong đó:
+
+* **Web app:** vừa là job portal cho candidate, vừa là control panel cho recruiter/admin.
+* **Email:** là kênh hành động nhanh để người dùng apply, skip, invite, reject, feedback hoặc xác nhận automation.
+* **Backend:** là automation agent chạy matching, recommendation, policy evaluation, async jobs, audit log và feedback learning.
+
+## ĐỊNH NGHĨA NHANH
+
 * **HITL (Human-in-the-Loop):** Mô hình trong đó hệ thống tự động xử lý phần lớn tác vụ, nhưng các hành động quan trọng vẫn có người giám sát, phê duyệt hoặc can thiệp khi cần.
-* **AutoFit:** Lớp tự động hóa chính sách của hệ thống, biến kết quả matching thành hành động phù hợp như auto-apply, invite, notify, hoặc chuyển sang hàng đợi chờ duyệt, tùy theo quyền người dùng và ngưỡng đã cấu hình.
+* **AutoFit:** Lớp tự động hóa chính sách của hệ thống, biến kết quả matching thành hành động phù hợp như auto-apply, invite, notify, gửi email xác nhận hoặc chuyển sang hàng đợi chờ duyệt.
+* **Control Panel:** phần web dùng để cấu hình policy, xem trạng thái xử lý, xem audit log, kiểm tra lý do scoring và xử lý ngoại lệ.
+* **Action Channel:** kênh tương tác nhanh qua email/magic-link, cho phép người dùng bấm hành động mà không cần mở dashboard đầy đủ.
+* **Automation Agent:** backend service có vòng lặp `Perception -> Decision -> Action -> Learning`, tự động nhận dữ liệu, tính toán, quyết định action theo policy, thực thi hoặc xin xác nhận, rồi học từ feedback.
 
-## 🎯 MỤC TIÊU ĐỒ ÁN
-Xây dựng một hệ thống Backend có khả năng:
-* Tự động trích xuất và phân tích nội dung từ CV định dạng PDF và Job Description.
-* Chuyển đổi dữ liệu văn bản thành không gian vector để tính toán Matching Score.
-* Xếp hạng CV theo mức độ phù hợp một cách tự động.
-* Gợi ý Job cho candidate theo 2 luồng riêng: ranking khi upload CV và recommendation khi người dùng khai báo hồ sơ mong muốn ở màn hình chính.
-* Chuẩn hóa Matching Score về thang 100% để hiển thị trực quan.
-* Gắn nhãn kết quả theo các mức Low / Medium / High / Potential, trong đó nhãn Potential dành cho các CV có điểm chưa cao nhưng có nền tảng kỹ năng chuyển đổi tốt.
-* Tự động cập nhật trọng số đánh giá dựa trên phản hồi của người dùng (Feedback learning) sử dụng thuật toán Rocchio để điều chỉnh vector truy vấn.
-* Xử lý chấm điểm bất đồng bộ (Asynchronous Automation) ngay khi file được tải lên.
+## MỤC TIÊU ĐỒ ÁN
+
+Xây dựng một nền tảng tuyển dụng IT có khả năng:
+
+* Cho candidate tìm kiếm, lọc, xem chi tiết và apply Job như một web tìm việc thông thường.
+* Cho recruiter tạo JD, xem CV đã apply, xem CV matching cao và xem candidate tiềm năng.
+* Tự động trích xuất và phân tích nội dung từ CV PDF text-based hoặc CV nhập qua form.
+* Kiểm tra tính hợp lệ của CV/JD, cảnh báo dữ liệu thiếu hoặc bất thường, và đề xuất sửa trước khi scoring.
+* Chuyển đổi CV, JD và hồ sơ mong muốn thành vector bằng TF-IDF.
+* Tính Matching Score và Recommendation Score bằng cosine similarity.
+* Chuẩn hóa điểm về thang 0-100% và gắn nhãn `Low / Medium / High / Potential`.
+* Tách rõ 2 luồng: ranking khi upload CV và recommendation khi candidate xem job/homepage.
+* Học từ feedback `Good / Potential / Bad / Not Interested` bằng thuật toán Rocchio.
+* Chạy các tác vụ nặng bằng background processing và scheduler.
+* Tự động đánh giá policy AutoFit để quyết định notify, auto-apply, invite, gửi email xác nhận hoặc chờ duyệt.
+* Cho phép người dùng thao tác qua actionable email bằng magic-link bảo mật.
+* Ghi audit log cho toàn bộ hành động quan trọng, đặc biệt là automation và email action.
 * Hỗ trợ song ngữ tiếng Việt và tiếng Anh cho giao diện và pipeline tiền xử lý.
-* Kết hợp cơ chế Human-in-the-Loop qua email/magic-link để người dùng có thể duyệt, từ chối hoặc cấp quyền tự động hóa mà không cần vào web liên tục.
 
-## 🔍 ĐIỂM CẦN LÀM RÕ THÊM VÀ PHÂN TÁCH 2 LUỒNG CHỨC NĂNG
-* **Luồng 1 - Ranking khi upload CV:** candidate upload CV, hệ thống chấm điểm từng JD và trả về danh sách phù hợp theo %.
-* **Luồng 2 - Gợi ý JD ở màn hình chính:** candidate khai báo hồ sơ mong muốn, hệ thống dùng một profile vector riêng để đề xuất top JD phù hợp.
-* Hai luồng trên dùng chung pipeline tiền xử lý, TF-IDF, cosine similarity và Rocchio, nhưng khác nhau ở query vector đầu vào.
-* Nhãn `Potential` không chỉ dựa trên điểm số thô mà còn dựa trên nhóm kỹ năng có thể chuyển đổi, số năm kinh nghiệm và độ tương đồng theo skill family.
-* Mô hình đề xuất cho project sẽ là **Matching Engine** cho CV-JD khi upload và **Recommendation Engine** cho candidate-to-job ở trang chính.
+## PHÂN TÁCH LUỒNG CHỨC NĂNG
 
-## 📦 PHẠM VI HỆ THỐNG (SCOPE)
-**Hệ thống CHỈ làm:**
-* Upload CV (chỉ parse PDF định dạng text-based) hoặc nhập liệu qua Form.
-* Khai báo hồ sơ mong muốn của candidate để phục vụ luồng gợi ý Job trên màn hình chính.
-* Nhập Job Description (JD).
-* Trích xuất từ khóa/đặc trưng và vector hóa (Sử dụng Static Corpus để chuẩn hóa hệ số IDF).
-* Tính similarity score (Cosine Similarity) trực tiếp trên tầng Service của Java.
-* Ranking CV khi upload và gợi ý Job theo hồ sơ mong muốn bằng hai luồng riêng.
-* Chuẩn hóa kết quả về thang điểm 0-100% và phân loại thành Low / Medium / High / Potential.
-* Cho phép candidate bật/tắt cơ chế auto-apply nội bộ khi điểm vượt ngưỡng thiết lập.
-* Feedback (Good / Bad match) để hệ thống tự điều chỉnh weight (Thuật toán Rocchio).
-* Chấm điểm ngầm tự động với luồng quản lý trạng thái (Background processing).
-* Hỗ trợ song ngữ tiếng Việt và tiếng Anh cho dữ liệu đầu vào và giao diện.
-* Kiểm tra tính hợp lệ của dữ liệu CV/JD đầu vào, cảnh báo khi thiếu hoặc sai định dạng, và đề xuất sửa thay vì chỉ báo lỗi thô.
+### Luồng 1: Job Portal Cho Candidate
 
-**KHÔNG làm:**
-* Hệ thống tuyển dụng full-flow (phỏng vấn, gửi email thủ công, v.v.).
-* Microservices phức tạp hoặc Parse file PDF dạng ảnh scan (OCR).
+Candidate vào web để:
 
-## 🔎 VALIDATION & SANITY CHECK
-Để tránh đưa dữ liệu bẩn vào pipeline vector hóa, hệ thống cần có lớp kiểm tra dữ liệu đầu vào trước khi scoring:
-* **CV PDF:** kiểm tra file có đúng định dạng PDF text-based, dung lượng hợp lệ, không phải file rỗng hoặc ảnh scan.
-* **CV Form:** kiểm tra email, số điện thoại, thời gian kinh nghiệm, kỹ năng, học vấn, vị trí mong muốn, và các trường bắt buộc.
-* **JD:** kiểm tra title, mô tả công việc, kỹ năng bắt buộc, seniority, location, ngôn ngữ, và mức độ đầy đủ của nội dung.
-* **Validation mềm:** nếu dữ liệu thiếu nhưng vẫn có thể xử lý, hệ thống không chặn ngay mà hiển thị cảnh báo, tô đỏ trường thiếu, và đề xuất nội dung cần bổ sung.
-* **Validation cứng:** nếu file sai định dạng, text trống, hoặc dữ liệu mâu thuẫn nghiêm trọng, hệ thống chặn xử lý và trả lỗi rõ ràng.
-* **Sanity suggestions:** khi phát hiện bất thường như thời gian kinh nghiệm âm, ngày tháng không hợp lệ, skill không khớp ngôn ngữ, hoặc JD quá ngắn, hệ thống phải đề xuất sửa trước khi chạy scoring.
+* xem job feed,
+* tìm kiếm job theo keyword,
+* lọc theo skill, location, seniority, language, score,
+* xem job detail,
+* apply thủ công,
+* xem job recommendation cá nhân.
 
-## 🖥️ KIẾN TRÚC GIAO DIỆN (SINGLE WEB APP)
-Tối ưu hóa nguồn lực Frontend để tập trung sức mạnh cho Backend, điều hướng hiển thị dựa trên Role:
-* **Role Ứng viên (Candidate):** Giao diện cực kỳ tối giản (vibe coding). Bao gồm:
-    * Trang kéo thả file PDF để upload CV.
-    * Trang nhập liệu Form CV (Dành cho ứng viên không có sẵn file PDF, đóng vai trò như một CV ảo để trích xuất thông tin).
-    * Trang khai báo hồ sơ mong muốn để hệ thống gợi ý Job ở màn hình chính.
-    * Trang theo dõi trạng thái xử lý hồ sơ (Đang chờ / Đã đánh giá).
-    * Danh sách các Job phù hợp được xếp hạng điểm matching từ cao xuống thấp, hiển thị score theo dạng %.
-    * Tùy chọn đặt ngưỡng auto-apply và bật/tắt chế độ tự động ứng tuyển nội bộ khi vượt ngưỡng.
-* **Role Nhà tuyển dụng (Recruiter):** Giao diện Dashboard quản trị chuyên nghiệp. Bao gồm:
-    * Quản lý danh sách Job Description.
-    * Xem bảng Ranking chi tiết của từng Job.
-    * Xem danh sách các CV đã apply vào Job.
-    * Xem toàn bộ các CV matching cao với Job kể cả khi chưa apply.
-    * Mời các CV tiềm năng hoặc matching cao chưa apply.
-    * Thống kê số lượng CV đã apply và số lượng CV matching cho một Job cụ thể.
-    * Cung cấp nút Feedback để trực tiếp "dạy" hệ thống tối ưu hóa thuật toán.
-* **Chung / Shared:**
-    * Giao diện và dữ liệu đầu vào hỗ trợ song ngữ tiếng Việt và tiếng Anh.
-    * Biểu đồ đường hiển thị xu hướng công việc theo thời gian hoặc theo nhóm kỹ năng.
-    * Cơ chế auto refresh / timeout để làm mới dữ liệu JD và ranking mới nhất khi người dùng quay lại màn hình chính.
+### Luồng 2: Ranking Khi Upload CV
 
-## 🤖 MÔ HÌNH HOẠT ĐỘNG NỘI BỘ
-Vòng lặp xử lý:
-1. **Perception (Nhận thức):** Đọc CV/JD và hồ sơ mong muốn bằng Apache PDFBox, trích xuất đặc trưng (Feature extraction) thành vector bằng TF-IDF, hỗ trợ cả tiếng Việt và tiếng Anh.
-2. **Decision (Quyết định):** Tính toán khoảng cách Cosine Similarity trên tầng Service (Java) cho 2 luồng riêng: Matching Engine khi upload CV và Recommendation Engine khi candidate ở màn hình chính.
-3. **Action (Hành động):** Xếp hạng CV/JD, chuẩn hóa điểm về 0-100%, gắn nhãn (Low / Medium / High / Potential) và trả kết quả qua API; nếu vượt ngưỡng thì tạo trạng thái apply nội bộ.
-4. **Learning (Học tập):** Nhận Feedback $\rightarrow$ Cập nhật tịnh tiến vector hồ sơ đánh giá (Learned Profile Vector) đại diện cho Job và profile mong muốn của Candidate bằng Thuật toán Rocchio.
+Candidate upload CV hoặc nhập CV form.
+Hệ thống parse, validate, vector hóa CV và chấm điểm với các JD active.
+Kết quả trả về danh sách job phù hợp theo score %, label và lý do match.
 
-* **Mô hình lõi đề xuất:** Hai engine dùng chung pipeline tiền xử lý, vocabulary, TF-IDF và cosine similarity, nhưng khác nhau ở query vector đầu vào.
+### Luồng 3: Recommendation Theo Hồ Sơ Mong Muốn
 
-## 🧠 CÔNG NGHỆ AI / NLP ÁP DỤNG (THỰC CHIẾN & CHUẨN BACKEND)
-* **Hướng tiếp cận được lựa chọn (Truyền thống nhưng đào sâu):** Tự xây dựng TF-IDF Vectorization thuần bằng Java kết hợp với Thuật toán Rocchio cho cơ chế Feedback. Cách này giúp kiểm soát hoàn toàn thuật toán và thể hiện rõ năng lực lập trình lõi. Bộ vector này sẽ được tái sử dụng cho cả Matching Engine và Recommendation Engine.
-* *(Hướng bắt trend - KHÔNG chọn để tránh loãng scope): Spring AI gọi API của OpenAI/Gemini để trích xuất JSON/Vector.*
+Candidate khai báo desired title, skills, location, seniority, language.
+Hệ thống tạo profile vector riêng và gợi ý top JD phù hợp ở homepage/job feed.
 
+### Luồng 4: Recruiter Control Panel
 
-## ⚙️ AUTOMATION & OPTIMIZATION TRONG HỆ THỐNG
-* **Xử lý bất đồng bộ (`@Async`):** Khi CV được upload, hệ thống trả về ID thành công ngay lập tức. Tiến trình parse file và tính điểm ma trận được đẩy xuống chạy ngầm (background process), không làm treo hay chậm giao diện người dùng.
-* **Job Scheduler (`@Scheduled`):** Tự động quét và cập nhật lại toàn bộ bảng Ranking theo định kỳ mỗi khi trọng số của Job thay đổi (sau khi hệ thống thực hiện bước Learning).
-* **Auto refresh / polling:** Frontend tự làm mới dữ liệu theo chu kỳ hoặc khi người dùng quay lại màn hình chính để luôn lấy được JD và ranking mới nhất.
+Recruiter vào dashboard để:
 
-## 🗄️ DATABASE SCHEMA (SUPABASE - POSTGRESQL)
-**Cấu trúc các bảng cốt lõi (Sẽ cập nhật thêm khi code):**
+* tạo và quản lý JD,
+* xem ranking CV theo từng JD,
+* xem CV đã apply,
+* xem candidate matching cao nhưng chưa apply,
+* xem candidate `Potential`,
+* invite candidate,
+* feedback để dạy hệ thống.
+
+### Luồng 5: HITL Email Action Channel
+
+Khi hệ thống phát hiện match quan trọng, backend gửi email có CTA.
+
+Ví dụ:
+
+* Candidate nhận email `Apply / Skip / Show Similar`.
+* Recruiter nhận email `Invite / Reject / Mark Potential`.
+* Người dùng nhận email `Good Match / Potential / Bad Match` để feedback.
+* Magic-link mở confirm page, POST mới thực thi action.
+
+## PHẠM VI HỆ THỐNG (SCOPE)
+
+**Hệ thống làm:**
+
+* Job portal cơ bản cho candidate: job feed, search, filter, job detail, apply.
+* Recruiter dashboard: JD management, ranking, applicants, potential pool, analytics.
+* Upload CV text-based PDF hoặc nhập CV qua form.
+* Validate CV/JD bằng hard validation và soft warning.
+* Trích xuất từ khóa/đặc trưng và vector hóa bằng TF-IDF với static corpus.
+* Tính similarity score bằng cosine similarity trên tầng service của Java.
+* Ranking CV-JD và recommendation candidate-to-job bằng hai luồng riêng.
+* Chuẩn hóa kết quả về 0-100% và phân loại `Low / Medium / High / Potential`.
+* AutoFit policy: auto-apply, notify, invite, email approval, pending approval.
+* Feedback learning bằng Rocchio.
+* Actionable email, magic-link, passwordless login cơ bản.
+* Audit log cho action tự động, email action, feedback, policy update và login.
+* Background processing bằng `@Async` và scheduler bằng `@Scheduled`.
+* Hỗ trợ tiếng Việt và tiếng Anh.
+
+**Hệ thống không làm trong core scope:**
+
+* OCR cho PDF scan.
+* Microservices phức tạp.
+* Full ATS flow như phỏng vấn, offer, payroll.
+* Tự apply sang website bên thứ ba.
+* LLM agent tự lập kế hoạch phức tạp.
+
+## VALIDATION & SANITY CHECK
+
+Để tránh dữ liệu bẩn đi vào pipeline vector hóa, hệ thống phải kiểm tra đầu vào trước khi scoring.
+
+* **CV PDF:** kiểm tra đúng PDF, dung lượng hợp lệ, extract được text, không phải file rỗng hoặc ảnh scan.
+* **CV Form:** kiểm tra email, số điện thoại, năm kinh nghiệm, kỹ năng, học vấn, vị trí mong muốn và trường bắt buộc.
+* **JD:** kiểm tra title, mô tả công việc, kỹ năng bắt buộc, seniority, location, language và độ đầy đủ nội dung.
+* **Validation mềm:** dữ liệu thiếu nhưng vẫn xử lý được thì hiển thị warning và đề xuất bổ sung.
+* **Validation cứng:** file sai định dạng, text trống hoặc dữ liệu mâu thuẫn nghiêm trọng thì chặn xử lý.
+* **Sanity suggestions:** đề xuất sửa khi phát hiện kinh nghiệm âm, ngày tháng sai, skill mismatch, JD quá ngắn hoặc language mismatch.
+
+## KIẾN TRÚC TRẢI NGHIỆM: JOB PORTAL + CONTROL PANEL + EMAIL CHANNEL
+
+### Candidate Web Experience
+
+Candidate vẫn có trải nghiệm như một web tìm việc bình thường:
+
+* Homepage/job feed.
+* Search và filter job.
+* Job detail page.
+* Upload CV.
+* Manual CV form.
+* Profile/preferences.
+* Recommendations.
+* Applications history.
+* AutoFit settings: bật/tắt auto-apply, đặt threshold, giới hạn số auto-apply/ngày.
+* Notification/history cho các action tự động.
+
+### Recruiter Web Experience
+
+Recruiter dùng web như control panel tuyển dụng:
+
+* Dashboard tổng quan.
+* Quản lý JD.
+* Ranking CV theo JD.
+* Applicants.
+* Potential pool.
+* Invite candidate.
+* Feedback Good/Potential/Bad.
+* Automation policy.
+* Analytics/trend chart.
+* Audit summary.
+
+### Email Action Experience
+
+Email không thay thế web, mà là kênh hành động nhanh.
+
+Các email chính:
+
+* Candidate job match: `Apply / Skip / Show Similar`.
+* Candidate auto-apply consent: `Allow Auto-Apply / Deny / Change Threshold`.
+* Recruiter high-match CV: `Invite / Reject / Mark Potential`.
+* Recruiter potential candidate: `Review / Invite / Ignore`.
+* Feedback request: `Good Match / Potential / Bad Match`.
+* Daily digest: `Open Dashboard / Review Top Matches`.
+* Passwordless login: `Sign In`.
+
+## MÔ HÌNH HOẠT ĐỘNG NỘI BỘ
+
+Hệ thống hoạt động như một automation agent chuyên biệt trong miền tuyển dụng:
+
+1. **Perception:** đọc CV, JD, candidate preference, feedback và automation policy.
+2. **Decision:** tính matching/recommendation score, gắn label, đánh giá AutoFit policy.
+3. **Action:** trả kết quả qua API, tạo application, gửi invite, gửi email action, đưa vào queue chờ duyệt hoặc ghi notification.
+4. **Learning:** nhận feedback từ web/email và cập nhật learned vector bằng Rocchio.
+5. **Audit:** ghi lại toàn bộ quyết định quan trọng để giải thích và kiểm tra lại.
+
+Hai engine lõi:
+
+* **Matching Engine:** chấm CV so với JD khi upload CV hoặc khi recruiter tạo JD.
+* **Recommendation Engine:** gợi ý JD cho candidate dựa trên profile vector.
+
+Cả hai dùng chung pipeline tiền xử lý, vocabulary, TF-IDF, cosine similarity và feedback learning.
+
+## CÔNG NGHỆ AI / NLP ÁP DỤNG
+
+* **TF-IDF Vectorization:** tự xây dựng bằng Java để kiểm soát thuật toán và dễ giải thích khi bảo vệ.
+* **Cosine Similarity:** tính độ tương đồng giữa CV vector, JD vector và candidate profile vector.
+* **Rocchio Feedback Learning:** cập nhật learned vector dựa trên feedback `Good / Potential / Bad`.
+* **Potential Heuristic:** phát hiện candidate có kỹ năng chuyển đổi tốt dù score chưa cao, ví dụ Java có thể chuyển sang Go nếu có backend foundation tốt.
+* **Static Corpus / Controlled IDF:** dùng corpus cố định hoặc cập nhật có kiểm soát để score ổn định.
+
+Hướng không chọn làm core:
+
+* Gọi LLM/OpenAI/Gemini để làm vector hoặc tự động quyết định toàn bộ, vì scope sẽ khó kiểm soát và khó giải thích hơn.
+
+## AUTOMATION, POLICY, EMAIL, AUDIT
+
+### AutoFit Policy Engine
+
+AutoFit quyết định hành động dựa trên:
+
+* role của user,
+* score,
+* label,
+* `isPotential`,
+* user consent,
+* threshold,
+* giới hạn số email/action mỗi ngày,
+* trạng thái job/application hiện tại.
+
+Kết quả policy:
+
+* `DO_NOTHING`,
+* `NOTIFY_ONLY`,
+* `SEND_EMAIL_ACTION`,
+* `CREATE_PENDING_APPROVAL`,
+* `AUTO_EXECUTE`.
+
+### Actionable Email
+
+Email được render bằng template HTML, có CTA rõ ràng và token riêng cho từng action.
+
+Nguyên tắc:
+
+* mỗi email tối đa 2 CTA chính và 1 CTA phụ,
+* CTA đi qua magic-link,
+* token hết hạn và dùng một lần,
+* GET chỉ hiển thị confirm page,
+* POST mới thực thi hành động,
+* mọi kết quả đều ghi audit log.
+
+### Audit Log
+
+Audit log ghi:
+
+* actor,
+* action,
+* target,
+* source channel,
+* policy snapshot,
+* score/label liên quan,
+* result,
+* timestamp.
+
+Audit log là phần bắt buộc để chứng minh automation có kiểm soát.
+
+## DATABASE SCHEMA (SUPABASE - POSTGRESQL)
+
+Các bảng cốt lõi:
+
+* **UserAccount:** `id`, `email`, `role`, `status`, `created_at`
 * **Candidate:** `id`, `name`, `email`, `user_account_id`
+* **Recruiter:** `id`, `name`, `email`, `company_name`, `user_account_id`
 * **CandidatePreference:** `id`, `candidate_id`, `desired_title`, `desired_skills`, `preferred_location`, `seniority_level`, `auto_apply_threshold`, `auto_apply_enabled`, `preferred_language`
-* **CV:** `id`, `candidate_id`, `raw_text`, `extracted_terms` (JSONB), `language`
-* **Job:** `id`, `title`, `original_text`, `learned_profile_vector` (JSONB), `language`
-* **Matching:** `id`, `cv_id`, `job_id`, `raw_score`, `normalized_score`, `label`, `is_potential`
+* **CV:** `id`, `candidate_id`, `raw_text`, `extracted_terms` JSONB, `language`, `status`
+* **Job:** `id`, `recruiter_id`, `title`, `company`, `original_text`, `required_skills`, `learned_profile_vector` JSONB, `language`, `status`
+* **Matching:** `id`, `cv_id`, `job_id`, `raw_score`, `normalized_score`, `label`, `is_potential`, `reasons` JSONB
 * **Application:** `id`, `candidate_id`, `job_id`, `matching_id`, `status`, `is_auto_applied`, `created_at`
-* **Feedback:** `id`, `matching_id`, `good_match`
-* **JobTrendSnapshot (nếu cần):** `id`, `job_id`, `snapshot_date`, `view_count`, `apply_count`, `match_count`
+* **Feedback:** `id`, `matching_id`, `actor_id`, `feedback_type`, `reason_tags` JSONB, `created_at`
+* **AutomationPolicy:** `id`, `user_id`, `role`, `auto_apply_enabled`, `auto_apply_threshold`, `auto_invite_enabled`, `daily_digest_enabled`, `email_action_enabled`
+* **EmailAction:** `id`, `recipient_user_id`, `action_type`, `target_type`, `target_id`, `status`, `sent_at`, `executed_at`
+* **EmailToken:** `id`, `token_hash`, `purpose`, `user_id`, `action_id`, `target_type`, `target_id`, `expires_at`, `used_at`, `revoked_at`
+* **AuditLog:** `id`, `actor_type`, `actor_id`, `action_type`, `target_type`, `target_id`, `source_channel`, `result`, `metadata` JSONB, `created_at`
+* **NotificationJob:** `id`, `job_type`, `payload` JSONB, `status`, `retry_count`, `next_retry_at`
+* **JobTrendSnapshot:** `id`, `job_id`, `snapshot_date`, `view_count`, `apply_count`, `match_count`
 
-## 🧱 KIẾN TRÚC HỆ THỐNG (GỌN)
+## KIẾN TRÚC HỆ THỐNG
+
 ```text
 Spring Boot Application (Java 21+)
-├── Security Layer (Spring Security + JWT Authentication)
-├── REST API Layer (Controllers with Role-based Routing)
-├── AI & Processing Module
-│    ├── PDF Extraction (Apache PDFBox)
-│    ├── Vectorization Engine (TF-IDF with Static Corpus)
-│    └── Feedback Learning Engine (Rocchio)
-├── Core Services
-│    ├── Matching Service (Cosine Similarity Calculation)
-│    ├── Recommendation Service (Candidate Profile to Job Suggestion)
-│    └── Async Processing Workers
-├── Schedulers (Automation Tasks)
-└── Data Access Layer (Spring Data JPA + Supabase DB)
+├── Security Layer
+│   ├── JWT Authentication
+│   ├── Passwordless Magic-Link
+│   └── Role-based Access Control
+├── REST API Layer
+│   ├── Candidate APIs
+│   ├── Recruiter APIs
+│   ├── Job Portal APIs
+│   ├── Automation APIs
+│   └── Audit/Analytics APIs
+├── AI & NLP Module
+│   ├── PDF Extraction (Apache PDFBox)
+│   ├── Text Normalization (VI/EN)
+│   ├── TF-IDF Vectorization
+│   ├── Cosine Similarity
+│   ├── Potential Detection
+│   └── Rocchio Feedback Learning
+├── Automation Agent Module
+│   ├── AutoFit Policy Engine
+│   ├── Automation Orchestrator
+│   ├── Email Action Service
+│   ├── Magic-Link Token Service
+│   ├── Notification/Digest Service
+│   └── Audit Log Service
+├── Background Workers
+│   ├── CV Parsing Worker
+│   ├── Matching/Recompute Worker
+│   ├── Email Sending Worker
+│   └── Token Cleanup Worker
+└── Data Access Layer
+    └── Spring Data JPA + PostgreSQL/Supabase
 ```
 
 ## TECH STACK
-Core: Java 21+, Spring Boot.
-Database: Supabase (PostgreSQL hỗ trợ lưu trữ JSONB).
-Xử lý File: Apache PDFBox (chuẩn công nghiệp cho xử lý tài liệu Java).
-Đa luồng/Tự động: Spring @Async, Spring @Scheduled.
 
-## TÍNH NĂNG NÂNG CẤP (NẾU DƯ THỜI GIAN HOÀN THIỆN)
-Nếu phase cốt lõi hoàn thành sớm, đồ án sẽ được tích hợp thêm các module sau để đạt đến mức độ hoàn hảo của một hệ thống thực tế:
-1. Hệ thống Phân quyền Bảo mật (Spring Security + JWT)
-Đây là "bài toán bắt buộc" của mọi hệ thống thực tế.
-Tính năng: Xây dựng cơ chế đăng nhập, cấp phát Token (JSON Web Token).
-Điểm nhấn Backend: Thiết lập bộ lọc (Filter) để đảm bảo chỉ có Role RECRUITER mới được gọi API xem Ranking và gửi Feedback. Người ngoài gọi API sẽ bị chặn lỗi 403 Forbidden.
-2. Giao tiếp Tự động (JavaMailSender + RabbitMQ/Kafka cơ bản)
-Bổ sung thêm "hành động" (Action) cho hệ thống.
-Tính năng: Khi một CV được chấm điểm trên mức 80% (High Fit), hệ thống tự động soạn một email báo hỷ gửi đến hòm thư của ứng viên.
-Điểm nhấn Backend: Tích hợp JavaMailSender và đưa tác vụ gửi email này vào một luồng chạy ngầm bất đồng bộ khác, hoặc sử dụng một Message Broker nhẹ nhàng để hàng đợi email không làm chậm hệ thống chính.
-3. Tối ưu Hiệu năng với Caching (Redis)
-Nếu dữ liệu bắt đầu lớn lên, việc liên tục query vào PostgreSQL sẽ tốn tài nguyên.
-Tính năng: Lưu tạm thời (cache) danh sách Job Description và Top 10 CV của mỗi Job vào bộ nhớ đệm.
-Điểm nhấn Backend: Cấu hình Spring Cache với Redis. Khi nhà tuyển dụng F5 trang Web liên tục, hệ thống trả data từ Redis (tốc độ mili-giây) thay vì bắt Database phải tính toán lại từ đầu.
-4. Xuất báo cáo chuyên nghiệp (Apache POI)
-Tính năng rất được các doanh nghiệp ưa chuộng.
-Tính năng: Nhấn 1 nút trên Web App, tải về file .xlsx (Excel) chứa danh sách các ứng viên đã được chấm điểm, sắp xếp từ cao xuống thấp kèm link tải CV.
-Điểm nhấn Backend: Thể hiện khả năng xử lý stream file, thao tác với cấu trúc file nhị phân của Office thông qua thư viện Apache POI chuẩn công nghiệp.
-5. Hybrid OCR: Gọi API của OpenAI để xử lý ngoại lệ cho các file PDF dạng ảnh scan (nếu có).
-6. Human-in-the-Loop Automation qua Email/Magic-Link (AutoFit)
-Tính năng: Gửi email hành động cho recruiter hoặc candidate với nút Yes/No, dùng magic-link có token hết hạn để xác nhận hành động, hỗ trợ passwordless login, auto-apply theo ngưỡng và audit log để truy vết toàn bộ quyết định.
-Điểm nhấn Backend: Xây dựng Email Service, Token Service, Policy Engine cho AutoFit, và Audit Log Service để tất cả hành động tự động đều có người giám sát và có thể kiểm tra lại.
+* **Backend:** Java 21+, Spring Boot, Spring Web, Spring Data JPA, Spring Security, Bean Validation.
+* **Database:** Supabase/PostgreSQL, JSONB cho vector/metadata.
+* **File Processing:** Apache PDFBox.
+* **AI/NLP:** TF-IDF, cosine similarity, Rocchio tự triển khai bằng Java.
+* **Automation:** Spring `@Async`, Spring `@Scheduled`, idempotent background jobs.
+* **Email:** JavaMailSender hoặc SendGrid, Thymeleaf HTML email templates.
+* **Frontend:** React + TypeScript hoặc stack tương đương, i18n, chart library.
+* **Documentation:** OpenAPI/Swagger cho backend contract.
 
-## 🎤 DEMO KHI BẢO VỆ (RẤT DỄ ĂN ĐIỂM)
-Đăng nhập bằng account HR, khởi tạo 1 Job Description.
-Đăng nhập bằng account Ứng viên, Upload 3-5 CV cùng lúc. Mở console cho hội đồng xem các luồng (Thread) chạy bất đồng bộ để phân tích file.
-Load lại trang HR $\rightarrow$ Hệ thống hiện bảng Ranking.
-Bấm "Good match" cho 1 CV điểm thấp $\rightarrow$ Hệ thống auto-learning $\rightarrow$ Điểm CV đó và các CV có đặc trưng tương tự tự động tăng lên.
-Ứng viên mở màn hình chính $\rightarrow$ Hệ thống đề xuất danh sách Job theo hồ sơ mong muốn, hiển thị điểm theo % và nhãn Low / Medium / High / Potential.
-Thiết lập ngưỡng auto-apply, ví dụ 95% $\rightarrow$ Khi score vượt ngưỡng thì hệ thống tự tạo bản ghi apply nội bộ.
-HR mở dashboard $\rightarrow$ Xem danh sách CV đã apply, danh sách CV matching cao chưa apply, và có thể bấm mời các CV tiềm năng.
-Chuyển ngôn ngữ Việt/Anh $\rightarrow$ Giao diện và dữ liệu đầu vào đổi theo ngôn ngữ đã chọn.
-Mở trang thống kê $\rightarrow$ Hiển thị biểu đồ đường về xu hướng công việc theo thời gian hoặc theo kỹ năng.
-## 📌 CÂU CHỐT KHI BẢO VỆ
-"Hệ thống của em tập trung giải quyết bài toán đánh giá và gợi ý mức độ phù hợp CV-JD cho ngành công nghệ thông tin, kết hợp xử lý văn bản bất đồng bộ, phân quyền đa luồng, và hai luồng chức năng matching/recommendation dùng chung một pipeline TF-IDF/Rocchio. Hệ thống không chỉ tự động phân tích và tính toán qua luồng xử lý nền, mà còn biết học hỏi qua cơ chế phản hồi bằng thuật toán tịnh tiến vector. Toàn bộ logic tính toán được xử lý tối ưu trên tầng Service của Java, kết hợp với lưu trữ trạng thái đồng bộ trên nền tảng Supabase."
+## MVP BẮT BUỘC
+
+MVP nên hoàn thành theo thứ tự:
+
+1. Auth + role candidate/recruiter.
+2. Job portal cơ bản: job feed, search, filter, job detail.
+3. Candidate profile, preference và CV upload/form.
+4. JD CRUD cho recruiter.
+5. TF-IDF vectorization + cosine matching.
+6. Recommendation candidate-to-job.
+7. Score 0-100%, label và Potential heuristic.
+8. Feedback Good/Potential/Bad + Rocchio update.
+9. AutoFit policy cơ bản: auto-apply threshold, notify/email action.
+10. Một luồng actionable email hoàn chỉnh bằng magic-link.
+11. Audit log cho action chính.
+12. Dashboard candidate/recruiter và bilingual UI cơ bản.
+
+## TÍNH NĂNG PHASE SAU
+
+Sau khi MVP chạy ổn, có thể bổ sung:
+
+1. Redis cache cho ranking/job feed.
+2. Apache POI export Excel.
+3. Hybrid OCR cho PDF scan.
+4. Message broker như RabbitMQ/Kafka cho email queue lớn.
+5. Advanced analytics.
+6. Admin console đầy đủ.
+7. Tích hợp ATS hoặc job board bên ngoài.
+
+## DEMO KHI BẢO VỆ
+
+Luồng demo đề xuất:
+
+1. Candidate mở homepage như web tìm việc, tìm kiếm/lọc job.
+2. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
+3. Candidate xem job recommendation với score %, label và lý do match.
+4. Recruiter tạo JD và mở dashboard ranking.
+5. Recruiter xem applicants, matching cao chưa apply và candidate Potential.
+6. Candidate bật auto-apply threshold, ví dụ 95%.
+7. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
+8. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
+9. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
+10. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
+11. Mở audit log để chứng minh mọi automation đều truy vết được.
+12. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc.
+
+## CÂU CHỐT KHI BẢO VỆ
+
+"Hệ thống của em là một nền tảng tuyển dụng IT tích hợp job portal, CV-JD matching, job recommendation và automation có Human-in-the-Loop. Web app đóng vai trò job portal kiêm control panel, email là kênh hành động nhanh qua magic-link, còn backend là automation agent chịu trách nhiệm tính score, đánh giá policy, thực thi action, ghi audit log và học từ feedback bằng Rocchio. Nhờ đó hệ thống không chỉ chấm điểm CV-JD, mà còn có thể tự động đề xuất, xin xác nhận, thực thi và cải thiện kết quả theo phản hồi của người dùng."

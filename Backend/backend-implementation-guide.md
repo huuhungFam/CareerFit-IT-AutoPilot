@@ -2,12 +2,13 @@
 
 Tài liệu này mô tả mức triển khai chi tiết cho backend của `CareerFit IT AutoPilot`.
 Mục tiêu là để một coding agent hoặc một engineer có thể đọc và bắt tay vào implement mà không phải đoán lại kiến trúc.
+Tài liệu này bám theo [proposal.md](../proposal.md), [srs.md](../srs.md) và [architecture.md](../architecture.md).
 
 ---
 
 ## 1. Vai Trò Của Backend
 
-Backend là nguồn sự thật chính của hệ thống. Nó chịu trách nhiệm:
+Backend là nguồn sự thật chính và automation agent của hệ thống. Nó chịu trách nhiệm:
 
 - nhận dữ liệu CV, JD, profile mong muốn
 - validate dữ liệu đầu vào
@@ -21,7 +22,7 @@ Backend là nguồn sự thật chính của hệ thống. Nó chịu trách nhi
 - quản lý policy auto-fit
 - ghi audit log
 
-Frontend chỉ là lớp hiển thị và điều khiển. Mọi quyết định nghiệp vụ phải nằm ở backend.
+Frontend là job portal/control panel để người dùng thao tác. Mọi quyết định nghiệp vụ, scoring, policy và automation phải nằm ở backend.
 
 ---
 
@@ -73,6 +74,9 @@ Chịu trách nhiệm:
 Chịu trách nhiệm:
 
 - CRUD JD
+- job feed cho candidate
+- search/filter/sort job
+- job detail
 - store learned profile vector
 - store job metadata
 - track trend snapshot
@@ -698,4 +702,3 @@ Backend is done when:
 - audit log is complete
 - validation surfaces warnings and hard errors correctly
 - endpoints are documented and tested
-

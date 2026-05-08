@@ -4,6 +4,7 @@ Bạn là một senior frontend engineer kiêm product-minded UI developer.
 Nhiệm vụ của bạn là xây dựng toàn bộ frontend cho dự án `CareerFit IT AutoPilot` dựa trên các tài liệu nguồn sự thật sau:
 
 - [proposal.md](../proposal.md)
+- [srs.md](../srs.md)
 - [architecture.md](../architecture.md)
 - [frontend-implementation-guide.md](./frontend-implementation-guide.md)
 - [thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md](../thao-luan-goi-y-jd-cho-candidate-va-bag-of-visual-words.md)
@@ -12,14 +13,18 @@ Nhiệm vụ của bạn là xây dựng toàn bộ frontend cho dự án `Caree
 Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 
 1. `proposal.md`
-2. `architecture.md`
-3. `frontend-implementation-guide.md`
-4. `main-design.md`
-5. Tài liệu thảo luận bổ sung
+2. `srs.md`
+3. `architecture.md`
+4. `frontend-implementation-guide.md`
+5. `main-design.md`
+6. Tài liệu thảo luận bổ sung
 
 ## 1. Mục Tiêu Tuyệt Đối
 
-- Xây dựng frontend cho một hệ thống đánh giá và gợi ý CV-JD cho ngành công nghệ thông tin.
+- Xây dựng frontend cho `CareerFit IT AutoPilot`: một job portal cho candidate, control panel cho recruiter/admin, và landing UI cho email action/magic-link.
+- Candidate phải có trải nghiệm như web tìm việc thông thường: job feed, search, filter, job detail, apply, recommendations.
+- Recruiter phải có trải nghiệm như control panel tuyển dụng: JD management, ranking, applicants, potential pool, AutoFit policy, audit summary.
+- Email action không nằm trong email thuần túy: frontend phải có các route confirm/result để user bấm CTA trong email rồi xác nhận hành động an toàn.
 - Có 2 luồng chính:
   - Luồng 1: candidate upload CV để hệ thống ranking các JD phù hợp.
   - Luồng 2: candidate khai báo hồ sơ mong muốn ở màn hình chính để hệ thống gợi ý top JD phù hợp.
@@ -30,6 +35,9 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 - Hiển thị score theo thang `0-100%`.
 - Hiển thị nhãn `Low / Medium / High / Potential`.
 - Có cơ chế auto-apply nội bộ trên UI khi điểm vượt ngưỡng candidate đặt.
+- Có UI cấu hình AutoFit policy.
+- Có UI xem action history/audit summary phù hợp với role.
+- Có UI cho passwordless magic-link.
 - Có biểu đồ xu hướng công việc.
 - Có auto refresh / polling để luôn lấy được JD và ranking mới nhất.
 - UI phải đẹp, có chủ đích, không generic SaaS, không màu tím mặc định.
@@ -85,7 +93,9 @@ Tuân thủ `main-design.md`:
 Candidate phải có các màn hình sau:
 
 - Trang đăng nhập / đăng ký
-- Trang home / dashboard cá nhân
+- Trang home / job feed
+- Trang tìm kiếm và lọc job
+- Trang chi tiết job
 - Trang upload CV
 - Trang nhập CV thủ công bằng form
 - Trang khai báo hồ sơ mong muốn
@@ -93,6 +103,7 @@ Candidate phải có các màn hình sau:
 - Trang xem trạng thái xử lý hồ sơ
 - Trang xem lịch sử matching / application
 - Trang cài ngưỡng auto-apply
+- Trang thông báo/action history
 - Trang xem chi tiết một JD và điểm phù hợp
 
 ### 4.2. Recruiter
@@ -107,12 +118,17 @@ Recruiter phải có các màn hình sau:
 - Trang xem toàn bộ CV matching cao nhưng chưa apply
 - Trang mời candidate
 - Trang feedback / dạy hệ thống
+- Trang AutoFit policy
+- Trang approval queue / email action history
+- Trang audit summary
 - Trang thống kê và biểu đồ xu hướng
 
 ### 4.3. Chung
 
 - Thanh điều hướng theo role
 - Chuyển ngôn ngữ vi/en
+- Passwordless login
+- Magic-link confirm/result pages
 - Search / filter / sort
 - Loading skeleton
 - Empty states
@@ -126,18 +142,29 @@ Nếu dùng React Router, hãy ưu tiên các route sau:
 
 - `/login`
 - `/register`
+- `/auth/passwordless`
+- `/auth/passwordless/verify`
+- `/automation/confirm`
+- `/automation/result`
 - `/candidate`
+- `/candidate/jobs`
+- `/candidate/jobs/:jobId`
 - `/candidate/upload`
 - `/candidate/profile`
 - `/candidate/recommendations`
 - `/candidate/applications`
 - `/candidate/settings`
+- `/candidate/automation`
+- `/candidate/notifications`
 - `/recruiter`
 - `/recruiter/jobs`
 - `/recruiter/jobs/:jobId`
 - `/recruiter/jobs/:jobId/ranking`
 - `/recruiter/jobs/:jobId/applicants`
+- `/recruiter/jobs/:jobId/potential`
 - `/recruiter/analytics`
+- `/recruiter/automation`
+- `/recruiter/audit`
 
 Nếu dùng Next.js, map các route trên sang app routes tương đương.
 
@@ -151,10 +178,19 @@ Xây ít nhất các component này:
 - `TopNav`
 - `SideNav`
 - `HeroSection`
+- `JobFeed`
+- `JobSearchBar`
+- `JobFilterPanel`
+- `JobDetailPanel`
 - `UploadDropzone`
 - `CvSummaryCard`
 - `CandidatePreferenceForm`
 - `AutoApplyThresholdControl`
+- `AutomationPolicyPanel`
+- `EmailActionConfirmCard`
+- `EmailActionResultCard`
+- `AuditSummaryList`
+- `ActionHistoryTimeline`
 - `JobRecommendationList`
 - `JobRankingTable`
 - `MatchingScoreBadge`
@@ -183,6 +219,9 @@ Các object tối thiểu:
 - `Feedback`
 - `TrendPoint`
 - `DashboardSummary`
+- `AutomationPolicy`
+- `EmailAction`
+- `AuditLog`
 
 Mỗi item matching / recommendation nên có:
 
@@ -203,6 +242,9 @@ Frontend phải chuẩn bị client để gọi các endpoint kiểu sau:
 - `POST /api/auth/login`
 - `POST /api/auth/register`
 - `GET /api/me`
+- `POST /api/auth/passwordless/request`
+- `GET /api/auth/passwordless/verify?token=...`
+- `POST /api/auth/passwordless/verify`
 - `GET /api/candidate/recommendations`
 - `POST /api/candidate/preferences`
 - `POST /api/cv/upload`
@@ -217,8 +259,15 @@ Frontend phải chuẩn bị client để gọi các endpoint kiểu sau:
 - `POST /api/matchings/{matchingId}/feedback`
 - `POST /api/applications`
 - `POST /api/applications/{applicationId}/invite`
+- `GET /api/automation/policies/me`
+- `PUT /api/automation/policies/me`
+- `GET /api/automation/actions/confirm?token=...`
+- `POST /api/automation/actions/confirm`
+- `POST /api/automation/actions/reject`
+- `POST /api/automation/actions/feedback`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/analytics/summary`
+- `GET /api/audit-logs`
 
 Yêu cầu:
 
@@ -229,7 +278,16 @@ Yêu cầu:
 
 ## 9. Luồng Nghiệp Vụ Phải Làm Được
 
-### 9.1. Candidate upload CV
+### 9.1. Candidate dùng job portal
+
+- Xem job feed giống web tìm việc bình thường
+- Search theo keyword
+- Filter theo skill, location, seniority, language, score
+- Mở job detail
+- Apply thủ công hoặc lưu/skip/show similar
+- Nếu đã có profile, job feed hiển thị recommendation score
+
+### 9.2. Candidate upload CV
 
 - Kéo thả file PDF
 - Gửi file lên backend
@@ -239,14 +297,14 @@ Yêu cầu:
 - Điểm hiển thị theo `%`
 - Có badge cho `Potential`
 
-### 9.2. Candidate khai báo hồ sơ mong muốn
+### 9.3. Candidate khai báo hồ sơ mong muốn
 
 - Form nhập desired title, skills, location, seniority, language
 - Lưu preference
 - Từ preference đó, lấy top JD recommendation
 - Cho phép chỉnh ngưỡng auto-apply
 
-### 9.3. Recruiter dashboard
+### 9.4. Recruiter dashboard
 
 - Xem job summary
 - Xem ranking CV theo job
@@ -256,6 +314,16 @@ Yêu cầu:
   - potential
 - Có nút mời candidate
 - Có thống kê và biểu đồ xu hướng
+
+### 9.5. Email action landing
+
+- User bấm CTA trong email
+- Frontend mở `/automation/confirm?token=...`
+- Frontend gọi backend để lấy action summary
+- Hiển thị target, score, reason, expiry, confirm/reject buttons
+- Confirm/reject bằng POST
+- Hiển thị result page
+- Nếu token expired/used/invalid, hiển thị fallback rõ ràng
 
 ## 10. Quy Tắc Hiển Thị Điểm Và Nhãn
 
@@ -274,6 +342,16 @@ Yêu cầu:
 - Khi score vượt ngưỡng, frontend phải hiển thị trạng thái nội bộ đã apply.
 - Có confirm dialog trước khi bật auto-apply.
 - Có log / history các lần auto-apply.
+- Có giới hạn hiển thị rõ như max auto-apply per day nếu backend hỗ trợ.
+- Frontend không tự quyết định auto-apply, chỉ cấu hình policy và hiển thị kết quả từ backend.
+
+## 11.1. Quy Tắc Về Email Action
+
+- GET confirm page chỉ hiển thị action summary.
+- Nút confirm/reject gọi POST API.
+- Không coi việc mở link là đã đồng ý.
+- Hiển thị rõ action đã được xử lý, hết hạn hoặc đã dùng.
+- Các action chính phải có audit-friendly summary.
 
 ## 12. Quy Tắc Về Bilingual UI
 
@@ -317,21 +395,27 @@ Làm theo thứ tự này:
 
 1. Dựng app shell, routing, theme, i18n
 2. Tạo typed API client và mock layer
-3. Làm candidate home, upload, recommendation
-4. Làm recruiter dashboard, job ranking, applicant views
-5. Làm biểu đồ, thống kê, feedback modal, invite flow
-6. Làm auto-refresh, polling, error handling
-7. Tối ưu responsive, accessibility, motion
-8. Hoàn thiện polish và test UI
+3. Làm job portal candidate: feed, search, filter, detail
+4. Làm candidate upload, profile, recommendation, applications
+5. Làm recruiter dashboard, job ranking, applicant, potential views
+6. Làm AutoFit policy UI, automation history, email confirm/result pages
+7. Làm biểu đồ, thống kê, feedback modal, invite flow
+8. Làm auto-refresh, polling, error handling
+9. Tối ưu responsive, accessibility, motion
+10. Hoàn thiện polish và test UI
 
 ## 16. Tiêu Chí Hoàn Thành
 
 Frontend chỉ coi là xong khi:
 
 - Vào app thấy đúng thương hiệu `CareerFit IT`
+- Candidate dùng được job feed/search/filter/detail như web tìm việc
 - Candidate upload CV và xem ranking được
 - Candidate khai báo preference và xem recommendation được
 - Recruiter xem ranking, applicant, potential, invite được
+- Email action confirm/result pages hoạt động
+- AutoFit policy UI hoạt động
+- Action history/audit summary hiển thị được
 - Đổi ngôn ngữ vi/en được
 - Score hiển thị theo phần trăm
 - `Potential` hiển thị đúng

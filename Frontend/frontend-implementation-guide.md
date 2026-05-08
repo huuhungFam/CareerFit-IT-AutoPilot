@@ -2,15 +2,17 @@
 
 Tài liệu này mô tả mức triển khai chi tiết cho frontend của `CareerFit IT AutoPilot`.
 Mục tiêu là để frontend không chỉ “đẹp” mà còn phản ánh đúng toàn bộ luồng automation, HITL, recommendation và validation của hệ thống.
+Tài liệu này bám theo [proposal.md](../proposal.md), [srs.md](../srs.md) và [architecture.md](../architecture.md).
 
 ---
 
 ## 1. Vai Trò Của Frontend
 
-Frontend là control plane cho người dùng.
+Frontend là job portal cho candidate và control plane cho recruiter/admin.
 
 Nó phải:
 
+- cho candidate tìm kiếm, lọc, xem chi tiết và apply job như một web tìm việc thông thường
 - cho candidate upload CV và khai báo hồ sơ mong muốn
 - cho recruiter quản lý job và duyệt matching
 - hiển thị score, label, potential
@@ -79,6 +81,8 @@ Nếu repo đã chọn stack khác, giữ cùng nguyên tắc:
 ### 4.2. Candidate routes
 
 - `/candidate`
+- `/candidate/jobs`
+- `/candidate/jobs/:jobId`
 - `/candidate/upload`
 - `/candidate/profile`
 - `/candidate/recommendations`
@@ -179,11 +183,12 @@ Brand language:
 
 ### Purpose
 
-Trang trung tâm cho candidate.
+Trang trung tâm cho candidate, kết hợp job feed, recommendation summary và trạng thái automation.
 
 ### Sections
 
 - summary header
+- highlighted job feed
 - CV upload CTA
 - recommendation summary
 - current automation policy card
@@ -196,8 +201,58 @@ Trang trung tâm cho candidate.
 - show whether auto-apply is on/off
 - show threshold
 - show notifications from HITL
+- let candidate continue browsing jobs without feeling like a technical dashboard
 
-## 6.3. CV Upload Page
+## 6.3. Candidate Job Feed Page
+
+### Purpose
+
+Cho candidate tìm kiếm và khám phá job như một nền tảng tuyển dụng thông thường.
+
+### Data shown
+
+- job title
+- company
+- location
+- seniority
+- required skills
+- salary range if available
+- recommendation score if the candidate has a profile
+- label and potential flag when available
+
+### Behaviors
+
+- search by keyword
+- filter by skill, location, seniority, language, score range
+- sort by relevance, newest, score
+- open job detail
+- apply, save, skip, show similar
+
+## 6.4. Candidate Job Detail Page
+
+### Purpose
+
+Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với candidate.
+
+### Data shown
+
+- full job description
+- required skills
+- optional skills
+- company/location/salary
+- matching/recommendation score
+- reason chips
+- application status
+
+### Behaviors
+
+- apply manually
+- save for later
+- skip/not interested
+- show similar jobs
+- inspect why score was assigned
+
+## 6.5. CV Upload Page
 
 ### Purpose
 
@@ -224,7 +279,7 @@ Trang trung tâm cho candidate.
 - polling status until scored
 - render ranking results after success
 
-## 6.4. Candidate Profile Page
+## 6.6. Candidate Profile Page
 
 ### Purpose
 
@@ -242,7 +297,7 @@ Trang trung tâm cho candidate.
 - save preference immediately or by explicit submit
 - allow toggling automation policy
 
-## 6.5. Candidate Recommendations Page
+## 6.7. Candidate Recommendations Page
 
 ### Purpose
 
@@ -268,7 +323,7 @@ Trang trung tâm cho candidate.
   - Save for later
   - Show Similar
 
-## 6.6. Candidate Applications Page
+## 6.8. Candidate Applications Page
 
 ### Purpose
 
@@ -283,7 +338,7 @@ Trang trung tâm cho candidate.
 - ability to inspect why auto-apply happened
 - show audit summary if user has permission
 
-## 6.7. Recruiter Dashboard
+## 6.9. Recruiter Dashboard
 
 ### Purpose
 
@@ -301,7 +356,7 @@ Trang trung tâm cho candidate.
 - pending approvals
 - digest summary
 
-## 6.8. Recruiter Job Detail
+## 6.10. Recruiter Job Detail
 
 ### Subtabs
 
@@ -320,7 +375,7 @@ Trang trung tâm cho candidate.
 - feedback action
 - export if enabled
 
-## 6.9. Automation Confirm Page
+## 6.11. Automation Confirm Page
 
 ### Purpose
 
@@ -340,7 +395,7 @@ Landing page from email magic-link.
 - if token already used: show already processed state
 - if token valid: perform action via backend POST
 
-## 6.10. Automation Result Page
+## 6.12. Automation Result Page
 
 ### Purpose
 
@@ -353,7 +408,7 @@ Show the outcome after clicking email CTA.
 - what was updated
 - next steps
 
-## 6.11. Analytics Page
+## 6.13. Analytics Page
 
 ### Purpose
 
@@ -377,7 +432,11 @@ The following components should exist at minimum:
 - `LanguageSwitcher`
 - `ThemeHeader`
 - `StatCard`
+- `JobFeed`
 - `JobCard`
+- `JobSearchBar`
+- `JobFilterPanel`
+- `JobDetailPanel`
 - `CvUploadDropzone`
 - `CvPreviewPanel`
 - `CandidateProfileForm`
@@ -665,4 +724,3 @@ Frontend is done when:
 - charts render
 - auto refresh behaves correctly
 - design system is consistent
-

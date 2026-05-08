@@ -1,23 +1,75 @@
-# Architecture: HITL Automation Layer for CareerFit IT AutoPilot
+# Architecture: Automation Agent, Control Panel and Email Action Channel
 
-Tài liệu này mô tả lớp tự động hóa bằng email, magic-link, auto-apply và audit log cho `CareerFit IT AutoPilot`.
-Nó bổ sung cho [proposal.md](proposal.md) và tập trung vào câu hỏi: hệ thống sẽ tự động làm gì, khi nào cần người duyệt, và mọi hành động được truy vết ra sao.
+Tài liệu này mô tả kiến trúc automation chính của `CareerFit IT AutoPilot`.
+Nó bổ sung cho [proposal.md](proposal.md) và [srs.md](srs.md), tập trung vào cách biến:
+
+- web app thành job portal kiêm control panel,
+- email thành action channel,
+- backend thành automation agent có policy, audit và feedback learning.
 
 ---
 
-## 1. Mục Tiêu
+## 1. Kiến Trúc Sản Phẩm
+
+```text
+Candidate / Recruiter
+        |
+        | Web: job portal + control panel
+        | Email: action channel
+        v
+Spring Boot Backend Automation Agent
+        |
+        | Matching, Recommendation, AutoFit Policy, Audit, Feedback Learning
+        v
+PostgreSQL / Supabase
+```
+
+### 1.1. Web App
+
+Web app có hai vai trò:
+
+- Với candidate, web vẫn là một job portal bình thường: job feed, search, filter, job detail, CV upload, recommendations, applications.
+- Với recruiter/admin, web là control panel: JD management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics.
+
+### 1.2. Email Action Channel
+
+Email là kênh hành động nhanh cho các quyết định nhỏ hoặc cần xác nhận:
+
+- candidate bấm `Apply`, `Skip`, `Show Similar`,
+- recruiter bấm `Invite`, `Reject`, `Mark Potential`,
+- người dùng gửi feedback `Good Match`, `Potential`, `Bad Match`,
+- người dùng đăng nhập bằng passwordless magic-link.
+
+### 1.3. Backend Automation Agent
+
+Backend là nơi giữ toàn bộ logic nghiệp vụ:
+
+- nhận dữ liệu CV/JD/profile,
+- validate dữ liệu,
+- chạy matching/recommendation,
+- đánh giá AutoFit policy,
+- gửi email hoặc tự thực thi nếu có consent,
+- ghi audit log,
+- học từ feedback bằng Rocchio.
+
+Frontend không quyết định automation. Email không chứa logic nghiệp vụ. Mọi quyết định phải đi qua backend.
+
+---
+
+## 2. Mục Tiêu
 
 - Cho phép người dùng chỉ cần theo dõi và bấm Yes/No khi cần.
 - Cho phép hệ thống tự động thực thi hành động nếu người dùng đã cấp quyền.
 - Duy trì Human-in-the-Loop: hành động quan trọng vẫn có thể cần xác nhận.
 - Ghi lại toàn bộ hành động vào audit log để kiểm tra lại được.
 - Dùng email như một kênh giao tiếp chính, giảm phụ thuộc vào việc mở web liên tục.
+- Dùng feedback từ web/email để cập nhật vector bằng Rocchio và cải thiện ranking/recommendation.
 
 ---
 
-## 2. Khái Niệm Cốt Lõi
+## 3. Khái Niệm Cốt Lõi
 
-### 2.1. HITL
+### 3.1. HITL
 
 Human-in-the-Loop là mô hình trong đó:
 
@@ -30,7 +82,7 @@ Trong project này, HITL có nghĩa là:
 - candidate có thể xác nhận auto-apply,
 - hệ thống không tự ý thực hiện hành động nhạy cảm nếu chưa có consent.
 
-### 2.2. AutoFit
+### 3.2. AutoFit
 
 AutoFit là lớp chính sách tự động hóa của hệ thống.
 
@@ -47,7 +99,7 @@ Ví dụ AutoFit:
 - score 85-95% -> gửi email xác nhận để người dùng bấm Yes/No
 - score thấp nhưng có tín hiệu `Potential` -> gửi vào digest hoặc gắn cờ cho recruiter
 
-### 2.3. Actionable Email
+### 3.3. Actionable Email
 
 Email chứa lời kêu gọi hành động rõ ràng:
 
@@ -58,7 +110,7 @@ Email chứa lời kêu gọi hành động rõ ràng:
 
 Email không chỉ là thông báo, mà là một giao diện rút gọn để thao tác nhanh.
 
-### 2.4. Magic-Link
+### 3.4. Magic-Link
 
 Magic-link là link có token bảo mật, thời hạn ngắn và dùng một lần.
 
@@ -68,7 +120,7 @@ Nó dùng cho:
 - xác nhận consent
 - xác nhận hành động từ email
 
-### 2.5. Auto-Apply
+### 3.5. Auto-Apply
 
 Auto-apply là hành động hệ thống tự tạo bản ghi ứng tuyển nội bộ khi thỏa policy.
 
@@ -81,7 +133,25 @@ Trong phạm vi đồ án, auto-apply nên hiểu là:
 - thông báo cho recruiter hoặc candidate,
 - ghi audit log.
 
-### 2.6. Audit Log
+### 3.6. Feedback Learning
+
+Feedback learning là cơ chế dùng phản hồi từ candidate/recruiter để cập nhật vector bằng Rocchio.
+
+Nguồn feedback:
+
+- web feedback,
+- email one-click feedback,
+- recruiter đánh dấu `Good / Potential / Bad`,
+- candidate đánh dấu `Not Interested` hoặc `Show Similar`.
+
+Quy tắc:
+
+- `Good Match` tăng trọng số dương mạnh,
+- `Potential` tăng trọng số nhẹ hơn,
+- `Bad Match` đẩy vector ra xa,
+- `Skip` không tự động tương đương `Bad Match`.
+
+### 3.7. Audit Log
 
 Audit log là nhật ký bất biến ghi lại:
 
@@ -95,7 +165,7 @@ Không có audit log thì automation rất khó kiểm soát.
 
 ---
 
-## 3. Nguyên Tắc Thiết Kế
+## 4. Nguyên Tắc Thiết Kế
 
 1. **Consent-first:** hành động nhạy cảm phải có quyền hoặc xác nhận.
 2. **Token ngắn hạn:** token email phải hết hạn và có thể thu hồi.
@@ -104,12 +174,53 @@ Không có audit log thì automation rất khó kiểm soát.
 5. **Audit by default:** mọi action đều sinh log.
 6. **Safe fallback:** token lỗi thì quay về web/confirm page, không fail im lặng.
 7. **Không tin email client:** link scanners có thể chạm vào link, nên không nên thực thi side effect nặng chỉ bằng GET trần.
+8. **Backend owns decisions:** frontend và email chỉ gửi intent, backend mới quyết định action cuối cùng.
 
 ---
 
-## 4. Thành Phần Hệ Thống
+## 5. Thành Phần Hệ Thống
 
-### 4.1. Email Template Renderer
+### 5.1. Matching and Recommendation Services
+
+Trách nhiệm:
+
+- nhận vector CV/JD/profile,
+- tính cosine similarity,
+- normalize score,
+- gắn nhãn `Low / Medium / High / Potential`,
+- tạo reason chips cho UI/email,
+- trigger AutoFit khi có kết quả quan trọng.
+
+### 5.2. Feedback Learning Service
+
+Trách nhiệm:
+
+- ghi nhận feedback từ web/email,
+- phân loại feedback thành positive/weak positive/negative/preference signal,
+- cập nhật learned vector bằng Rocchio,
+- đánh dấu ranking/recommendation cần recompute.
+
+### 5.3. AutoFit Policy Engine
+
+Trách nhiệm:
+
+- quyết định action nào được tự động hóa,
+- kiểm tra threshold,
+- kiểm tra consent của candidate/recruiter,
+- kiểm tra giới hạn số action/email mỗi ngày,
+- chọn channel: web, email, internal queue, auto execute.
+
+### 5.4. Automation Orchestrator
+
+Trách nhiệm:
+
+- nhận event từ matching/recommendation/feedback,
+- gọi policy engine,
+- tạo application/invite nếu được phép,
+- tạo email action nếu cần HITL,
+- ghi audit log cho quyết định.
+
+### 5.5. Email Template Renderer
 
 Trách nhiệm:
 
@@ -123,7 +234,7 @@ Công nghệ:
 - HTML email responsive
 - inline CSS
 
-### 4.2. Notification Service
+### 5.6. Notification Service
 
 Trách nhiệm:
 
@@ -138,7 +249,7 @@ Công nghệ:
 - Spring Scheduler
 - JavaMailSender hoặc SendGrid API
 
-### 4.3. Token Service
+### 5.7. Token Service
 
 Trách nhiệm:
 
@@ -155,16 +266,7 @@ Quy tắc:
 - token phải có `usedAt`
 - token nên lưu hash, không lưu raw token nếu có thể
 
-### 4.4. AutoFit Policy Engine
-
-Trách nhiệm:
-
-- quyết định action nào được tự động hóa
-- kiểm tra threshold
-- kiểm tra consent của candidate/recruiter
-- chọn channel: email, web, internal queue
-
-### 4.5. Action API
+### 5.8. Action API
 
 Trách nhiệm:
 
@@ -173,7 +275,7 @@ Trách nhiệm:
 - cập nhật trạng thái matching/application
 - trả confirmation page hoặc JSON response
 
-### 4.6. Audit Log Service
+### 5.9. Audit Log Service
 
 Trách nhiệm:
 
@@ -183,9 +285,9 @@ Trách nhiệm:
 
 ---
 
-## 5. Data Model Đề Xuất
+## 6. Data Model Đề Xuất
 
-### 5.1. `automation_policy`
+### 6.1. `automation_policy`
 
 Lưu policy automation theo user hoặc role.
 
@@ -203,7 +305,7 @@ Trường gợi ý:
 - `created_at`
 - `updated_at`
 
-### 5.2. `email_action`
+### 6.2. `email_action`
 
 Lưu một email có hành động.
 
@@ -222,7 +324,7 @@ Trường gợi ý:
 - `opened_at`
 - `executed_at`
 
-### 5.3. `email_token`
+### 6.3. `email_token`
 
 Lưu token xác thực cho action hoặc login.
 
@@ -240,7 +342,7 @@ Trường gợi ý:
 - `revoked_at`
 - `created_at`
 
-### 5.4. `audit_log`
+### 6.4. `audit_log`
 
 Lưu lịch sử hành động.
 
@@ -259,7 +361,7 @@ Trường gợi ý:
 - `metadata` (JSONB)
 - `created_at`
 
-### 5.5. `notification_job`
+### 6.5. `notification_job`
 
 Lưu job gửi email / digest.
 
@@ -275,9 +377,9 @@ Trường gợi ý:
 
 ---
 
-## 6. Luồng Nghiệp Vụ
+## 7. Luồng Nghiệp Vụ
 
-### 6.1. Recruiter nhận email actionable
+### 7.1. Recruiter nhận email actionable
 
 Luồng:
 
@@ -295,7 +397,7 @@ Khuyến nghị:
 - Với action có hậu quả thật, không nên thực thi ngay từ link GET trần nếu chưa có bước confirm.
 - Landing page nên là nơi chốt hành động cuối cùng.
 
-### 6.2. Candidate nhận gợi ý job và auto-apply
+### 7.2. Candidate nhận gợi ý job và auto-apply
 
 Luồng:
 
@@ -306,7 +408,18 @@ Luồng:
 5. Nếu chưa cho phép, gửi email Yes/No để candidate xác nhận.
 6. Audit log ghi nhận toàn bộ quyết định.
 
-### 6.3. Passwordless Login
+### 7.3. Feedback qua email
+
+Luồng:
+
+1. Hệ thống gửi email yêu cầu feedback sau khi recruiter/candidate xem match.
+2. Email có các CTA `Good Match`, `Potential`, `Bad Match` hoặc `Not Interested`.
+3. User bấm CTA và đi qua confirm page nếu cần.
+4. Backend verify token, ghi feedback và audit log.
+5. Feedback Learning Service cập nhật vector bằng Rocchio.
+6. Ranking/recommendation liên quan được đánh dấu recompute.
+
+### 7.4. Passwordless Login
 
 Luồng:
 
@@ -319,7 +432,7 @@ Luồng:
 7. Token được đánh dấu `used`.
 8. Audit log ghi sự kiện login.
 
-### 6.4. Daily Digest
+### 7.5. Daily Digest
 
 Luồng:
 
@@ -331,37 +444,42 @@ Luồng:
 
 ---
 
-## 7. API Đề Xuất
+## 8. API Đề Xuất
 
-### 7.1. Email / Action
+### 8.1. Email / Action
 
 - `POST /api/automation/email-actions`
 - `GET /api/automation/actions/confirm?token=...`
 - `POST /api/automation/actions/confirm`
 - `POST /api/automation/actions/reject`
 
-### 7.2. Magic-Link Login
+### 8.2. Magic-Link Login
 
 - `POST /api/auth/passwordless/request`
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
 
-### 7.3. AutoFit Policy
+### 8.3. AutoFit Policy
 
 - `GET /api/automation/policies/me`
 - `POST /api/automation/policies/me`
 - `PUT /api/automation/policies/me`
 
-### 7.4. Audit
+### 8.4. Feedback
+
+- `POST /api/matchings/{matchingId}/feedback`
+- `POST /api/automation/actions/feedback`
+
+### 8.5. Audit
 
 - `GET /api/audit-logs`
 - `GET /api/audit-logs/{id}`
 
 ---
 
-## 8. Bảo Mật
+## 9. Bảo Mật
 
-### 8.1. Chống đoán token
+### 9.1. Chống đoán token
 
 - token phải đủ dài
 - phải được ký
@@ -369,7 +487,7 @@ Luồng:
 - phải có scope rõ ràng
 - phải one-time use
 
-### 8.2. Chống link scanner
+### 9.2. Chống link scanner
 
 Email client hoặc gateway có thể tự mở link.
 
@@ -379,13 +497,13 @@ Email client hoặc gateway có thể tự mở link.
 - chỉ POST mới thực thi thay đổi trạng thái
 - GET chỉ dùng để hiển thị thông tin xác nhận
 
-### 8.3. Chống replay
+### 9.3. Chống replay
 
 - token dùng rồi phải vô hiệu hóa
 - action API phải idempotent
 - log phải lưu trạng thái thực thi
 
-### 8.4. Role guard
+### 9.4. Role guard
 
 - recruiter chỉ xem / duyệt dữ liệu thuộc phạm vi được cấp
 - candidate chỉ thao tác trên hồ sơ của mình
@@ -393,9 +511,9 @@ Email client hoặc gateway có thể tự mở link.
 
 ---
 
-## 9. Failure Modes
+## 10. Failure Modes
 
-### 9.1. Token hết hạn
+### 10.1. Token hết hạn
 
 Xử lý:
 
@@ -403,7 +521,7 @@ Xử lý:
 - cho phép resend nếu policy cho phép
 - không thực thi action
 
-### 9.2. Token bị dùng lại
+### 10.2. Token bị dùng lại
 
 Xử lý:
 
@@ -411,7 +529,7 @@ Xử lý:
 - không tạo action mới
 - ghi log cảnh báo
 
-### 9.3. Mail không gửi được
+### 10.3. Mail không gửi được
 
 Xử lý:
 
@@ -419,7 +537,7 @@ Xử lý:
 - chuyển sang queue `failed`
 - hiển thị trạng thái trong dashboard
 
-### 9.4. Policy không rõ ràng
+### 10.4. Policy không rõ ràng
 
 Xử lý:
 
@@ -427,7 +545,7 @@ Xử lý:
 - không auto-apply nếu không có consent
 - yêu cầu người dùng cấu hình lại
 
-### 9.5. Nội dung email sai dữ liệu
+### 10.5. Nội dung email sai dữ liệu
 
 Xử lý:
 
@@ -436,7 +554,7 @@ Xử lý:
 
 ---
 
-## 10. Triển Khai Khuyến Nghị
+## 11. Triển Khai Khuyến Nghị
 
 Ưu tiên triển khai theo thứ tự:
 
@@ -459,9 +577,9 @@ Lý do:
 
 ---
 
-## 11. Definition of Done
+## 12. Definition of Done
 
-Lớp automation này chỉ coi là xong khi:
+Kiến trúc automation chỉ coi là xong khi:
 
 - gửi được email actionable
 - token hết hạn và one-time hoạt động đúng
@@ -469,5 +587,6 @@ Lớp automation này chỉ coi là xong khi:
 - auto-apply có policy và consent
 - recruiter/candidate có thể yes/no qua email hoặc confirm page
 - audit log ghi được toàn bộ action
+- feedback từ web/email cập nhật được Rocchio vector
+- web có control panel để xem policy, queue, action history và audit summary
 - replay và link scanner không làm hỏng state
-
