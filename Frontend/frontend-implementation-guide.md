@@ -200,6 +200,9 @@ Trang trung tâm cho candidate, kết hợp job feed, recommendation summary và
 - show latest status of upload jobs
 - show whether auto-apply is on/off
 - show threshold
+- show next job scan time
+- show daily digest time and email quota if enabled
+- show timezone and quiet-hours status if enabled
 - show notifications from HITL
 - let candidate continue browsing jobs without feeling like a technical dashboard
 
@@ -227,6 +230,7 @@ Cho candidate tìm kiếm và khám phá job như một nền tảng tuyển d�
 - sort by relevance, newest, score
 - open job detail
 - apply, save, skip, show similar
+- when skipped, remove the job from the visible list immediately and show the next available job
 
 ## 6.4. Candidate Job Detail Page
 
@@ -338,7 +342,39 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - ability to inspect why auto-apply happened
 - show audit summary if user has permission
 
-## 6.9. Recruiter Dashboard
+## 6.9. Candidate AutoFit Settings Page
+
+### Purpose
+
+Cho candidate cấu hình lịch tự động và thông báo đề xuất job.
+
+### Controls
+
+- auto-apply enabled
+- auto-apply threshold
+- automatic job scan enabled
+- scan frequency: `1 hour`, `6 hours`, `daily`
+- high-match email enabled
+- high-match threshold
+- daily digest enabled
+- daily digest time
+- timezone
+- max emails per day
+- quiet hours enabled
+- quiet hours start/end
+- notification cooldown
+- replacement after email skip enabled
+- replacement delay minutes
+
+### Behaviors
+
+- show clear preview of current policy
+- show next scan time if backend returns it
+- warn user if email quota is low
+- show when immediate email is muted by quiet hours
+- explain through concise field labels, not long instructional text
+
+## 6.10. Recruiter Dashboard
 
 ### Purpose
 
@@ -356,7 +392,7 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - pending approvals
 - digest summary
 
-## 6.10. Recruiter Job Detail
+## 6.11. Recruiter Job Detail
 
 ### Subtabs
 
@@ -375,7 +411,7 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - feedback action
 - export if enabled
 
-## 6.11. Automation Confirm Page
+## 6.12. Automation Confirm Page
 
 ### Purpose
 
@@ -394,8 +430,9 @@ Landing page from email magic-link.
 - if token invalid: show error and request resend
 - if token already used: show already processed state
 - if token valid: perform action via backend POST
+- if action is `SKIP` from email: show that the job was skipped and no replacement will be sent immediately unless replacement autopilot is enabled
 
-## 6.12. Automation Result Page
+## 6.13. Automation Result Page
 
 ### Purpose
 
@@ -408,7 +445,7 @@ Show the outcome after clicking email CTA.
 - what was updated
 - next steps
 
-## 6.13. Analytics Page
+## 6.14. Analytics Page
 
 ### Purpose
 
@@ -442,6 +479,13 @@ The following components should exist at minimum:
 - `CandidateProfileForm`
 - `AutoApplyToggle`
 - `ThresholdSlider`
+- `ScanFrequencySelect`
+- `DigestTimePicker`
+- `EmailQuotaIndicator`
+- `ReplacementAfterSkipToggle`
+- `QuietHoursControl`
+- `TimezoneSelect`
+- `NotificationCooldownField`
 - `MatchingBadge`
 - `PotentialBadge`
 - `ReasonChips`

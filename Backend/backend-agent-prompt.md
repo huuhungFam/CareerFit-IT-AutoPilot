@@ -35,6 +35,7 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - actionable email + magic-link
   - passwordless login
   - audit log
+  - job scan scheduling, daily digest, high-match notification, skip interaction tracking
   - async processing bằng `@Async`
   - định kỳ cập nhật bằng `@Scheduled`
   - JWT security + role-based routing
@@ -113,6 +114,7 @@ Tầng xử lý:
 - `EmailAction`
 - `EmailToken`
 - `AuditLog`
+- `RecommendationInteraction`
 - `NotificationJob`
 - `JobTrendSnapshot`
 
@@ -148,6 +150,10 @@ Tầng xử lý:
 - `AutomationPolicy.autoApplyEnabled`
 - `AutomationPolicy.autoApplyThreshold`
 - `AutomationPolicy.emailActionEnabled`
+- `AutomationPolicy.userTimezone`
+- `AutomationPolicy.quietHoursEnabled`
+- `AutomationPolicy.notificationCooldownHours`
+- `AutomationPolicy.maxEmailPerDay`
 - `EmailAction.actionType`
 - `EmailAction.status`
 - `EmailToken.tokenHash`
@@ -157,6 +163,9 @@ Tầng xử lý:
 - `AuditLog.actorType`
 - `AuditLog.actionType`
 - `AuditLog.sourceChannel`
+- `RecommendationInteraction.action`
+- `RecommendationInteraction.source`
+- `RecommendationInteraction.createdAt`
 
 ## 5. API Contract Phải Có
 
@@ -220,13 +229,18 @@ Tầng xử lý:
 - `POST /api/automation/actions/reject`
 - `POST /api/automation/actions/feedback`
 
-### 5.9. Analytics / Trend
+### 5.9. Recommendation Interaction
+
+- `POST /api/recommendations/{jobId}/interactions`
+- `GET /api/recommendations/interactions`
+
+### 5.10. Analytics / Trend
 
 - `GET /api/analytics/summary`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/jobs/{jobId}/trends`
 
-### 5.10. Audit / Admin / Recompute
+### 5.11. Audit / Admin / Recompute
 
 - `GET /api/audit-logs`
 - `POST /api/jobs/{jobId}/recompute`
@@ -266,11 +280,35 @@ Yêu cầu:
 1. Nhận event từ matching/recommendation/application.
 2. Đọc automation policy của candidate/recruiter.
 3. Kiểm tra threshold, consent, role và trạng thái hiện tại.
-4. Chọn action: do nothing, notify, send email action, pending approval, auto execute.
-5. Nếu auto execute, thực thi idempotent và ghi audit log.
-6. Nếu cần HITL, tạo `EmailAction`, `EmailToken` và gửi email async.
+4. Kiểm tra tần suất scan, quota email/ngày và recommendation interaction cũ.
+5. Kiểm tra cooldown chống gửi lặp.
+6. Kiểm tra timezone và quiet hours.
+7. Chọn action: do nothing, notify, add to digest, send email action, pending approval, auto execute.
+8. Nếu auto execute, thực thi idempotent và ghi audit log.
+9. Nếu cần HITL, tạo `EmailAction`, `EmailToken` và gửi email async.
 
-### 6.4. Feedback Learning
+### 6.4. Notification Timing
+
+1. Ranking khi upload CV chạy ngay bằng async worker.
+2. Ranking khi tạo/cập nhật JD chạy ngay hoặc vào background queue.
+3. Scan job mới cho candidate mặc định mỗi 1 giờ nếu user bật.
+4. Email high-match gửi ngay chỉ khi score vượt ngưỡng và chưa vượt quota.
+5. Candidate high-match threshold mặc định là `90%`.
+6. Recruiter high-match threshold mặc định là `85%`.
+7. Daily digest mặc định gửi lúc `08:00` theo timezone của user.
+8. High-match email phải tôn trọng quiet hours và notification cooldown.
+9. Weekly summary là phase sau nếu còn thời gian.
+
+### 6.5. Skip / Recommendation Interaction
+
+1. Web skip: ghi `RecommendationInteraction(SKIPPED, WEB)`, frontend ẩn job ngay và hiển thị job kế tiếp.
+2. Email skip: ghi `RecommendationInteraction(SKIPPED, EMAIL)`, không gửi job kế tiếp ngay.
+3. Email skip chỉ gửi job thay thế sau `30-60 phút` nếu user bật replacement autopilot.
+4. `SKIPPED` không phải `BAD_MATCH`.
+5. `NOT_INTERESTED` mạnh hơn skip và nên giảm ưu tiên job/company/skill tương tự.
+6. `SHOW_SIMILAR` là tín hiệu tích cực cho nhóm job tương tự.
+
+### 6.6. Feedback Learning
 
 1. Nhận feedback từ web hoặc email.
 2. Phân loại `GOOD_MATCH`, `POTENTIAL`, `BAD_MATCH`, `NOT_INTERESTED`.
@@ -369,6 +407,9 @@ Các tác vụ này phải chạy nền, không block request.
 - Dọn token hết hạn
 - Retry notification job lỗi tạm thời
 - Tạo daily digest
+- Scan job mới mỗi giờ khi policy bật
+- Tạo high-match notification
+- Tạo replacement recommendation sau email skip nếu policy bật
 
 ### 11.3. Trạng thái xử lý
 
@@ -431,6 +472,13 @@ Backend phải trả dữ liệu đủ để frontend làm UI:
 - `actionStatus`
 - `auditSummary`
 - `automationPolicy`
+- `nextScanAt`
+- `dailyDigestTime`
+- `emailQuotaRemaining`
+- `recommendationInteractions`
+- `userTimezone`
+- `quietHours`
+- `notificationCooldown`
 
 ## 16. Ưu Tiên Triển Khai
 
@@ -443,10 +491,11 @@ Làm theo thứ tự:
 5. Làm candidate recommendation API
 6. Làm automation policy + audit log nền
 7. Làm actionable email + magic-link confirm
-8. Làm feedback learning bằng Rocchio
-9. Làm auto-apply và application tracking
-10. Làm analytics / trend endpoints
-11. Làm OpenAPI, logging, validation, tests
+8. Làm job scan, high-match notification, daily digest, recommendation interaction
+9. Làm feedback learning bằng Rocchio
+10. Làm auto-apply và application tracking
+11. Làm analytics / trend endpoints
+12. Làm OpenAPI, logging, validation, tests
 
 ## 17. Testing Bắt Buộc
 
@@ -468,6 +517,12 @@ Phải có:
   - email action confirm
   - passwordless login
   - audit log write
+  - job scan scheduler
+  - high-match notification quota
+  - skip interaction filtering
+  - daily digest generation
+  - quiet hours/timezone behavior
+  - notification cooldown
   - security rules
 - Nếu có thời gian, thêm test cho scheduler và async flow.
 
@@ -498,6 +553,8 @@ Backend chỉ coi là xong khi:
 - Actionable email + magic-link confirm hoạt động
 - Passwordless login hoạt động
 - Audit log ghi được action quan trọng
+- Job scan/digest/high-match notification hoạt động đúng policy
+- Skip trên web ẩn ngay, skip qua email không spam job kế tiếp
 - Recruiter xem được applicant, matching cao, potential
 - Có chart / analytics data
 - JWT và role-based access chạy đúng

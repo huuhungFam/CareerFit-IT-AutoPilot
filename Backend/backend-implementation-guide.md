@@ -20,6 +20,8 @@ Backend là nguồn sự thật chính và automation agent của hệ thống. 
 - chạy async background workers
 - gửi email actionable và passwordless login
 - quản lý policy auto-fit
+- quản lý lịch scan job, daily digest, high-match notification và quota email
+- lưu recommendation interaction như skip, apply, show similar, not interested
 - ghi audit log
 
 Frontend là job portal/control panel để người dùng thao tác. Mọi quyết định nghiệp vụ, scoring, policy và automation phải nằm ở backend.
@@ -116,6 +118,9 @@ Chịu trách nhiệm:
 - invite candidate
 - daily digest
 - automation policy
+- job scan scheduler
+- high-match notification
+- recommendation interaction tracking
 
 ### 3.9. `analytics`
 
@@ -154,6 +159,8 @@ Chịu trách nhiệm:
 - `EmailAction`
 - `EmailToken`
 - `AuditLog`
+- `RecommendationInteraction`
+- `NotificationJob`
 - `JobTrendSnapshot`
 
 ### 4.2. Required States
@@ -202,6 +209,22 @@ Chịu trách nhiệm:
 - `CHANGE_THRESHOLD`
 - `INVITE_CANDIDATE`
 - `FEEDBACK_ACTION`
+
+#### Recommendation interaction action
+
+- `VIEWED`
+- `SKIPPED`
+- `APPLIED`
+- `SAVED`
+- `NOT_INTERESTED`
+- `SHOW_SIMILAR`
+
+#### Recommendation interaction source
+
+- `WEB`
+- `EMAIL`
+- `DIGEST`
+- `AUTOPILOT`
 
 ---
 
@@ -320,9 +343,14 @@ Where:
 2. Check whether the action is allowed for the role.
 3. Check score threshold.
 4. Check consent requirements.
-5. Choose action:
+5. Check scan frequency and email quota.
+6. Check previous recommendation interactions.
+7. Check notification cooldown.
+8. Check user timezone and quiet hours.
+9. Choose action:
    - auto execute
    - send actionable email
+   - add to digest
    - queue for human approval
    - do nothing
 
@@ -330,11 +358,51 @@ Where:
 
 - `AutoFitPolicyService.evaluate(...)`
 - `AutomationOrchestratorService.routeAction(...)`
+- `JobScanScheduler.scanNewJobs(...)`
+- `HighMatchNotificationService.createIfEligible(...)`
+- `DailyDigestService.generateDigest(...)`
+- `RecommendationInteractionService.record(...)`
+- `RecommendationInteractionService.filterExcludedJobs(...)`
+- `NotificationQuotaService.checkAndConsume(...)`
+- `QuietHoursService.isMuted(...)`
+- `NotificationCooldownService.isCoolingDown(...)`
 - `NotificationService.sendActionableEmail(...)`
 - `EmailTemplateService.renderTemplate(...)`
 - `EmailTokenService.issueToken(...)`
 - `EmailActionService.confirmAction(...)`
 - `AuditLogService.record(...)`
+
+## 5.6. Notification Timing Pipeline
+
+### Defaults
+
+- CV upload ranking: run immediately using async worker.
+- JD create/update ranking: run immediately or enqueue background recompute.
+- Candidate job scan: every 1 hour when enabled.
+- High-match email: send immediately only when score is greater than or equal to threshold.
+- Candidate default high-match threshold: `90`.
+- Recruiter default high-match threshold: `85`.
+- Daily digest: send at `08:00` in the user's timezone.
+- High-match email must respect daily quota, quiet hours and cooldown.
+- Replacement after email skip: disabled by default; when enabled, delay `30-60 minutes`.
+
+### Steps
+
+1. Scheduler finds new or recently updated jobs.
+2. Recommendation engine scores jobs against eligible candidates.
+3. AutoFit policy checks consent, threshold, quota, quiet hours, cooldown and existing interactions.
+4. If candidate already skipped, applied or marked not interested, exclude it from immediate notification.
+5. If score is high enough and all notification guards pass, create `EmailAction` and `NotificationJob`.
+6. If score is not high enough or notification guards fail, store it for daily digest or web-only display.
+
+### Skip rules
+
+- Web `SKIPPED`: hide immediately in frontend and return the next job from current result set.
+- Email `SKIPPED`: record interaction, do not send replacement immediately.
+- Email `SKIPPED` with replacement enabled: schedule next recommendation after configured delay.
+- `SKIPPED` is not a negative Rocchio feedback.
+- `NOT_INTERESTED` is stronger than skip and should reduce similar recommendations.
+- `SHOW_SIMILAR` should increase priority for related jobs.
 
 ---
 
@@ -502,13 +570,18 @@ Do not hide it inside the raw score.
 - `POST /api/automation/actions/confirm`
 - `POST /api/automation/actions/reject`
 
-### 8.9. Analytics
+### 8.9. Recommendation Interaction
+
+- `POST /api/recommendations/{jobId}/interactions`
+- `GET /api/recommendations/interactions`
+
+### 8.10. Analytics
 
 - `GET /api/analytics/summary`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/jobs/{jobId}/trends`
 
-### 8.10. Common response envelope
+### 8.11. Common response envelope
 
 Use one consistent shape:
 
@@ -547,6 +620,8 @@ Errors should include:
 - `email_action`
 - `email_token`
 - `audit_log`
+- `recommendation_interaction`
+- `notification_job`
 - `job_trend_snapshot`
 
 ### Suggested indexes
@@ -555,6 +630,8 @@ Errors should include:
 - `job(language)`
 - `matching(job_id, normalized_score DESC)`
 - `application(candidate_id, job_id)`
+- `recommendation_interaction(candidate_id, job_id)`
+- `notification_job(status, next_retry_at)`
 - `email_token(token_hash)`
 - `audit_log(created_at DESC)`
 
@@ -587,6 +664,9 @@ Use scheduled jobs for:
 - expired token cleanup
 - stale queue cleanup
 - trend snapshot generation
+- hourly job scan
+- high-match notification generation
+- replacement recommendation after email skip when enabled
 
 ### 10.3. Idempotency
 
@@ -597,6 +677,7 @@ If a job runs twice:
 - it must not create duplicate applications
 - it must not create duplicate audit logs for the same action
 - it must not send duplicate emails unless explicitly retrying
+- it must not re-notify a skipped or not-interested job
 
 ---
 
@@ -657,6 +738,9 @@ Important error classes:
 - token already used
 - email provider failed
 - policy denied
+- quota exceeded
+- quiet hours active
+- cooldown active
 
 ---
 
@@ -673,6 +757,9 @@ Important error classes:
 - potential heuristic
 - policy evaluation
 - token verification
+- quota evaluation
+- quiet hours calculation
+- cooldown calculation
 
 ### Integration tests
 
@@ -683,6 +770,11 @@ Important error classes:
 - passwordless login
 - email action confirm
 - invite flow
+- job scan to notification
+- skip interaction
+- daily digest generation
+- quiet hours and timezone behavior
+- notification cooldown
 - audit log write
 
 ---

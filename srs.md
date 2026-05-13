@@ -32,10 +32,13 @@ Hệ thống kết hợp 5 lớp chính:
 ### 1.3. Tên Đề Tài
 
 Tiếng Việt:
-`Nền tảng tự động hóa đánh giá và gợi ý mức độ phù hợp giữa CV và Job Description cho ngành công nghệ thông tin với Human-in-the-Loop.`
+`Nền tảng tự động hóa tuyển dụng tích hợp AI hỗ trợ đánh giá và gợi ý CV-JD với Human-in-the-Loop.`
+
+Phạm vi áp dụng:
+`Hệ thống tập trung vào bài toán tuyển dụng trong ngành công nghệ thông tin.`
 
 Tiếng Anh:
-`Design and Implementation of a Human-in-the-Loop CV Evaluation and Job Recommendation Automation Platform for IT.`
+`Design and Implementation of a Human-in-the-Loop AI-Assisted Recruitment Automation Platform for CV-JD Evaluation and Recommendation in IT.`
 
 Tên sản phẩm:
 `CareerFit IT AutoPilot`
@@ -59,6 +62,7 @@ Tên sản phẩm:
 | Magic-link | Link có token bảo mật, hết hạn và dùng một lần, dùng cho login hoặc xác nhận hành động. |
 | Actionable Email | Email có nút thao tác như Apply, Skip, Invite, Reject, Good Match. |
 | Audit Log | Nhật ký bất biến ghi lại toàn bộ hành động quan trọng của người dùng và hệ thống. |
+| Recommendation Interaction | Lịch sử tương tác của candidate với job được đề xuất, ví dụ Viewed, Skipped, Applied, Not Interested, Show Similar. |
 
 ### 1.5. Tài Liệu Tham Chiếu
 
@@ -239,6 +243,7 @@ Trách nhiệm:
 | UC-C10 | Xác nhận apply qua email | Candidate bấm Apply/Skip/Show Similar từ email. |
 | UC-C11 | Xem lịch sử ứng tuyển | Candidate xem job đã apply, auto-applied, skipped. |
 | UC-C12 | Phản hồi job recommendation | Candidate feedback Good/Potential/Bad/Not Interested. |
+| UC-C13 | Cấu hình lịch tự động | Candidate chọn tần suất scan job, giờ nhận digest và giới hạn email/ngày. |
 
 ### 4.2. Recruiter Use Cases
 
@@ -280,6 +285,8 @@ Trách nhiệm:
 | UC-S08 | Đánh giá policy AutoFit | Hệ thống quyết định auto action/email/queue. |
 | UC-S09 | Gửi actionable email | Hệ thống gửi email có CTA. |
 | UC-S10 | Ghi audit log | Hệ thống ghi log mọi hành động quan trọng. |
+| UC-S11 | Scan job định kỳ | Hệ thống quét job mới theo tần suất trong AutoFit policy. |
+| UC-S12 | Xử lý skip | Hệ thống ghi nhận skip và quyết định có đề xuất job thay thế hay không. |
 
 ---
 
@@ -623,15 +630,31 @@ Candidate policy:
 - auto-apply threshold,
 - email recommendation enabled,
 - daily digest enabled,
+- daily digest time,
+- user timezone,
+- job scan enabled,
+- job scan frequency,
+- high-match email enabled,
+- high-match threshold,
+- max email per day,
+- quiet hours enabled,
+- quiet hours start,
+- quiet hours end,
+- notification cooldown hours,
+- replacement after skip enabled,
+- replacement delay minutes,
 - max auto-apply per day.
 
 Recruiter policy:
 
 - email high-match alert enabled,
 - daily digest enabled,
+- daily digest time,
+- user timezone,
 - auto-invite enabled nếu được cho phép,
 - high-match threshold,
-- potential threshold.
+- potential threshold,
+- max email per day.
 
 #### FR-AUTO-02: Đánh giá policy
 
@@ -664,6 +687,94 @@ Invite có thể thực hiện từ:
 
 - web,
 - email action.
+
+#### FR-AUTO-05: Scan job mới định kỳ
+
+Hệ thống phải cho phép candidate bật/tắt tự động quét job mới.
+
+Tần suất hỗ trợ tối thiểu:
+
+- mỗi 1 giờ,
+- mỗi 6 giờ,
+- mỗi ngày.
+
+Default khuyến nghị: mỗi 1 giờ.
+
+#### FR-AUTO-06: High-match notification
+
+Hệ thống phải gửi email ngay khi có job/candidate match rất cao nếu người dùng bật cấu hình này.
+
+Default khuyến nghị:
+
+- candidate high-match job threshold: `>= 90%`,
+- recruiter high-match CV threshold: `>= 85%` hoặc theo policy,
+- không vượt quá `max_email_per_day`.
+
+Nếu score chưa đủ gửi ngay, kết quả phải được gom vào daily digest hoặc hiển thị trên web.
+
+#### FR-AUTO-07: Daily digest
+
+Hệ thống phải hỗ trợ email tổng hợp hằng ngày.
+
+Default khuyến nghị:
+
+- gửi lúc `08:00` theo timezone của user,
+- gom top job/candidate đáng chú ý,
+- mỗi CTA trong digest vẫn dùng token riêng.
+
+#### FR-AUTO-08: Weekly summary
+
+Hệ thống có thể hỗ trợ báo cáo tuần cho xu hướng job, tổng số match và hiệu quả automation.
+
+Tính năng này có thể triển khai sau MVP nếu thiếu thời gian.
+
+#### FR-AUTO-09: Xử lý Skip
+
+Hệ thống phải phân biệt skip theo nguồn:
+
+- Skip trên web: ẩn job ngay và trả job kế tiếp từ danh sách hiện tại.
+- Skip qua email: ghi nhận interaction nhưng không gửi job kế tiếp ngay.
+- Skip qua email chỉ được gửi job thay thế sau delay nếu user bật Autopilot tìm job thay thế.
+
+Default delay đề xuất: `30-60 phút`.
+
+Skip không được coi là Bad Match.
+
+#### FR-AUTO-10: Recommendation interaction tracking
+
+Hệ thống phải lưu lại tương tác recommendation của candidate.
+
+Các action tối thiểu:
+
+- `VIEWED`,
+- `SKIPPED`,
+- `APPLIED`,
+- `SAVED`,
+- `NOT_INTERESTED`,
+- `SHOW_SIMILAR`.
+
+Các source tối thiểu:
+
+- `WEB`,
+- `EMAIL`,
+- `DIGEST`,
+- `AUTOPILOT`.
+
+#### FR-AUTO-11: Timezone, quiet hours và cooldown
+
+Hệ thống phải lưu timezone của người dùng để tính đúng giờ gửi digest và quiet hours.
+
+Hệ thống phải hỗ trợ:
+
+- `user_timezone`,
+- `quiet_hours_enabled`,
+- `quiet_hours_start`,
+- `quiet_hours_end`,
+- `notification_cooldown_hours`.
+
+Nếu đang trong quiet hours, hệ thống không gửi email ngay mà phải dời sang digest hoặc thời điểm hợp lệ tiếp theo.
+
+Nếu cùng một job/candidate đã được notify hoặc skip gần đây, hệ thống không gửi lặp lại cho đến khi hết cooldown, trừ khi JD/CV thay đổi đáng kể.
 
 ### 5.9. Email Và Magic-Link
 
@@ -886,6 +997,7 @@ Các entity tối thiểu:
 - `EmailToken`,
 - `AuditLog`,
 - `NotificationJob`,
+- `RecommendationInteraction`,
 - `JobTrendSnapshot`.
 
 ### 7.2. Database
@@ -904,6 +1016,7 @@ Các index chính:
 - `matching(job_id, normalized_score)`,
 - `matching(cv_id, normalized_score)`,
 - `application(candidate_id, job_id)`,
+- `recommendation_interaction(candidate_id, job_id)`,
 - `email_token(token_hash)`,
 - `audit_log(created_at)`.
 
@@ -1032,12 +1145,39 @@ Tối thiểu phải biết:
 - GET chỉ hiển thị confirm.
 - POST mới thực thi action.
 
+### 9.3.1. Notification Timing Rules
+
+- Ranking sau upload CV phải chạy ngay bằng async worker.
+- Ranking sau khi recruiter tạo/cập nhật JD phải chạy ngay hoặc đưa vào background queue.
+- Job scan cho candidate mặc định chạy mỗi 1 giờ nếu user bật.
+- Email high-match chỉ gửi ngay khi score vượt ngưỡng và chưa vượt quota ngày.
+- Match không đủ ngưỡng gửi ngay phải được gom vào daily digest.
+- Daily digest mặc định gửi lúc `08:00` theo timezone của user.
+- Email gửi ngay phải tôn trọng quiet hours nếu user bật.
+- Hệ thống phải có cooldown chống gửi lặp lại cùng job/candidate.
+- Weekly summary là optional sau MVP.
+
+### 9.3.2. AutoFit Decision Priority
+
+Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo thứ tự:
+
+- kiểm tra role, quyền truy cập và consent,
+- kiểm tra job/CV/application còn hợp lệ,
+- kiểm tra interaction cũ như `APPLIED`, `SKIPPED`, `NOT_INTERESTED`, `SHOW_SIMILAR`,
+- kiểm tra cooldown,
+- kiểm tra quota email/ngày,
+- kiểm tra quiet hours và timezone,
+- chọn action cuối cùng: auto execute, gửi email, gom digest, chờ duyệt hoặc không làm gì.
+
 ### 9.4. Feedback Rules
 
 - Good Match ảnh hưởng mạnh đến vector.
 - Potential ảnh hưởng nhẹ hơn Good.
 - Bad Match ảnh hưởng âm.
 - Skip hoặc Not Interested không tự động tương đương Bad Match.
+- Skip là tín hiệu yếu để ẩn hoặc giảm ưu tiên job cụ thể.
+- Not Interested là tín hiệu mạnh hơn Skip.
+- Show Similar là tín hiệu tích cực cho nhóm job tương tự.
 
 ### 9.5. Validation Rules
 
@@ -1106,6 +1246,12 @@ Tối thiểu phải biết:
 - `GET /api/automation/actions/confirm?token=...`
 - `POST /api/automation/actions/confirm`
 - `POST /api/automation/actions/reject`
+- `POST /api/automation/actions/feedback`
+
+### 10.8.1. Recommendation Interaction
+
+- `POST /api/recommendations/{jobId}/interactions`
+- `GET /api/recommendations/interactions`
 
 ### 10.9. Analytics Và Audit
 
@@ -1137,7 +1283,8 @@ Tối thiểu phải biết:
 3. Backend score profile với job active.
 4. Frontend hiển thị job feed kèm recommendation score.
 5. Candidate apply/skip/show similar.
-6. Feedback được lưu nếu có.
+6. Hệ thống lưu `RecommendationInteraction`.
+7. Feedback được lưu nếu có.
 
 ### 11.3. Recruiter Tạo JD Và Xem Ranking
 
@@ -1161,6 +1308,25 @@ Tối thiểu phải biết:
 8. User xác nhận bằng POST.
 9. Backend thực thi action.
 10. Backend ghi audit log.
+
+### 11.5. Scan job mới và gửi thông báo
+
+1. Scheduler chạy theo `job_scan_frequency`.
+2. Backend tìm job mới hoặc job vừa cập nhật.
+3. Recommendation Engine score job với candidate phù hợp.
+4. AutoFit kiểm tra consent, interaction cũ, cooldown, quota, quiet hours và threshold.
+5. Nếu candidate đã skip/not interested/applied job đó, backend không gửi lại job đó trong cùng luồng recommendation.
+6. Nếu score rất cao và đủ điều kiện gửi ngay, backend tạo actionable email.
+7. Nếu không đủ điều kiện gửi ngay, backend đưa vào daily digest hoặc chỉ hiển thị trên web.
+
+### 11.6. Skip job
+
+1. Candidate bấm `Skip`.
+2. Backend ghi `RecommendationInteraction`.
+3. Nếu source là `WEB`, frontend ẩn job ngay và hiển thị job kế tiếp.
+4. Nếu source là `EMAIL`, backend không gửi job kế tiếp ngay.
+5. Nếu user bật Autopilot thay thế sau skip, backend tạo notification job sau delay `30-60 phút`.
+6. Audit log ghi lại action nếu skip đi qua email/magic-link.
 
 ---
 
@@ -1192,6 +1358,12 @@ Cần test:
 - passwordless login,
 - email action confirm,
 - auto-apply,
+- job scan scheduler,
+- skip interaction,
+- high-match notification quota,
+- daily digest generation,
+- timezone/quiet hours behavior,
+- notification cooldown,
 - audit log.
 
 ### 12.3. UI Test
@@ -1224,6 +1396,11 @@ Hệ thống được xem là đạt yêu cầu MVP khi:
 - candidate bật auto-apply threshold được,
 - hệ thống tạo application nội bộ khi đủ điều kiện,
 - hệ thống gửi được ít nhất một loại actionable email,
+- hệ thống hỗ trợ scan job mới theo lịch,
+- hệ thống xử lý skip đúng giữa web và email,
+- high-match email không vượt quota ngày,
+- daily digest dùng đúng timezone,
+- quiet hours và cooldown hoạt động đúng,
 - magic-link confirm hoạt động đúng,
 - audit log ghi được action quan trọng,
 - UI hỗ trợ tiếng Việt và tiếng Anh ở các màn hình chính.
@@ -1294,4 +1471,3 @@ Hệ thống đủ cơ sở để được mô tả là một nền tảng autom
 ```text
 Perception -> Decision -> Action -> Learning
 ```
-

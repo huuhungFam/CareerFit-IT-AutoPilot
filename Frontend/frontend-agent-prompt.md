@@ -36,6 +36,8 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 - Hiển thị nhãn `Low / Medium / High / Potential`.
 - Có cơ chế auto-apply nội bộ trên UI khi điểm vượt ngưỡng candidate đặt.
 - Có UI cấu hình AutoFit policy.
+- Có UI cấu hình tần suất scan job, giờ nhận daily digest, ngưỡng high-match email và quota email/ngày.
+- Có UI cấu hình timezone, quiet hours và cooldown chống gửi lặp nếu backend hỗ trợ.
 - Có UI xem action history/audit summary phù hợp với role.
 - Có UI cho passwordless magic-link.
 - Có biểu đồ xu hướng công việc.
@@ -103,6 +105,7 @@ Candidate phải có các màn hình sau:
 - Trang xem trạng thái xử lý hồ sơ
 - Trang xem lịch sử matching / application
 - Trang cài ngưỡng auto-apply
+- Trang cài tần suất scan job, daily digest, high-match email, giới hạn email/ngày
 - Trang thông báo/action history
 - Trang xem chi tiết một JD và điểm phù hợp
 
@@ -187,6 +190,13 @@ Xây ít nhất các component này:
 - `CandidatePreferenceForm`
 - `AutoApplyThresholdControl`
 - `AutomationPolicyPanel`
+- `ScanFrequencySelect`
+- `DigestTimePicker`
+- `EmailQuotaIndicator`
+- `ReplacementAfterSkipToggle`
+- `QuietHoursControl`
+- `TimezoneSelect`
+- `NotificationCooldownField`
 - `EmailActionConfirmCard`
 - `EmailActionResultCard`
 - `AuditSummaryList`
@@ -265,6 +275,8 @@ Frontend phải chuẩn bị client để gọi các endpoint kiểu sau:
 - `POST /api/automation/actions/confirm`
 - `POST /api/automation/actions/reject`
 - `POST /api/automation/actions/feedback`
+- `POST /api/recommendations/{jobId}/interactions`
+- `GET /api/recommendations/interactions`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/analytics/summary`
 - `GET /api/audit-logs`
@@ -285,6 +297,7 @@ Yêu cầu:
 - Filter theo skill, location, seniority, language, score
 - Mở job detail
 - Apply thủ công hoặc lưu/skip/show similar
+- Khi bấm skip trên web, job biến mất ngay và job kế tiếp được hiển thị
 - Nếu đã có profile, job feed hiển thị recommendation score
 
 ### 9.2. Candidate upload CV
@@ -324,6 +337,7 @@ Yêu cầu:
 - Confirm/reject bằng POST
 - Hiển thị result page
 - Nếu token expired/used/invalid, hiển thị fallback rõ ràng
+- Nếu action là skip từ email, hiển thị trạng thái đã bỏ qua và không giả định sẽ gửi job kế tiếp ngay
 
 ## 10. Quy Tắc Hiển Thị Điểm Và Nhãn
 
@@ -345,7 +359,19 @@ Yêu cầu:
 - Có giới hạn hiển thị rõ như max auto-apply per day nếu backend hỗ trợ.
 - Frontend không tự quyết định auto-apply, chỉ cấu hình policy và hiển thị kết quả từ backend.
 
-## 11.1. Quy Tắc Về Email Action
+## 11.1. Quy Tắc Về Job Scan Và Notification
+
+- Candidate phải cấu hình được bật/tắt tự động quét job mới.
+- Tần suất scan tối thiểu: `1 giờ`, `6 giờ`, `mỗi ngày`.
+- Daily digest phải có bật/tắt và chọn giờ nhận, mặc định `08:00`.
+- High-match email phải có bật/tắt và ngưỡng score, mặc định candidate `90%`.
+- Hiển thị quota email/ngày nếu backend trả về.
+- Cho user chọn timezone hoặc hiển thị timezone đang dùng.
+- Quiet hours phải có bật/tắt và khoảng giờ bắt đầu/kết thúc nếu backend hỗ trợ.
+- Cooldown chống gửi lặp phải hiển thị như một setting nâng cao nếu backend trả về.
+- Replacement after email skip phải là toggle riêng, không mặc định bật.
+
+## 11.2. Quy Tắc Về Email Action
 
 - GET confirm page chỉ hiển thị action summary.
 - Nút confirm/reject gọi POST API.
@@ -399,10 +425,11 @@ Làm theo thứ tự này:
 4. Làm candidate upload, profile, recommendation, applications
 5. Làm recruiter dashboard, job ranking, applicant, potential views
 6. Làm AutoFit policy UI, automation history, email confirm/result pages
-7. Làm biểu đồ, thống kê, feedback modal, invite flow
-8. Làm auto-refresh, polling, error handling
-9. Tối ưu responsive, accessibility, motion
-10. Hoàn thiện polish và test UI
+7. Làm job scan/digest/high-match settings và skip interaction UX
+8. Làm biểu đồ, thống kê, feedback modal, invite flow
+9. Làm auto-refresh, polling, error handling
+10. Tối ưu responsive, accessibility, motion
+11. Hoàn thiện polish và test UI
 
 ## 16. Tiêu Chí Hoàn Thành
 
@@ -415,6 +442,9 @@ Frontend chỉ coi là xong khi:
 - Recruiter xem ranking, applicant, potential, invite được
 - Email action confirm/result pages hoạt động
 - AutoFit policy UI hoạt động
+- Scan frequency/digest/high-match settings hiển thị và lưu được
+- Timezone/quiet hours/cooldown hiển thị đúng nếu backend hỗ trợ
+- Skip trên web ẩn job ngay; skip qua email không hiển thị flow gửi job kế tiếp ngay
 - Action history/audit summary hiển thị được
 - Đổi ngôn ngữ vi/en được
 - Score hiển thị theo phần trăm

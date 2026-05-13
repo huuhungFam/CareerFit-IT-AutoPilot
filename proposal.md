@@ -1,10 +1,11 @@
-# ĐỀ CƯƠNG ĐỒ ÁN TỐT NGHIỆP: NỀN TẢNG TỰ ĐỘNG HÓA ĐÁNH GIÁ VÀ GỢI Ý CV-JD VỚI HUMAN-IN-THE-LOOP
+# ĐỀ CƯƠNG ĐỒ ÁN TỐT NGHIỆP: NỀN TẢNG TỰ ĐỘNG HÓA TUYỂN DỤNG TÍCH HỢP AI HỖ TRỢ ĐÁNH GIÁ VÀ GỢI Ý CV-JD VỚI HUMAN-IN-THE-LOOP
 
 ## TÊN ĐỀ TÀI
 
 * **Tên website/ứng dụng:** CareerFit IT AutoPilot
-* **Tiếng Việt:** Nền tảng tự động hóa đánh giá và gợi ý mức độ phù hợp giữa CV và Job Description cho ngành công nghệ thông tin với Human-in-the-Loop.
-* **Tiếng Anh:** Design and Implementation of a Human-in-the-Loop CV Evaluation and Job Recommendation Automation Platform for IT.
+* **Tiếng Việt:** Nền tảng tự động hóa tuyển dụng tích hợp AI hỗ trợ đánh giá và gợi ý CV-JD với Human-in-the-Loop.
+* **Tiếng Anh:** Design and Implementation of a Human-in-the-Loop AI-Assisted Recruitment Automation Platform for CV-JD Evaluation and Recommendation in IT.
+* **Phạm vi áp dụng:** Hệ thống tập trung vào bài toán tuyển dụng trong ngành công nghệ thông tin.
 
 ## ĐỊNH VỊ SẢN PHẨM
 
@@ -180,6 +181,53 @@ Các email chính:
 * Daily digest: `Open Dashboard / Review Top Matches`.
 * Passwordless login: `Sign In`.
 
+### Automation Timing & Notification Policy
+
+Hệ thống không quét và gửi email liên tục. AutoFit phải có lịch chạy và giới hạn rõ ràng để tránh spam, giảm tải hệ thống và dễ giải thích khi bảo vệ.
+
+Default khuyến nghị:
+
+* **Ranking khi candidate upload CV:** chạy ngay bằng async worker.
+* **Ranking khi recruiter tạo/cập nhật JD:** chạy ngay hoặc đưa vào background queue.
+* **Scan job mới cho candidate:** chạy mỗi 1 giờ nếu candidate bật tự động quét job.
+* **Gửi email ngay:** chỉ gửi khi match rất cao, ví dụ `>= 90%`, và user bật email alert.
+* **Daily digest:** gửi 1 lần/ngày, mặc định `08:00` theo timezone của user.
+* **Weekly summary:** gửi 1 lần/tuần nếu user bật báo cáo tổng hợp.
+* **Analytics/job trend:** cập nhật mỗi ngày hoặc mỗi 6 giờ tùy cấu hình demo.
+* **Email quota:** giới hạn số email/ngày theo từng user, ví dụ tối đa 5 email/ngày.
+* **Cooldown chống lặp:** không gửi lại cùng một job đã được notify/skip trong một khoảng thời gian, ví dụ 7 ngày, trừ khi JD thay đổi đáng kể.
+* **Quiet hours:** nếu user bật khung giờ yên lặng, hệ thống không gửi email ngay trong khung đó mà dời sang digest hoặc thời điểm tiếp theo.
+
+Khi candidate bấm `Skip`:
+
+* **Trên web:** job bị ẩn ngay và job kế tiếp hiển thị ngay.
+* **Qua email:** không gửi job kế tiếp ngay lập tức; hệ thống ghi nhận `SKIPPED` và đưa job khác vào lần scan/digest tiếp theo.
+* **Nếu bật Autopilot tìm job thay thế:** hệ thống có thể gửi job kế tiếp sau `30-60 phút`, nhưng phải giới hạn số email/ngày.
+* `Skip` không được xem là `Bad Match`; nó chỉ là tín hiệu yếu để giảm ưu tiên job đó.
+
+UI AutoFit Settings cần có:
+
+* bật/tắt tự động quét job mới,
+* tần suất quét: `1 giờ / 6 giờ / mỗi ngày`,
+* bật/tắt gửi email ngay khi match cao,
+* ngưỡng gửi ngay, ví dụ `90%`,
+* bật/tắt daily digest,
+* giờ nhận digest, ví dụ `08:00`,
+* timezone nhận thông báo,
+* giới hạn email/ngày,
+* khung giờ yên lặng nếu user muốn,
+* bật/tắt Autopilot tìm job thay thế sau khi skip.
+
+Quy tắc ưu tiên khi AutoFit ra quyết định:
+
+1. Kiểm tra consent và role.
+2. Kiểm tra job/application còn hợp lệ.
+3. Kiểm tra interaction cũ như `SKIPPED`, `NOT_INTERESTED`, `APPLIED`.
+4. Kiểm tra cooldown chống gửi lặp lại.
+5. Kiểm tra quota email/ngày.
+6. Kiểm tra quiet hours và timezone.
+7. Nếu đủ điều kiện thì auto execute, gửi email ngay, gom vào digest hoặc chờ duyệt.
+
 ## MÔ HÌNH HOẠT ĐỘNG NỘI BỘ
 
 Hệ thống hoạt động như một automation agent chuyên biệt trong miền tuyển dụng:
@@ -222,6 +270,11 @@ AutoFit quyết định hành động dựa trên:
 * user consent,
 * threshold,
 * giới hạn số email/action mỗi ngày,
+* tần suất scan job mới,
+* daily digest time,
+* timezone và quiet hours,
+* cooldown chống gửi lặp notification,
+* trạng thái interaction trước đó như `SKIPPED`, `APPLIED`, `NOT_INTERESTED`, `SHOW_SIMILAR`,
 * trạng thái job/application hiện tại.
 
 Kết quả policy:
@@ -273,7 +326,8 @@ Các bảng cốt lõi:
 * **Matching:** `id`, `cv_id`, `job_id`, `raw_score`, `normalized_score`, `label`, `is_potential`, `reasons` JSONB
 * **Application:** `id`, `candidate_id`, `job_id`, `matching_id`, `status`, `is_auto_applied`, `created_at`
 * **Feedback:** `id`, `matching_id`, `actor_id`, `feedback_type`, `reason_tags` JSONB, `created_at`
-* **AutomationPolicy:** `id`, `user_id`, `role`, `auto_apply_enabled`, `auto_apply_threshold`, `auto_invite_enabled`, `daily_digest_enabled`, `email_action_enabled`
+* **AutomationPolicy:** `id`, `user_id`, `role`, `auto_apply_enabled`, `auto_apply_threshold`, `auto_invite_enabled`, `daily_digest_enabled`, `daily_digest_time`, `user_timezone`, `job_scan_enabled`, `job_scan_frequency`, `high_match_email_enabled`, `high_match_threshold`, `max_email_per_day`, `quiet_hours_enabled`, `quiet_hours_start`, `quiet_hours_end`, `notification_cooldown_hours`, `replacement_after_skip_enabled`, `replacement_delay_minutes`, `email_action_enabled`
+* **RecommendationInteraction:** `id`, `candidate_id`, `job_id`, `action`, `source`, `created_at`, `metadata` JSONB
 * **EmailAction:** `id`, `recipient_user_id`, `action_type`, `target_type`, `target_id`, `status`, `sent_at`, `executed_at`
 * **EmailToken:** `id`, `token_hash`, `purpose`, `user_id`, `action_id`, `target_type`, `target_id`, `expires_at`, `used_at`, `revoked_at`
 * **AuditLog:** `id`, `actor_type`, `actor_id`, `action_type`, `target_type`, `target_id`, `source_channel`, `result`, `metadata` JSONB, `created_at`

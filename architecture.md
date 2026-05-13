@@ -92,12 +92,20 @@ Nó quyết định:
 - hành động nào được tự động hóa,
 - hành động nào cần người duyệt,
 - hành động nào chỉ ghi log và chờ xác nhận.
+- bao lâu thì quét job mới,
+- khi nào gửi ngay và khi nào gom vào digest,
+- xử lý thế nào khi user bấm `Skip`, `Not Interested` hoặc `Show Similar`.
+- có đang vượt quota email/ngày hay không,
+- có đang nằm trong quiet hours của user hay không,
+- notification cùng job có đang trong cooldown chống gửi lặp hay không.
 
 Ví dụ AutoFit:
 
 - score > 95% và candidate bật auto-apply -> tạo application nội bộ tự động
 - score 85-95% -> gửi email xác nhận để người dùng bấm Yes/No
 - score thấp nhưng có tín hiệu `Potential` -> gửi vào digest hoặc gắn cờ cho recruiter
+- job mới match candidate >= 90% -> gửi email ngay nếu user bật high-match alert
+- job match trung bình -> gom vào daily digest
 
 ### 3.3. Actionable Email
 
@@ -208,6 +216,9 @@ Trách nhiệm:
 - kiểm tra threshold,
 - kiểm tra consent của candidate/recruiter,
 - kiểm tra giới hạn số action/email mỗi ngày,
+- kiểm tra tần suất scan job mới,
+- kiểm tra interaction cũ để không đề xuất lại job đã bị skip/not interested,
+- kiểm tra quota email, timezone, quiet hours và cooldown,
 - chọn channel: web, email, internal queue, auto execute.
 
 ### 5.4. Automation Orchestrator
@@ -300,6 +311,19 @@ Trường gợi ý:
 - `auto_apply_threshold`
 - `auto_invite_enabled`
 - `daily_digest_enabled`
+- `daily_digest_time`
+- `user_timezone`
+- `job_scan_enabled`
+- `job_scan_frequency`
+- `high_match_email_enabled`
+- `high_match_threshold`
+- `max_email_per_day`
+- `quiet_hours_enabled`
+- `quiet_hours_start`
+- `quiet_hours_end`
+- `notification_cooldown_hours`
+- `replacement_after_skip_enabled`
+- `replacement_delay_minutes`
 - `email_action_enabled`
 - `passwordless_enabled`
 - `created_at`
@@ -375,6 +399,36 @@ Trường gợi ý:
 - `next_retry_at`
 - `created_at`
 
+### 6.6. `recommendation_interaction`
+
+Lưu hành vi của candidate với từng job để hệ thống không đề xuất lặp lại sai cách.
+
+Trường gợi ý:
+
+- `id`
+- `candidate_id`
+- `job_id`
+- `action`
+- `source`
+- `created_at`
+- `metadata` (JSONB)
+
+`action` gợi ý:
+
+- `VIEWED`
+- `SKIPPED`
+- `APPLIED`
+- `SAVED`
+- `NOT_INTERESTED`
+- `SHOW_SIMILAR`
+
+`source` gợi ý:
+
+- `WEB`
+- `EMAIL`
+- `DIGEST`
+- `AUTOPILOT`
+
 ---
 
 ## 7. Luồng Nghiệp Vụ
@@ -442,6 +496,54 @@ Luồng:
 4. Email chứa summary ngắn, score, tag, và CTA.
 5. Mỗi CTA đi qua token riêng.
 
+### 7.6. Job scan và high-match notification
+
+Luồng:
+
+1. Scheduler chạy theo `job_scan_frequency`, mặc định mỗi 1 giờ.
+2. Hệ thống tìm job mới hoặc job vừa cập nhật.
+3. Recommendation Engine score job đó với candidate phù hợp.
+4. AutoFit kiểm tra policy, interaction cũ, quota, cooldown và quiet hours.
+5. Nếu user đã `SKIPPED`, `NOT_INTERESTED` hoặc `APPLIED`, job đó không được gửi lại trong cùng luồng recommendation.
+6. Nếu score >= `high_match_threshold`, mặc định 90%, user bật high-match email, chưa vượt quota, không nằm trong quiet hours và không bị cooldown, hệ thống tạo actionable email.
+7. Nếu không đủ điều kiện gửi ngay, hệ thống gom vào daily digest hoặc giữ trong web recommendation.
+
+### 7.6.1. Thứ tự quyết định AutoFit
+
+Thứ tự này giúp code không mâu thuẫn khi nhiều điều kiện cùng xảy ra:
+
+1. Check role, quyền truy cập và consent.
+2. Check target còn hợp lệ: job active, CV active, chưa apply trùng.
+3. Check interaction cũ: `APPLIED`, `SKIPPED`, `NOT_INTERESTED`, `SHOW_SIMILAR`.
+4. Check cooldown chống gửi lặp cùng job/candidate.
+5. Check quota email/ngày.
+6. Check quiet hours theo `user_timezone`.
+7. Chọn action cuối: `AUTO_EXECUTE`, `SEND_EMAIL_ACTION`, `ADD_TO_DIGEST`, `CREATE_PENDING_APPROVAL`, `DO_NOTHING`.
+
+### 7.7. Skip và job kế tiếp
+
+Luồng web:
+
+1. Candidate bấm `Skip` trên job feed hoặc recommendation card.
+2. Backend ghi `RecommendationInteraction(action=SKIPPED, source=WEB)`.
+3. Frontend ẩn job ngay và hiển thị job kế tiếp từ danh sách hiện có.
+4. Lần recommendation tiếp theo loại job đã skip khỏi danh sách ưu tiên.
+
+Luồng email:
+
+1. Candidate bấm `Skip` trong email.
+2. Backend ghi `RecommendationInteraction(action=SKIPPED, source=EMAIL)`.
+3. Hệ thống không gửi job kế tiếp ngay để tránh spam.
+4. Nếu `replacement_after_skip_enabled = true`, hệ thống có thể tạo notification job sau `replacement_delay_minutes`, mặc định 30-60 phút.
+5. Nếu không bật, job kế tiếp chỉ xuất hiện trong web hoặc daily digest tiếp theo.
+
+Quy tắc:
+
+- `Skip` không phải `Bad Match`.
+- `Not Interested` là tín hiệu mạnh hơn `Skip`.
+- `Show Similar` là tín hiệu tích cực cho nhóm job tương tự.
+- `Bad Match` mới được dùng làm negative feedback mạnh cho Rocchio.
+
 ---
 
 ## 8. API Đề Xuất
@@ -465,12 +567,17 @@ Luồng:
 - `POST /api/automation/policies/me`
 - `PUT /api/automation/policies/me`
 
-### 8.4. Feedback
+### 8.4. Recommendation Interaction
+
+- `POST /api/recommendations/{jobId}/interactions`
+- `GET /api/recommendations/interactions`
+
+### 8.5. Feedback
 
 - `POST /api/matchings/{matchingId}/feedback`
 - `POST /api/automation/actions/feedback`
 
-### 8.5. Audit
+### 8.6. Audit
 
 - `GET /api/audit-logs`
 - `GET /api/audit-logs/{id}`
@@ -567,7 +674,9 @@ Xử lý:
 7. magic-link login
 8. auto-apply policy
 9. daily digest
-10. confirmation landing pages
+10. job scan + high-match notification policy
+11. recommendation interaction
+12. confirmation landing pages
 
 Lý do:
 
@@ -586,6 +695,8 @@ Kiến trúc automation chỉ coi là xong khi:
 - magic-link login hoạt động
 - auto-apply có policy và consent
 - recruiter/candidate có thể yes/no qua email hoặc confirm page
+- high-match email chỉ gửi ngay khi vượt ngưỡng và không vượt quota
+- skip qua web ẩn job ngay, skip qua email không spam job kế tiếp
 - audit log ghi được toàn bộ action
 - feedback từ web/email cập nhật được Rocchio vector
 - web có control panel để xem policy, queue, action history và audit summary
