@@ -2,6 +2,13 @@ export type Language = 'vi' | 'en';
 
 export type Role = 'candidate' | 'recruiter';
 
+export interface MockAccount {
+  username: string;
+  password: string;
+  role: Role;
+  displayName: string;
+}
+
 export type MatchLabel = 'Low' | 'Medium' | 'High' | 'Potential';
 
 export interface Job {

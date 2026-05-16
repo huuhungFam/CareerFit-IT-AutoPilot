@@ -28,6 +28,9 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 - Có 2 luồng chính:
   - Luồng 1: candidate upload CV để hệ thống ranking các JD phù hợp.
   - Luồng 2: candidate khai báo hồ sơ mong muốn ở màn hình chính để hệ thống gợi ý top JD phù hợp.
+- Candidate có trang `Hồ sơ & CV` để quản lý nhiều CV, hồ sơ cố định và portfolio/dự án.
+- Trang Upload CV có 2 tab chuyển qua lại: `Document Parser` và `Manual Creation`.
+- Recruiter dashboard tổng quan phải tách khỏi trang Việc làm HR Dashboard.
 - Hỗ trợ 2 vai trò:
   - Candidate
   - Recruiter
@@ -100,7 +103,7 @@ Candidate phải có các màn hình sau:
 - Trang chi tiết job
 - Trang upload CV
 - Trang nhập CV thủ công bằng form
-- Trang khai báo hồ sơ mong muốn
+- Trang Hồ sơ & CV: CV đã tạo, hồ sơ cố định, portfolio/dự án
 - Trang gợi ý JD theo hồ sơ
 - Trang xem trạng thái xử lý hồ sơ
 - Trang xem lịch sử matching / application
@@ -114,7 +117,7 @@ Candidate phải có các màn hình sau:
 Recruiter phải có các màn hình sau:
 
 - Dashboard tổng quan
-- Danh sách job
+- Danh sách job theo giao diện HR Dashboard
 - Tạo / sửa / xem JD
 - Trang ranking CV cho một job
 - Trang xem CV đã apply
@@ -186,8 +189,13 @@ Xây ít nhất các component này:
 - `JobFilterPanel`
 - `JobDetailPanel`
 - `UploadDropzone`
+- `UploadTabSwitcher`
 - `CvSummaryCard`
+- `CvManagementList`
+- `CvManagementCard`
 - `CandidatePreferenceForm`
+- `FixedCandidateProfileForm`
+- `PortfolioProjectCard`
 - `AutoApplyThresholdControl`
 - `AutomationPolicyPanel`
 - `ScanFrequencySelect`
@@ -203,6 +211,8 @@ Xây ít nhất các component này:
 - `ActionHistoryTimeline`
 - `JobRecommendationList`
 - `JobRankingTable`
+- `RecruiterOverviewPanel`
+- `RecruiterHrDashboard`
 - `MatchingScoreBadge`
 - `PotentialTag`
 - `StatusTimeline`
@@ -223,6 +233,8 @@ Các object tối thiểu:
 - `Candidate`
 - `CandidatePreference`
 - `CV`
+- `CandidatePortfolioLink`
+- `CandidatePortfolioProject`
 - `Job`
 - `Matching`
 - `Application`
@@ -232,6 +244,18 @@ Các object tối thiểu:
 - `AutomationPolicy`
 - `EmailAction`
 - `AuditLog`
+
+`Job` cần hỗ trợ salary có điều kiện:
+
+- `salaryMode`: `NEGOTIABLE`, `RANGE`, `UP_TO`, `FROM`, `HIDDEN`
+- `salaryMin`: nullable
+- `salaryMax`: nullable
+- `salaryCurrency`: nullable
+- `salaryType`: nullable
+- `salaryIsVisible`: boolean
+- `salaryDisplayText`: nullable
+
+UI không được bắt recruiter nhập đủ mọi salary field. Form phải đổi field bắt buộc theo `salaryMode`.
 
 Mỗi item matching / recommendation nên có:
 
@@ -244,6 +268,13 @@ Mỗi item matching / recommendation nên có:
 - `isPotential`
 - `reasons`
 - `status`
+
+Candidate profile UI cần hiểu:
+
+- một candidate có thể có nhiều CV,
+- một CV có `source = UPLOAD | MANUAL`,
+- một CV có thể là `isDefault`,
+- portfolio project là dữ liệu bổ trợ, không thay thế CV.
 
 ## 8. API Contract Mặc Định
 
@@ -259,13 +290,25 @@ Frontend phải chuẩn bị client để gọi các endpoint kiểu sau:
 - `POST /api/candidate/preferences`
 - `POST /api/cv/upload`
 - `POST /api/cv/manual`
+- `GET /api/cv/me`
 - `GET /api/cv/{id}/status`
+- `POST /api/cv/{id}/set-default`
+- `GET /api/candidates/me/profile`
+- `PUT /api/candidates/me/profile`
+- `GET /api/candidates/me/portfolio`
+- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/projects`
+- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 - `GET /api/jobs`
 - `POST /api/jobs`
 - `PUT /api/jobs/{jobId}`
 - `GET /api/jobs/{jobId}/ranking`
 - `GET /api/jobs/{jobId}/applicants`
 - `GET /api/jobs/{jobId}/potential`
+- `GET /api/recruiter/dashboard`
+- `GET /api/recruiter/jobs`
+- `GET /api/recruiter/jobs/{jobId}/workspace`
 - `POST /api/matchings/{matchingId}/feedback`
 - `POST /api/applications`
 - `POST /api/applications/{applicationId}/invite`
@@ -303,6 +346,8 @@ Yêu cầu:
 ### 9.2. Candidate upload CV
 
 - Kéo thả file PDF
+- Tab `Document Parser` hiển thị dropzone/parser
+- Tab `Manual Creation` hiển thị form builder thủ công
 - Gửi file lên backend
 - Hiển thị trạng thái `pending / processing / scored / failed`
 - Poll trạng thái định kỳ
@@ -310,17 +355,18 @@ Yêu cầu:
 - Điểm hiển thị theo `%`
 - Có badge cho `Potential`
 
-### 9.3. Candidate khai báo hồ sơ mong muốn
+### 9.3. Candidate Hồ sơ & CV
 
-- Form nhập desired title, skills, location, seniority, language
-- Lưu preference
-- Từ preference đó, lấy top JD recommendation
-- Cho phép chỉnh ngưỡng auto-apply
+- Tab `CV đã tạo` quản lý nhiều CV đã upload/nhập form.
+- Cho phép chọn CV mặc định.
+- Tab `Hồ sơ cố định` nhập desired title, skills, location, seniority, language, salary/work model và threshold.
+- Tab `Portfolio / Dự án` quản lý GitHub, LinkedIn, website, demo links và project cards.
+- Từ hồ sơ cố định và CV mặc định, lấy top JD recommendation.
 
 ### 9.4. Recruiter dashboard
 
-- Xem job summary
-- Xem ranking CV theo job
+- `/recruiter` là tổng quan: job market chart, metrics, ranking/applicant/potential summary.
+- `/recruiter/jobs` là HR Dashboard: Active Requisitions bên trái, selected job detail + Applied CVs/AI Potential Matches bên phải.
 - Phân biệt:
   - đã apply
   - matching cao chưa apply
@@ -344,6 +390,7 @@ Yêu cầu:
 - `rawScore` là giá trị thuật toán nội bộ.
 - `normalizedScore` là phần trăm hiển thị cho người dùng.
 - `normalizedScore` phải được hiển thị rõ ràng.
+- Badge score đổi màu theo điểm: điểm cao xanh sáng/teal, điểm trung bình vàng/cam, điểm thấp đỏ.
 - `Potential` phải nổi bật hơn một tag bình thường, nhưng không lòe loẹt.
 - Có thể hiển thị thêm lý do ngắn gọn, ví dụ:
   - transferable skills
@@ -423,13 +470,14 @@ Làm theo thứ tự này:
 2. Tạo typed API client và mock layer
 3. Làm job portal candidate: feed, search, filter, detail
 4. Làm candidate upload, profile, recommendation, applications
-5. Làm recruiter dashboard, job ranking, applicant, potential views
-6. Làm AutoFit policy UI, automation history, email confirm/result pages
-7. Làm job scan/digest/high-match settings và skip interaction UX
-8. Làm biểu đồ, thống kê, feedback modal, invite flow
-9. Làm auto-refresh, polling, error handling
-10. Tối ưu responsive, accessibility, motion
-11. Hoàn thiện polish và test UI
+5. Làm Hồ sơ & CV: multi-CV, fixed profile và portfolio
+6. Làm recruiter overview và recruiter HR job dashboard
+7. Làm AutoFit policy UI, automation history, email confirm/result pages
+8. Làm job scan/digest/high-match settings và skip interaction UX
+9. Làm biểu đồ, thống kê, feedback modal, invite flow
+10. Làm auto-refresh, polling, error handling
+11. Tối ưu responsive, accessibility, motion
+12. Hoàn thiện polish và test UI
 
 ## 16. Tiêu Chí Hoàn Thành
 
@@ -438,8 +486,10 @@ Frontend chỉ coi là xong khi:
 - Vào app thấy đúng thương hiệu `CareerFit IT`
 - Candidate dùng được job feed/search/filter/detail như web tìm việc
 - Candidate upload CV và xem ranking được
+- Candidate quản lý nhiều CV, chọn CV mặc định, khai báo hồ sơ cố định và portfolio được
 - Candidate khai báo preference và xem recommendation được
 - Recruiter xem ranking, applicant, potential, invite được
+- Recruiter overview và HR job dashboard tách riêng đúng route
 - Email action confirm/result pages hoạt động
 - AutoFit policy UI hoạt động
 - Scan frequency/digest/high-match settings hiển thị và lưu được

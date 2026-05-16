@@ -13,7 +13,7 @@ Frontend là job portal cho candidate và control plane cho recruiter/admin.
 Nó phải:
 
 - cho candidate tìm kiếm, lọc, xem chi tiết và apply job như một web tìm việc thông thường
-- cho candidate upload CV và khai báo hồ sơ mong muốn
+- cho candidate upload CV, nhập CV thủ công, quản lý nhiều CV, hồ sơ cố định và portfolio
 - cho recruiter quản lý job và duyệt matching
 - hiển thị score, label, potential
 - hiển thị trạng thái xử lý background
@@ -219,14 +219,14 @@ Cho candidate tìm kiếm và khám phá job như một nền tảng tuyển d�
 - location
 - seniority
 - required skills
-- salary range if available
+- salary display text if visible, for example `Thỏa thuận`, `1000 - 2000 USD / tháng`, `Up to 2000 USD`
 - recommendation score if the candidate has a profile
 - label and potential flag when available
 
 ### Behaviors
 
 - search by keyword
-- filter by skill, location, seniority, language, score range
+- filter by skill, location, seniority, language, salary mode/range, score range
 - sort by relevance, newest, score
 - open job detail
 - apply, save, skip, show similar
@@ -243,7 +243,7 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - full job description
 - required skills
 - optional skills
-- company/location/salary
+- company/location/salary display text if visible
 - matching/recommendation score
 - reason chips
 - application status
@@ -260,8 +260,9 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 
 ### Purpose
 
-- drop PDF
-- upload manual form
+- hỗ trợ 2 tab giao diện: Document Parser và Manual Creation
+- Document Parser để drop/upload PDF
+- Manual Creation để nhập CV bằng form
 - display validation
 - display processing state
 
@@ -282,17 +283,25 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - preview extracted summary if backend returns it
 - polling status until scored
 - render ranking results after success
+- tab `Document Parser` và `Manual Creation` phải chuyển qua lại, không thay thế nhau
+- sticky action bar `Save & Start Matching` chỉ hiển thị trong tab Manual Creation
+- Document Parser giữ dropzone/parser chính, không cần thêm card tóm tắt trùng ở hero
 
 ## 6.6. Candidate Profile Page
 
 ### Purpose
 
-- set desired title
-- desired skills
-- location
-- seniority
-- language
-- auto-apply threshold
+- Trang này hiển thị dưới label `Hồ sơ & CV`.
+- Quản lý nhiều CV đã upload hoặc nhập form.
+- Chọn CV mặc định.
+- Chỉnh hồ sơ cố định và preference.
+- Quản lý portfolio/dự án bổ trợ.
+
+### Tabs
+
+- `CV đã tạo`: danh sách nhiều CV, source, updated date, status, score, skills và actions.
+- `Hồ sơ cố định`: thông tin cá nhân, desired title, desired skills, location, seniority, expected salary, work model, auto-apply threshold.
+- `Portfolio / Dự án`: GitHub, LinkedIn, website, demo/design links và project cards.
 
 ### Behaviors
 
@@ -300,6 +309,16 @@ Hiển thị JD đầy đủ và giải thích vì sao job phù hợp với cand
 - show helper text for each field
 - save preference immediately or by explicit submit
 - allow toggling automation policy
+- allow setting one CV as default
+- portfolio is not a replacement for CV and should not live under Upload CV
+
+### UI copy note
+
+Trang phải có chú thích ngắn ở đầu để phân biệt:
+
+- CV là từng phiên bản hồ sơ dùng để matching/ứng tuyển.
+- Hồ sơ cố định là dữ liệu nền dùng chung cho AutoFit.
+- Portfolio là bằng chứng năng lực/dự án bổ trợ.
 
 ## 6.7. Candidate Recommendations Page
 
@@ -378,11 +397,9 @@ Cho candidate cấu hình lịch tự động và thông báo đề xuất job.
 
 ### Purpose
 
-- overview of jobs
-- ranking summary
-- applicant counts
-- potential pool
-- automation summary
+- `/recruiter` là dashboard tổng quan.
+- Không dùng layout HR Dashboard chi tiết ở trang này.
+- Hiển thị job market chart, metric cards và bảng tóm tắt ranking/applicant/potential pool.
 
 ### Sections
 
@@ -393,6 +410,14 @@ Cho candidate cấu hình lịch tự động và thông báo đề xuất job.
 - digest summary
 
 ## 6.11. Recruiter Job Detail
+
+Trang `/recruiter/jobs` là HR Dashboard cho job management.
+
+### Layout
+
+- left column: Active Requisitions.
+- right column: selected job detail, Applied CVs tab, AI Potential Matches tab.
+- search jobs, filters, post job action ở đầu trang.
 
 ### Subtabs
 
@@ -410,6 +435,25 @@ Cho candidate cấu hình lịch tự động và thông báo đề xuất job.
 - invite candidate action
 - feedback action
 - export if enabled
+
+## 6.11.1. Recruiter Job Salary Form
+
+Recruiter không phải nhập tất cả trường lương. UI phải cho chọn kiểu lương trước, sau đó chỉ hiện field cần thiết.
+
+Salary modes:
+
+- `NEGOTIABLE`: hiển thị là `Thỏa thuận`, không cần min/max.
+- `RANGE`: cần `salaryMin`, `salaryMax`, `salaryCurrency`, `salaryType`.
+- `UP_TO`: cần `salaryMax`, `salaryCurrency`, `salaryType`.
+- `FROM`: cần `salaryMin`, `salaryCurrency`, `salaryType`.
+- `HIDDEN`: không hiển thị lương cho candidate.
+
+UI rules:
+
+- Nếu chọn `RANGE`, validate `salaryMin <= salaryMax`.
+- Không cho nhập số âm.
+- `salaryDisplayText` có thể được backend generate từ structured fields, hoặc frontend preview trước khi submit.
+- Candidate-facing card/detail chỉ dùng `salaryDisplayText` khi `salaryIsVisible = true`.
 
 ## 6.12. Automation Confirm Page
 
@@ -476,7 +520,11 @@ The following components should exist at minimum:
 - `JobDetailPanel`
 - `CvUploadDropzone`
 - `CvPreviewPanel`
+- `CvManagementList`
+- `CvManagementCard`
 - `CandidateProfileForm`
+- `CandidatePortfolioForm`
+- `PortfolioProjectCard`
 - `AutoApplyToggle`
 - `ThresholdSlider`
 - `ScanFrequencySelect`
@@ -491,6 +539,8 @@ The following components should exist at minimum:
 - `ReasonChips`
 - `ActionButtonGroup`
 - `JobRankingTable`
+- `RecruiterOverviewPanel`
+- `RecruiterHrDashboard`
 - `ApplicantTable`
 - `PotentialList`
 - `NotificationList`
@@ -540,6 +590,8 @@ Use component state / form state for:
 Use React Hook Form + Zod for:
 
 - profile form
+- profile/CV tab selection
+- portfolio project form
 - job form
 - login form
 - passwordless request form
@@ -561,6 +613,7 @@ Frontend only renders:
 - `status`
 
 Frontend must not compute these values itself.
+Score badge color should be visual-only and based on `normalizedScore`: high scores use bright green/teal, mid scores use yellow/orange, low scores use red.
 
 ### 9.2. Status polling
 
@@ -739,6 +792,9 @@ Useful surface hierarchy:
 ### Component tests
 
 - upload dropzone
+- upload tab switcher
+- CV management list
+- portfolio project card
 - profile form
 - ranking table
 - action confirm card
@@ -759,8 +815,11 @@ Useful surface hierarchy:
 Frontend is done when:
 
 - candidate can upload and inspect results
+- candidate can manage multiple CVs and choose a default CV
+- candidate can edit fixed profile and portfolio from `Hồ sơ & CV`
 - candidate can configure automation policy
 - recruiter can review rankings and potential candidates
+- recruiter overview and recruiter job management are separate screens
 - email action pages work
 - passwordless login works
 - language toggle works

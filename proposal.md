@@ -36,7 +36,11 @@ Trong đó:
 Xây dựng một nền tảng tuyển dụng IT có khả năng:
 
 * Cho candidate tìm kiếm, lọc, xem chi tiết và apply Job như một web tìm việc thông thường.
+* Cho candidate nhập keyword, nhận gợi ý tìm kiếm, chuyển sang trang kết quả và lọc job theo điều kiện.
+* Cho candidate xem nhà tuyển dụng nổi bật, mở trang chi tiết công ty và xem các job đang tuyển của công ty đó.
+* Cho candidate quản lý nhiều CV, chọn CV mặc định, duy trì hồ sơ cố định và bổ sung portfolio/dự án.
 * Cho recruiter tạo JD, xem CV đã apply, xem CV matching cao và xem candidate tiềm năng.
+* Hiển thị dashboard thị trường việc làm IT dựa trên tổng số job đăng tuyển trên hệ thống, không nhầm với số CV-JD matching.
 * Tự động trích xuất và phân tích nội dung từ CV PDF text-based hoặc CV nhập qua form.
 * Kiểm tra tính hợp lệ của CV/JD, cảnh báo dữ liệu thiếu hoặc bất thường, và đề xuất sửa trước khi scoring.
 * Chuyển đổi CV, JD và hồ sơ mong muốn thành vector bằng TF-IDF.
@@ -57,9 +61,13 @@ Xây dựng một nền tảng tuyển dụng IT có khả năng:
 Candidate vào web để:
 
 * xem job feed,
-* tìm kiếm job theo keyword,
-* lọc theo skill, location, seniority, language, score,
+* tìm kiếm job theo keyword và nhận gợi ý tìm kiếm,
+* chuyển sang trang kết quả tìm kiếm sau khi bấm Search,
+* lọc theo skill, location, seniority, language, salary, score,
 * xem job detail,
+* xem nhà tuyển dụng nổi bật và chi tiết nhà tuyển dụng,
+* quản lý nhiều CV trong trang Hồ sơ & CV,
+* khai báo hồ sơ cố định và portfolio dự án,
 * apply thủ công,
 * xem job recommendation cá nhân.
 
@@ -101,7 +109,9 @@ Ví dụ:
 
 **Hệ thống làm:**
 
-* Job portal cơ bản cho candidate: job feed, search, filter, job detail, apply.
+* Job portal cơ bản cho candidate: job feed, search suggestion, search result page, filter, job detail, apply.
+* Employer experience cho candidate: featured employers, employer detail, danh sách job đang mở của từng công ty.
+* Candidate profile experience: Hồ sơ & CV với 3 tab `CV đã tạo`, `Hồ sơ cố định`, `Portfolio / Dự án`.
 * Recruiter dashboard: JD management, ranking, applicants, potential pool, analytics.
 * Upload CV text-based PDF hoặc nhập CV qua form.
 * Validate CV/JD bằng hard validation và soft warning.
@@ -130,10 +140,11 @@ Ví dụ:
 
 * **CV PDF:** kiểm tra đúng PDF, dung lượng hợp lệ, extract được text, không phải file rỗng hoặc ảnh scan.
 * **CV Form:** kiểm tra email, số điện thoại, năm kinh nghiệm, kỹ năng, học vấn, vị trí mong muốn và trường bắt buộc.
-* **JD:** kiểm tra title, mô tả công việc, kỹ năng bắt buộc, seniority, location, language và độ đầy đủ nội dung.
+* **JD:** kiểm tra title, mô tả công việc, kỹ năng bắt buộc, seniority, location, language, salary mode và độ đầy đủ nội dung.
 * **Validation mềm:** dữ liệu thiếu nhưng vẫn xử lý được thì hiển thị warning và đề xuất bổ sung.
 * **Validation cứng:** file sai định dạng, text trống hoặc dữ liệu mâu thuẫn nghiêm trọng thì chặn xử lý.
 * **Sanity suggestions:** đề xuất sửa khi phát hiện kinh nghiệm âm, ngày tháng sai, skill mismatch, JD quá ngắn hoặc language mismatch.
+* **Salary validation:** không bắt recruiter nhập đủ mọi trường lương; hệ thống dùng `salary_mode` để validate có điều kiện. Nếu chọn `NEGOTIABLE` hoặc `HIDDEN` thì không cần min/max. Nếu chọn `RANGE` thì cần min/max và `min <= max`. Nếu chọn `UP_TO` thì cần `salary_max`. Nếu chọn `FROM` thì cần `salary_min`.
 
 ## KIẾN TRÚC TRẢI NGHIỆM: JOB PORTAL + CONTROL PANEL + EMAIL CHANNEL
 
@@ -142,11 +153,12 @@ Ví dụ:
 Candidate vẫn có trải nghiệm như một web tìm việc bình thường:
 
 * Homepage/job feed.
-* Search và filter job.
+* Search suggestion, search result page và filter job.
 * Job detail page.
+* Featured employers và employer detail page.
 * Upload CV.
-* Manual CV form.
-* Profile/preferences.
+* Upload CV có 2 tab: `Document Parser` để upload file và `Manual Creation` để nhập CV bằng form.
+* Hồ sơ & CV: quản lý nhiều CV, chọn CV mặc định, chỉnh hồ sơ cố định và portfolio dự án.
 * Recommendations.
 * Applications history.
 * AutoFit settings: bật/tắt auto-apply, đặt threshold, giới hạn số auto-apply/ngày.
@@ -156,15 +168,15 @@ Candidate vẫn có trải nghiệm như một web tìm việc bình thường:
 
 Recruiter dùng web như control panel tuyển dụng:
 
-* Dashboard tổng quan.
-* Quản lý JD.
+* Dashboard tổng quan với job market chart, metric cards và bảng ranking/applicant/potential pool tóm tắt.
+* Trang Việc làm dạng HR Dashboard để quản lý requisition, xem job detail và Applied CVs/AI Potential Matches.
 * Ranking CV theo JD.
 * Applicants.
 * Potential pool.
 * Invite candidate.
 * Feedback Good/Potential/Bad.
 * Automation policy.
-* Analytics/trend chart.
+* Analytics/trend chart, trong đó job market chart dùng số lượng job đăng tuyển trên hệ thống.
 * Audit summary.
 
 ### Email Action Experience
@@ -194,6 +206,7 @@ Default khuyến nghị:
 * **Daily digest:** gửi 1 lần/ngày, mặc định `08:00` theo timezone của user.
 * **Weekly summary:** gửi 1 lần/tuần nếu user bật báo cáo tổng hợp.
 * **Analytics/job trend:** cập nhật mỗi ngày hoặc mỗi 6 giờ tùy cấu hình demo.
+* **Job market dashboard:** line chart hiển thị tổng job đăng tuyển theo thời gian; chart phân bố bên phải cho phép xem theo nhóm vị trí IT hoặc salary band.
 * **Email quota:** giới hạn số email/ngày theo từng user, ví dụ tối đa 5 email/ngày.
 * **Cooldown chống lặp:** không gửi lại cùng một job đã được notify/skip trong một khoảng thời gian, ví dụ 7 ngày, trừ khi JD thay đổi đáng kể.
 * **Quiet hours:** nếu user bật khung giờ yên lặng, hệ thống không gửi email ngay trong khung đó mà dời sang digest hoặc thời điểm tiếp theo.
@@ -313,16 +326,30 @@ Audit log ghi:
 
 Audit log là phần bắt buộc để chứng minh automation có kiểm soát.
 
-## DATABASE SCHEMA (SUPABASE - POSTGRESQL)
+## DATABASE & STORAGE STRATEGY
+
+Định hướng database của project:
+
+* **Primary DB:** PostgreSQL là database lõi của hệ thống.
+* **Development DB:** PostgreSQL local chạy bằng Docker Compose để tránh phụ thuộc giới hạn free tier và dễ tái tạo môi trường.
+* **Optional demo/deploy DB:** Supabase PostgreSQL có thể dùng khi cần demo online hoặc deploy nhanh, nhưng không phải phụ thuộc bắt buộc.
+* **Migration:** Flyway quản lý toàn bộ schema, index và migration SQL để local PostgreSQL và Supabase PostgreSQL có cùng cấu trúc.
+* **File CV:** môi trường dev lưu file CV bằng local storage; về sau có thể đổi sang Supabase Storage hoặc S3-compatible storage.
+* **Auth:** Spring Security JWT/passwordless tự triển khai trong backend, không phụ thuộc Supabase Auth.
+
+## DATABASE SCHEMA (POSTGRESQL)
 
 Các bảng cốt lõi:
 
 * **UserAccount:** `id`, `email`, `role`, `status`, `created_at`
 * **Candidate:** `id`, `name`, `email`, `user_account_id`
 * **Recruiter:** `id`, `name`, `email`, `company_name`, `user_account_id`
+* **EmployerProfile:** `id`, `recruiter_id`, `company_name`, `slug`, `logo_url`, `cover_url`, `summary`, `description`, `industry`, `company_size`, `location`, `website_url`, `benefits` JSONB, `is_featured`
 * **CandidatePreference:** `id`, `candidate_id`, `desired_title`, `desired_skills`, `preferred_location`, `seniority_level`, `auto_apply_threshold`, `auto_apply_enabled`, `preferred_language`
-* **CV:** `id`, `candidate_id`, `raw_text`, `extracted_terms` JSONB, `language`, `status`
-* **Job:** `id`, `recruiter_id`, `title`, `company`, `original_text`, `required_skills`, `learned_profile_vector` JSONB, `language`, `status`
+* **CV:** `id`, `candidate_id`, `display_name`, `source`, `is_default`, `raw_text`, `extracted_terms` JSONB, `top_skills` JSONB, `language`, `status`
+* **CandidatePortfolioLink:** `id`, `candidate_id`, `type`, `url`
+* **CandidatePortfolioProject:** `id`, `candidate_id`, `name`, `role`, `summary`, `tech_stack` JSONB, `project_url`, `impact`
+* **Job:** `id`, `recruiter_id`, `title`, `company`, `original_text`, `required_skills`, `nice_to_have_skills`, `seniority_level`, `employment_type`, `location`, `remote_type`, `salary_mode`, `salary_min`, `salary_max`, `salary_currency`, `salary_type`, `salary_is_visible`, `salary_display_text`, `learned_profile_vector` JSONB, `language`, `status`, `created_at`, `updated_at`
 * **Matching:** `id`, `cv_id`, `job_id`, `raw_score`, `normalized_score`, `label`, `is_potential`, `reasons` JSONB
 * **Application:** `id`, `candidate_id`, `job_id`, `matching_id`, `status`, `is_auto_applied`, `created_at`
 * **Feedback:** `id`, `matching_id`, `actor_id`, `feedback_type`, `reason_tags` JSONB, `created_at`
@@ -333,6 +360,9 @@ Các bảng cốt lõi:
 * **AuditLog:** `id`, `actor_type`, `actor_id`, `action_type`, `target_type`, `target_id`, `source_channel`, `result`, `metadata` JSONB, `created_at`
 * **NotificationJob:** `id`, `job_type`, `payload` JSONB, `status`, `retry_count`, `next_retry_at`
 * **JobTrendSnapshot:** `id`, `job_id`, `snapshot_date`, `view_count`, `apply_count`, `match_count`
+* **JobMarketSnapshot:** `id`, `snapshot_date`, `total_posted_jobs`, `active_jobs`, `new_jobs`, `employer_count`, `distribution_by_role` JSONB, `distribution_by_salary` JSONB
+
+Lưu ý: `JobMarketSnapshot.total_posted_jobs` phục vụ biểu đồ thị trường việc làm và không được dùng thay cho số lượng CV-JD matching.
 
 ## KIẾN TRÚC HỆ THỐNG
 
@@ -368,13 +398,15 @@ Spring Boot Application (Java 21+)
 │   ├── Email Sending Worker
 │   └── Token Cleanup Worker
 └── Data Access Layer
-    └── Spring Data JPA + PostgreSQL/Supabase
+    └── Spring Data JPA + PostgreSQL
 ```
 
 ## TECH STACK
 
 * **Backend:** Java 21+, Spring Boot, Spring Web, Spring Data JPA, Spring Security, Bean Validation.
-* **Database:** Supabase/PostgreSQL, JSONB cho vector/metadata.
+* **Database:** PostgreSQL local qua Docker cho development/demo trực tiếp; Supabase PostgreSQL là lựa chọn optional khi deploy/demo online.
+* **Migration:** Flyway.
+* **Storage:** local filesystem cho CV trong development; có thể đổi sang Supabase Storage/S3-compatible storage ở phase deploy.
 * **File Processing:** Apache PDFBox.
 * **AI/NLP:** TF-IDF, cosine similarity, Rocchio tự triển khai bằng Java.
 * **Automation:** Spring `@Async`, Spring `@Scheduled`, idempotent background jobs.
@@ -387,8 +419,8 @@ Spring Boot Application (Java 21+)
 MVP nên hoàn thành theo thứ tự:
 
 1. Auth + role candidate/recruiter.
-2. Job portal cơ bản: job feed, search, filter, job detail.
-3. Candidate profile, preference và CV upload/form.
+2. Job portal cơ bản: job feed, search suggestion, search result page, filter, job detail.
+3. Candidate Hồ sơ & CV: nhiều CV, Document Parser, Manual Creation, hồ sơ cố định và portfolio cơ bản.
 4. JD CRUD cho recruiter.
 5. TF-IDF vectorization + cosine matching.
 6. Recommendation candidate-to-job.
@@ -397,7 +429,7 @@ MVP nên hoàn thành theo thứ tự:
 9. AutoFit policy cơ bản: auto-apply threshold, notify/email action.
 10. Một luồng actionable email hoàn chỉnh bằng magic-link.
 11. Audit log cho action chính.
-12. Dashboard candidate/recruiter và bilingual UI cơ bản.
+12. Dashboard candidate/recruiter, job market analytics và bilingual UI cơ bản.
 
 ## TÍNH NĂNG PHASE SAU
 
@@ -416,17 +448,21 @@ Sau khi MVP chạy ổn, có thể bổ sung:
 Luồng demo đề xuất:
 
 1. Candidate mở homepage như web tìm việc, tìm kiếm/lọc job.
-2. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
-3. Candidate xem job recommendation với score %, label và lý do match.
-4. Recruiter tạo JD và mở dashboard ranking.
-5. Recruiter xem applicants, matching cao chưa apply và candidate Potential.
-6. Candidate bật auto-apply threshold, ví dụ 95%.
-7. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
-8. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
-9. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
-10. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
-11. Mở audit log để chứng minh mọi automation đều truy vết được.
-12. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc.
+2. Candidate bấm Search để chuyển sang trang kết quả, dùng filter và mở job detail.
+3. Candidate mở nhà tuyển dụng nổi bật và xem job đang mở của công ty.
+4. Candidate mở Upload CV, chuyển giữa `Document Parser` và `Manual Creation`.
+5. Candidate mở Hồ sơ & CV, chọn CV mặc định và bổ sung portfolio dự án.
+6. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
+7. Candidate xem job recommendation với score %, label và lý do match.
+8. Recruiter mở tổng quan để xem chart/metrics/ranking summary.
+9. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
+10. Candidate bật auto-apply threshold, ví dụ 95%.
+11. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
+12. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
+13. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
+14. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
+15. Mở audit log để chứng minh mọi automation đều truy vết được.
+16. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
 
 ## CÂU CHỐT KHI BẢO VỆ
 

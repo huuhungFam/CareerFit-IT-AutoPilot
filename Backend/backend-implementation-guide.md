@@ -22,9 +22,28 @@ Backend là nguồn sự thật chính và automation agent của hệ thống. 
 - quản lý policy auto-fit
 - quản lý lịch scan job, daily digest, high-match notification và quota email
 - lưu recommendation interaction như skip, apply, show similar, not interested
+- phục vụ job portal search, search suggestions, employer profile và job market analytics
+- phục vụ candidate multi-CV management, fixed profile và portfolio
+- phục vụ recruiter overview dashboard tách khỏi HR-style job workspace
 - ghi audit log
 
 Frontend là job portal/control panel để người dùng thao tác. Mọi quyết định nghiệp vụ, scoring, policy và automation phải nằm ở backend.
+
+---
+
+## 1.1. Database, Storage and Auth Strategy
+
+Backend phải ưu tiên triển khai theo hướng local-first:
+
+- **Primary DB:** PostgreSQL.
+- **Development DB:** PostgreSQL local qua Docker Compose.
+- **Optional demo/deploy DB:** Supabase PostgreSQL hoặc PostgreSQL cloud khác.
+- **Migration:** Flyway quản lý schema, index, constraint và enum.
+- **File CV:** local filesystem trong development.
+- **Storage abstraction:** tạo `StorageService` interface để có thể đổi local storage sang Supabase Storage/S3-compatible storage sau này.
+- **Auth:** Spring Security JWT/passwordless tự làm trong backend, không phụ thuộc Supabase Auth.
+
+Không hard-code logic nghiệp vụ vào Supabase-specific API. Backend chỉ nên xem Supabase là một PostgreSQL connection target nếu dùng ở phase deploy.
 
 ---
 
@@ -60,6 +79,8 @@ Chịu trách nhiệm:
 - candidate preference
 - language preference
 - auto-apply threshold
+- fixed profile data for `Hồ sơ & CV`
+- portfolio links and portfolio projects
 
 ### 3.3. `cv`
 
@@ -67,6 +88,8 @@ Chịu trách nhiệm:
 
 - upload CV PDF
 - nhập CV bằng form
+- quản lý nhiều CV cho một candidate
+- chọn CV mặc định
 - parse text
 - validate content
 - lưu raw text và extracted terms
@@ -77,11 +100,32 @@ Chịu trách nhiệm:
 
 - CRUD JD
 - job feed cho candidate
+- search suggestions
+- search results with filters
 - search/filter/sort job
 - job detail
 - store learned profile vector
 - store job metadata
+- store structured salary fields with conditional validation
 - track trend snapshot
+
+### 3.4.1. `employer`
+
+Chịu trách nhiệm:
+
+- featured employer list
+- employer detail profile
+- employer open jobs
+- mapping recruiter/company ownership to public employer profile
+
+### 3.4.2. `recruiter_workspace`
+
+Chịu trách nhiệm:
+
+- recruiter overview dashboard summary
+- HR Dashboard requisition list
+- selected job workspace data
+- applied CVs and AI potential matches for a selected job
 
 ### 3.5. `matching`
 
@@ -130,6 +174,11 @@ Chịu trách nhiệm:
 - summary stats
 - application counts
 - matching counts
+- job market summary based on posted jobs
+- job market trend based on total posted jobs over time
+- job demand distribution by IT role or salary band
+
+Lưu ý: job market analytics không được dùng `matching count` làm dữ liệu chính cho line chart thị trường việc làm.
 
 ### 3.10. `common`
 
@@ -150,7 +199,10 @@ Chịu trách nhiệm:
 - `UserAccount`
 - `Candidate`
 - `CandidatePreference`
+- `CandidatePortfolioLink`
+- `CandidatePortfolioProject`
 - `CV`
+- `EmployerProfile`
 - `Job`
 - `Matching`
 - `Application`
@@ -162,6 +214,7 @@ Chịu trách nhiệm:
 - `RecommendationInteraction`
 - `NotificationJob`
 - `JobTrendSnapshot`
+- `JobMarketSnapshot`
 
 ### 4.2. Required States
 
@@ -250,6 +303,14 @@ Chịu trách nhiệm:
 14. Update status to `SCORING_DONE`.
 15. If auto-fit policy allows, create notification or application action.
 
+### Multi-CV rules
+
+- One candidate can have many CVs.
+- CV source must distinguish uploaded document and manual creation.
+- One candidate should have at most one default CV.
+- Default CV is the primary input for candidate matching/recommendation unless a specific CV is selected.
+- Manual Creation creates a CV record with `source = MANUAL`.
+
 ### Suggested function split
 
 - `CvIngestionService.acceptUpload(...)`
@@ -262,6 +323,28 @@ Chịu trách nhiệm:
 - `LabelingService.assignLabel(...)`
 - `PotentialService.detectPotential(...)`
 - `CvStatusService.updateStatus(...)`
+- `CvManagementService.listCandidateCvs(...)`
+- `CvManagementService.setDefaultCv(...)`
+
+## 5.1.1. Candidate Profile & Portfolio Pipeline
+
+### Steps
+
+1. Frontend loads `/candidate/profile`.
+2. Backend returns CV list, fixed profile and portfolio data.
+3. Candidate updates fixed profile/preference.
+4. Candidate updates portfolio links or portfolio projects.
+5. Backend stores portfolio separately from CV raw text.
+
+### Suggested function split
+
+- `CandidateProfileService.getProfile(...)`
+- `CandidateProfileService.updateProfile(...)`
+- `CandidatePortfolioService.getPortfolio(...)`
+- `CandidatePortfolioService.updateLinks(...)`
+- `CandidatePortfolioService.createProject(...)`
+- `CandidatePortfolioService.updateProject(...)`
+- `CandidatePortfolioService.deleteProject(...)`
 
 ## 5.2. Candidate Recommendation Pipeline
 
@@ -303,6 +386,40 @@ Chịu trách nhiệm:
 - `JobValidationService.validateJob(...)`
 - `JobVectorService.buildJobVector(...)`
 - `JobRecomputeService.recomputeJobMatches(...)`
+
+## 5.3.1. Job Search Pipeline
+
+### Steps
+
+1. Frontend sends keyword, pagination, sort and optional filter query.
+2. Backend normalizes keyword and detects whether it matches skill, title, company or JD text.
+3. Backend applies filters such as level, working model, salary band, job domain and location.
+4. Backend returns one-column result data for frontend, total count and filter metadata.
+5. When keyword input is focused, frontend may call suggestions endpoint separately.
+
+### Suggested function split
+
+- `JobSearchService.searchJobs(...)`
+- `JobSearchService.getSuggestions(...)`
+- `JobFilterService.applyFilters(...)`
+- `JobSearchMapper.toSearchResultDto(...)`
+
+## 5.3.2. Employer Profile Pipeline
+
+### Steps
+
+1. Frontend requests featured employers for candidate home or job list.
+2. Backend returns public employer cards.
+3. Frontend requests employer detail by id or slug.
+4. Backend returns employer profile and open jobs for that employer.
+
+### Suggested function split
+
+- `EmployerProfileService.getFeaturedEmployers(...)`
+- `EmployerProfileService.getEmployerDetail(...)`
+- `EmployerProfileService.getOpenJobs(...)`
+- `EmployerProfileMapper.toCardDto(...)`
+- `EmployerProfileMapper.toDetailDto(...)`
 
 ## 5.4. Feedback Learning Pipeline
 
@@ -404,6 +521,57 @@ Where:
 - `NOT_INTERESTED` is stronger than skip and should reduce similar recommendations.
 - `SHOW_SIMILAR` should increase priority for related jobs.
 
+## 5.7. Job Market Analytics Pipeline
+
+### Semantics
+
+Job market analytics is about posted jobs on the platform.
+It is not the same as matching analytics.
+
+The dashboard line chart should use:
+
+- `totalPostedJobs`
+- `activeJobs`
+- `newJobs`
+
+It should not use:
+
+- `matchCount`
+- `highMatchCount`
+- `cvJdMatchingCount`
+
+### Steps
+
+1. Scheduler or analytics service aggregates job records by date.
+2. Service computes total posted jobs, active jobs, new jobs and employer count.
+3. Service computes distribution by IT role and by salary band.
+4. Results are stored as `JobMarketSnapshot` or computed from a read model.
+5. API returns summary, trend and demand distribution DTOs.
+
+### Suggested function split
+
+- `JobMarketAnalyticsService.getSummary(...)`
+- `JobMarketAnalyticsService.getTrends(...)`
+- `JobMarketAnalyticsService.getDemandDistribution(...)`
+- `JobMarketSnapshotScheduler.generateSnapshot(...)`
+- `JobMarketAnalyticsMapper.toSummaryDto(...)`
+
+## 5.8. Recruiter Workspace Pipeline
+
+### Steps
+
+1. `/api/recruiter/dashboard` returns overview metrics, chart data and ranking summary.
+2. `/api/recruiter/jobs` returns requisition list for the HR Dashboard.
+3. `/api/recruiter/jobs/{jobId}/workspace` returns selected job details, applied CVs and AI potential matches.
+
+### Suggested function split
+
+- `RecruiterDashboardService.getOverview(...)`
+- `RecruiterWorkspaceService.listRequisitions(...)`
+- `RecruiterWorkspaceService.getJobWorkspace(...)`
+- `RecruiterCandidateReviewService.getAppliedCvs(...)`
+- `RecruiterCandidateReviewService.getPotentialMatches(...)`
+
 ---
 
 ## 6. Validation Rules
@@ -454,13 +622,24 @@ Validate:
 - seniority
 - location
 - language
-- compensation or salary if provided
+- salary mode and salary fields if provided
 
 Soft checks:
 
 - JD too short
 - requirement list too vague
 - mixed language without clear normalization
+- missing public salary can be a warning, not a hard error
+
+Salary rules:
+
+- Use `salaryMode` as the source of truth: `NEGOTIABLE`, `RANGE`, `UP_TO`, `FROM`, `HIDDEN`.
+- `NEGOTIABLE`: allow `salaryMin = null`, `salaryMax = null`; display text should be `Thỏa thuận` or localized equivalent.
+- `RANGE`: require `salaryMin`, `salaryMax`, `salaryCurrency`, `salaryType`; enforce `salaryMin <= salaryMax`.
+- `UP_TO`: require `salaryMax`, `salaryCurrency`, `salaryType`; allow `salaryMin = null`.
+- `FROM`: require `salaryMin`, `salaryCurrency`, `salaryType`; allow `salaryMax = null`.
+- `HIDDEN`: allow min/max/currency/type to be null and hide salary from candidate-facing UI.
+- Reject negative salary values and unknown currency/type values.
 
 ---
 
@@ -530,17 +709,66 @@ Do not hide it inside the raw score.
 
 - `POST /api/cv/upload`
 - `POST /api/cv/manual`
+- `GET /api/cv/me`
 - `GET /api/cv/{id}`
 - `GET /api/cv/{id}/status`
 - `GET /api/candidates/{candidateId}/cv`
+- `POST /api/cv/{id}/set-default`
+
+### 8.3.1. Candidate Profile & Portfolio
+
+- `GET /api/candidates/me/profile`
+- `PUT /api/candidates/me/profile`
+- `GET /api/candidates/me/portfolio`
+- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/projects`
+- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 
 ### 8.4. Job
 
 - `POST /api/jobs`
 - `GET /api/jobs`
+- `GET /api/jobs/search`
+- `GET /api/jobs/search/suggestions`
 - `GET /api/jobs/{id}`
 - `PUT /api/jobs/{id}`
 - `DELETE /api/jobs/{id}`
+
+Recommended `GET /api/jobs/search` query params:
+
+- `keyword`
+- `location`
+- `level`
+- `workingModel`
+- `salary`
+- `domain`
+- `page`
+- `size`
+- `sort`
+
+Recommended `GET /api/jobs/search/suggestions` query params:
+
+- `keyword`
+- `limit`
+
+Suggestion response groups:
+
+- `SKILL`
+- `JOB_TITLE`
+- `COMPANY`
+
+### 8.4.1. Employer
+
+- `GET /api/employers/featured`
+- `GET /api/employers/{id}`
+- `GET /api/employers/{id}/jobs`
+
+### 8.4.2. Recruiter Workspace
+
+- `GET /api/recruiter/dashboard`
+- `GET /api/recruiter/jobs`
+- `GET /api/recruiter/jobs/{jobId}/workspace`
 
 ### 8.5. Matching / Recommendation
 
@@ -580,6 +808,12 @@ Do not hide it inside the raw score.
 - `GET /api/analytics/summary`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/jobs/{jobId}/trends`
+- `GET /api/analytics/job-market/summary`
+- `GET /api/analytics/job-market/trends`
+- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+
+`/api/analytics/job-market/*` must return posted-job statistics.
+Matching/application analytics can stay under `/api/analytics/summary`, `/api/analytics/jobs/trends` or recruiter-specific endpoints, but DTO field names must make the metric explicit.
 
 ### 8.11. Common response envelope
 
@@ -607,11 +841,20 @@ Errors should include:
 
 ## 9. Database and Indexing
 
+Database source of truth là PostgreSQL.
+
+Development/demo trực tiếp nên chạy PostgreSQL bằng Docker Compose.
+Flyway phải chạy migration để tạo schema thay vì tạo bảng thủ công bằng dashboard.
+Supabase PostgreSQL chỉ là optional target khi cần demo online hoặc deploy.
+
 ### Core tables
 
 - `candidate`
 - `candidate_preference`
+- `candidate_portfolio_link`
+- `candidate_portfolio_project`
 - `cv`
+- `employer_profile`
 - `job`
 - `matching`
 - `application`
@@ -623,11 +866,103 @@ Errors should include:
 - `recommendation_interaction`
 - `notification_job`
 - `job_trend_snapshot`
+- `job_market_snapshot`
+
+### `cv` multi-CV columns
+
+- `display_name`
+- `source`: `UPLOAD` or `MANUAL`
+- `is_default`
+- `parsed_summary`
+- `top_skills` JSONB
+- `last_scored_at`
+- `created_at`
+- `updated_at`
+
+Only one CV should be default per candidate.
+
+### `candidate_portfolio_link` columns
+
+- `id`
+- `candidate_id`
+- `type`
+- `url`
+- `created_at`
+- `updated_at`
+
+### `candidate_portfolio_project` columns
+
+- `id`
+- `candidate_id`
+- `name`
+- `role`
+- `summary`
+- `tech_stack` JSONB
+- `project_url`
+- `impact`
+- `created_at`
+- `updated_at`
+
+### `employer_profile` columns
+
+- `id`
+- `recruiter_id`
+- `company_name`
+- `slug`
+- `logo_url`
+- `cover_url`
+- `summary`
+- `description`
+- `industry`
+- `company_size`
+- `location`
+- `website_url`
+- `benefits` JSONB
+- `is_featured`
+- `created_at`
+- `updated_at`
+
+### `job_market_snapshot` columns
+
+- `id`
+- `snapshot_date`
+- `total_posted_jobs`
+- `active_jobs`
+- `new_jobs`
+- `employer_count`
+- `distribution_by_role` JSONB
+- `distribution_by_salary` JSONB
+- `created_at`
+
+Do not overload `match_count` for the job market chart. If both metrics are needed, keep matching metrics in a separate DTO or clearly named field.
+
+### `job` salary columns
+
+The `job` table must support real recruiter salary input patterns without forcing every salary field to be filled.
+
+- `salary_mode` enum/string: `NEGOTIABLE`, `RANGE`, `UP_TO`, `FROM`, `HIDDEN`; required.
+- `salary_min` numeric nullable.
+- `salary_max` numeric nullable.
+- `salary_currency` string nullable, for example `VND`, `USD`.
+- `salary_type` enum/string nullable: `MONTHLY`, `HOURLY`, `YEARLY`.
+- `salary_is_visible` boolean required, default `true`.
+- `salary_display_text` string nullable for UI/email display.
+
+Validation must be conditional on `salary_mode`, not based on all salary fields being non-null.
 
 ### Suggested indexes
 
 - `cv(candidate_id)`
+- `cv(candidate_id, is_default)`
+- `candidate_portfolio_project(candidate_id)`
 - `job(language)`
+- `job(salary_mode)`
+- `job(salary_min, salary_max)`
+- `job(title)`
+- `job(company)`
+- `employer_profile(slug)`
+- `employer_profile(is_featured)`
+- `job_market_snapshot(snapshot_date DESC)`
 - `matching(job_id, normalized_score DESC)`
 - `application(candidate_id, job_id)`
 - `recommendation_interaction(candidate_id, job_id)`
@@ -640,6 +975,9 @@ Errors should include:
 - Store extracted terms and vectors in `JSONB`
 - Store token hashes, never raw token if possible
 - Keep audit log append-only
+- Store uploaded CV files in local filesystem during development, for example under `storage/cv`
+- Persist only file metadata/path in database, not large binary CV content
+- Hide storage implementation behind `StorageService` so cloud storage can replace local storage later
 
 ---
 
@@ -664,6 +1002,7 @@ Use scheduled jobs for:
 - expired token cleanup
 - stale queue cleanup
 - trend snapshot generation
+- job market snapshot generation
 - hourly job scan
 - high-match notification generation
 - replacement recommendation after email skip when enabled
@@ -742,6 +1081,21 @@ Important error classes:
 - quiet hours active
 - cooldown active
 
+Frontend-facing DTOs should expose enough data for the current UI:
+
+- `searchSuggestions`
+- `candidateCvs`
+- `fixedCandidateProfile`
+- `portfolioLinks`
+- `portfolioProjects`
+- `featuredEmployers`
+- `employerProfile`
+- `jobMarketSummary`
+- `jobMarketTrendPoints`
+- `jobDemandByRole`
+- `jobDemandBySalary`
+- `trendPoints`
+
 ---
 
 ## 13. Testing Plan
@@ -765,7 +1119,14 @@ Important error classes:
 
 - CV upload to scoring
 - JD create/update to recompute
+- multi-CV list and set default CV
+- candidate fixed profile update
+- candidate portfolio endpoints
 - recommendation endpoint
+- job search endpoint
+- search suggestion endpoint
+- employer featured/detail endpoints
+- job market analytics endpoints
 - feedback update
 - passwordless login
 - email action confirm
@@ -784,6 +1145,8 @@ Important error classes:
 Backend is done when:
 
 - CV upload works end to end
+- multi-CV management works and one default CV can be selected
+- fixed profile and portfolio APIs work
 - JD CRUD works
 - scoring is deterministic
 - recommendation works
@@ -794,3 +1157,5 @@ Backend is done when:
 - audit log is complete
 - validation surfaces warnings and hard errors correctly
 - endpoints are documented and tested
+- search, employer and job-market endpoints are aligned with frontend routes
+- recruiter overview and recruiter HR workspace endpoints are aligned with frontend routes

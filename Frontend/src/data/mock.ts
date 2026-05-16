@@ -5,9 +5,25 @@ import type {
   CandidatePreference,
   EmailAction,
   Job,
+  MockAccount,
   RecruiterSummary,
   TrendPoint,
 } from '../types';
+
+export const mockAccounts: MockAccount[] = [
+  {
+    username: 'ca',
+    password: '1',
+    role: 'candidate',
+    displayName: 'Minh Anh',
+  },
+  {
+    username: 're',
+    password: '1',
+    role: 'recruiter',
+    displayName: 'Northstar Recruiter',
+  },
+];
 
 export const candidate: Candidate = {
   id: 'cand-01',

@@ -32,7 +32,7 @@ export function AutomationPolicyPanel({ policy }: { policy: AutomationPolicy }) 
           <input type="number" defaultValue={policy.maxEmailsPerDay} min="1" max="20" />
         </label>
         <label>
-          Timezone
+          {t('timezone')}
           <select defaultValue={policy.timezone}>
             <option>Asia/Ho_Chi_Minh</option>
             <option>UTC</option>

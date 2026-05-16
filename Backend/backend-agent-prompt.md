@@ -36,6 +36,9 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - passwordless login
   - audit log
   - job scan scheduling, daily digest, high-match notification, skip interaction tracking
+  - job portal search, search suggestions, employer profile và job market analytics
+  - quản lý nhiều CV cho candidate, hồ sơ cố định và portfolio/dự án
+  - recruiter overview dashboard tách khỏi HR job workspace
   - async processing bằng `@Async`
   - định kỳ cập nhật bằng `@Scheduled`
   - JWT security + role-based routing
@@ -51,13 +54,23 @@ Nếu trong repo chưa có code backend sẵn, dùng stack mặc định sau:
 - Spring Data JPA
 - Spring Security
 - Validation
-- PostgreSQL / Supabase
+- PostgreSQL local qua Docker Compose cho development/demo trực tiếp
 - Flyway
 - Apache PDFBox
 - OpenAPI / Swagger
 - JUnit 5
 - Mockito
 - Testcontainers nếu cần integration test
+
+Database/storage/auth strategy:
+
+- Primary DB là PostgreSQL.
+- Development DB là PostgreSQL local chạy bằng Docker Compose.
+- Supabase PostgreSQL chỉ là optional demo/deploy DB, không được hard-code dependency Supabase vào business logic.
+- Flyway quản lý schema/migration.
+- File CV trong development lưu bằng local filesystem.
+- Thiết kế `StorageService` interface để sau này đổi sang Supabase Storage/S3-compatible storage.
+- Auth tự triển khai bằng Spring Security JWT/passwordless, không phụ thuộc Supabase Auth.
 
 Quy tắc:
 
@@ -75,6 +88,7 @@ Chia package theo domain, tối thiểu gồm:
 - `candidate`
 - `cv`
 - `job`
+- `employer`
 - `matching`
 - `recommendation`
 - `application`
@@ -105,7 +119,10 @@ Tầng xử lý:
 - `UserAccount`
 - `Candidate`
 - `CandidatePreference`
+- `CandidatePortfolioLink`
+- `CandidatePortfolioProject`
 - `CV`
+- `EmployerProfile`
 - `Job`
 - `Matching`
 - `Application`
@@ -117,11 +134,14 @@ Tầng xử lý:
 - `RecommendationInteraction`
 - `NotificationJob`
 - `JobTrendSnapshot`
+- `JobMarketSnapshot`
 
 ### 4.2. Quan hệ
 
 - Một `Candidate` có thể có nhiều `CV`
 - Một `Candidate` có một `CandidatePreference` chính
+- Một `Candidate` có thể có nhiều portfolio links và portfolio projects
+- Một `Candidate` chỉ nên có một CV mặc định
 - Một `Job` có nhiều `Matching`
 - Một `Matching` gắn với một `CV` và một `Job`
 - Một `Matching` có thể có `Feedback`
@@ -133,11 +153,26 @@ Tầng xử lý:
 ### 4.3. Trường quan trọng
 
 - `CV.rawText`
+- `CV.displayName`
+- `CV.source`
+- `CV.isDefault`
 - `CV.extractedTerms` JSONB
 - `CV.language`
 - `Job.originalText`
+- `EmployerProfile.companyName`
+- `EmployerProfile.slug`
+- `EmployerProfile.logoUrl`
+- `EmployerProfile.coverUrl`
+- `EmployerProfile.isFeatured`
 - `Job.learnedProfileVector` JSONB
 - `Job.language`
+- `Job.salaryMode`
+- `Job.salaryMin`
+- `Job.salaryMax`
+- `Job.salaryCurrency`
+- `Job.salaryType`
+- `Job.salaryIsVisible`
+- `Job.salaryDisplayText`
 - `Matching.rawScore`
 - `Matching.normalizedScore`
 - `Matching.label`
@@ -189,37 +224,63 @@ Tầng xử lý:
 
 - `POST /api/cv/upload`
 - `POST /api/cv/manual`
+- `GET /api/cv/me`
 - `GET /api/cv/{cvId}`
 - `GET /api/cv/{cvId}/status`
 - `GET /api/candidates/{candidateId}/cv`
+- `POST /api/cv/{cvId}/set-default`
 
-### 5.4. Job
+### 5.4. Candidate Profile & Portfolio
+
+- `GET /api/candidates/me/profile`
+- `PUT /api/candidates/me/profile`
+- `GET /api/candidates/me/portfolio`
+- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/projects`
+- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `DELETE /api/candidates/me/portfolio/projects/{projectId}`
+
+### 5.5. Job
 
 - `POST /api/jobs`
 - `GET /api/jobs`
+- `GET /api/jobs/search`
+- `GET /api/jobs/search/suggestions`
 - `GET /api/jobs/{jobId}`
 - `PUT /api/jobs/{jobId}`
 - `DELETE /api/jobs/{jobId}`
 
-### 5.5. Matching / Recommendation
+### 5.6. Employer
+
+- `GET /api/employers/featured`
+- `GET /api/employers/{employerId}`
+- `GET /api/employers/{employerId}/jobs`
+
+### 5.7. Recruiter Workspace
+
+- `GET /api/recruiter/dashboard`
+- `GET /api/recruiter/jobs`
+- `GET /api/recruiter/jobs/{jobId}/workspace`
+
+### 5.8. Matching / Recommendation
 
 - `GET /api/jobs/{jobId}/ranking`
 - `GET /api/candidates/{candidateId}/recommendations`
 - `GET /api/jobs/{jobId}/applicants`
 - `GET /api/jobs/{jobId}/potential`
 
-### 5.6. Application / Invite
+### 5.9. Application / Invite
 
 - `POST /api/applications`
 - `GET /api/applications`
 - `GET /api/applications/{applicationId}`
 - `POST /api/applications/{applicationId}/invite`
 
-### 5.7. Feedback
+### 5.10. Feedback
 
 - `POST /api/matchings/{matchingId}/feedback`
 
-### 5.8. Automation / Email Action
+### 5.11. Automation / Email Action
 
 - `GET /api/automation/policies/me`
 - `PUT /api/automation/policies/me`
@@ -229,18 +290,23 @@ Tầng xử lý:
 - `POST /api/automation/actions/reject`
 - `POST /api/automation/actions/feedback`
 
-### 5.9. Recommendation Interaction
+### 5.12. Recommendation Interaction
 
 - `POST /api/recommendations/{jobId}/interactions`
 - `GET /api/recommendations/interactions`
 
-### 5.10. Analytics / Trend
+### 5.13. Analytics / Trend
 
 - `GET /api/analytics/summary`
 - `GET /api/analytics/jobs/trends`
 - `GET /api/jobs/{jobId}/trends`
+- `GET /api/analytics/job-market/summary`
+- `GET /api/analytics/job-market/trends`
+- `GET /api/analytics/job-market/demand?groupBy=role|salary`
 
-### 5.11. Audit / Admin / Recompute
+Các endpoint `/api/analytics/job-market/*` phải trả thống kê số lượng job đăng tuyển trên hệ thống, không trả số CV-JD matching.
+
+### 5.14. Audit / Admin / Recompute
 
 - `GET /api/audit-logs`
 - `POST /api/jobs/{jobId}/recompute`
@@ -267,6 +333,22 @@ Yêu cầu:
 9. Lưu `Matching`.
 10. Cập nhật trạng thái `SCORING_DONE` hoặc `FAILED`.
 
+Quy tắc multi-CV:
+
+- Một candidate có thể có nhiều CV.
+- CV nhập từ `Manual Creation` vẫn là một CV record.
+- CV upload từ `Document Parser` có `source = UPLOAD`.
+- Chỉ một CV được đặt `isDefault = true` cho mỗi candidate.
+
+### 6.1.1. Candidate Hồ sơ & CV
+
+1. Trả danh sách CV đã tạo.
+2. Cho candidate chọn CV mặc định.
+3. Lưu hồ sơ cố định: contact, desired title, skills, location, seniority, salary, work model, threshold.
+4. Lưu portfolio links.
+5. Lưu portfolio projects gồm role, summary, tech stack, URL và impact.
+6. Không trộn portfolio vào raw CV; portfolio là dữ liệu bổ trợ riêng.
+
 ### 6.2. Recommendation
 
 1. Lấy `CandidatePreference` hoặc candidate profile vector.
@@ -274,6 +356,29 @@ Yêu cầu:
 3. So sánh với toàn bộ Job phù hợp ngành IT.
 4. Trả top `N` JD với score và nhãn.
 5. Có thể tái dùng chung pipeline với Matching Engine, chỉ khác query vector đầu vào.
+
+### 6.2.1. Job Search / Search Suggestions
+
+1. Nhận keyword, filter, sort và pagination từ frontend.
+2. Normalize keyword theo tiếng Việt/Anh.
+3. Match keyword với title, skill, company và JD text.
+4. Trả danh sách job một cột cho trang kết quả.
+5. Trả tổng số kết quả và metadata filter.
+6. Endpoint suggestion chỉ phục vụ lúc input đang focus, gồm nhóm `SKILL`, `JOB_TITLE`, `COMPANY`.
+
+### 6.2.2. Employer Profile
+
+1. Trả danh sách nhà tuyển dụng nổi bật cho candidate home/job list.
+2. Trả employer detail theo id/slug.
+3. Trả danh sách job đang mở của employer.
+4. Chỉ expose dữ liệu public; dữ liệu nội bộ recruiter vẫn phải qua role guard.
+
+### 6.2.3. Recruiter Workspace
+
+1. `/api/recruiter/dashboard` trả dữ liệu tổng quan.
+2. `/api/recruiter/jobs` trả danh sách requisitions cho HR Dashboard.
+3. `/api/recruiter/jobs/{jobId}/workspace` trả job detail, Applied CVs và AI Potential Matches.
+4. Không ép frontend dùng cùng response cho `/recruiter` và `/recruiter/jobs`.
 
 ### 6.3. AutoFit Automation
 
@@ -307,6 +412,14 @@ Yêu cầu:
 4. `SKIPPED` không phải `BAD_MATCH`.
 5. `NOT_INTERESTED` mạnh hơn skip và nên giảm ưu tiên job/company/skill tương tự.
 6. `SHOW_SIMILAR` là tín hiệu tích cực cho nhóm job tương tự.
+
+### 6.5.1. Job Market Analytics
+
+1. Tổng hợp job records theo ngày hoặc theo cấu hình demo.
+2. Tính `totalPostedJobs`, `activeJobs`, `newJobs`, `employerCount`.
+3. Tính phân bố theo nhóm vị trí IT và salary band.
+4. Trả dữ liệu cho dashboard candidate/recruiter.
+5. Không dùng `matchCount` hoặc `highMatchCount` cho line chart thị trường việc làm.
 
 ### 6.6. Feedback Learning
 
@@ -423,10 +536,31 @@ Quản lý trạng thái rõ ràng:
 ## 12. Database / Migration
 
 - Dùng Flyway để quản lý schema.
-- Dùng PostgreSQL / Supabase.
+- Dùng PostgreSQL làm primary DB.
+- Development/demo trực tiếp dùng PostgreSQL local qua Docker Compose.
+- Supabase PostgreSQL chỉ là optional target khi deploy/demo online.
 - Trường vector / term phức tạp nên lưu JSONB.
+- Thêm bảng `employer_profile` cho hồ sơ công ty public:
+  - `id`, `recruiterId`, `companyName`, `slug`, `logoUrl`, `coverUrl`, `summary`, `description`, `industry`, `companySize`, `location`, `websiteUrl`, `benefits`, `isFeatured`
+- Bảng `cv` phải hỗ trợ nhiều CV:
+  - `displayName`, `source`, `isDefault`, `parsedSummary`, `topSkills`, `lastScoredAt`
+- Thêm bảng `candidate_portfolio_link`:
+  - `id`, `candidateId`, `type`, `url`
+- Thêm bảng `candidate_portfolio_project`:
+  - `id`, `candidateId`, `name`, `role`, `summary`, `techStack`, `projectUrl`, `impact`
+- Thêm bảng hoặc read model `job_market_snapshot` cho dashboard thị trường việc làm:
+  - `id`, `snapshotDate`, `totalPostedJobs`, `activeJobs`, `newJobs`, `employerCount`, `distributionByRole`, `distributionBySalary`
+- Không dùng `job_trend_snapshot.match_count` để vẽ biểu đồ tổng job đăng tuyển.
 - Email token phải lưu hash, không lưu raw token.
 - Audit log nên append-only trong nghiệp vụ bình thường.
+- Bảng `job` phải có salary fields có điều kiện:
+  - `salaryMode`: `NEGOTIABLE`, `RANGE`, `UP_TO`, `FROM`, `HIDDEN`
+  - `salaryMin`: nullable numeric
+  - `salaryMax`: nullable numeric
+  - `salaryCurrency`: nullable string, ví dụ `VND`, `USD`
+  - `salaryType`: nullable enum/string, ví dụ `MONTHLY`, `HOURLY`, `YEARLY`
+  - `salaryIsVisible`: boolean, default `true`
+  - `salaryDisplayText`: nullable string
 - Index các cột hay query:
   - candidateId
   - jobId
@@ -455,6 +589,12 @@ Quản lý trạng thái rõ ràng:
   - skills
   - threshold
   - language
+- Validate salary theo `salaryMode`, không bắt mọi salary field đều non-null:
+  - `NEGOTIABLE`: cho phép min/max null
+  - `RANGE`: cần min/max/currency/type và min <= max
+  - `UP_TO`: cần max/currency/type
+  - `FROM`: cần min/currency/type
+  - `HIDDEN`: cho phép min/max/currency/type null và không hiển thị cho candidate
 - Không cho dữ liệu rác đi sâu vào pipeline.
 
 ## 15. Data Semantics Cho Frontend
@@ -476,6 +616,17 @@ Backend phải trả dữ liệu đủ để frontend làm UI:
 - `dailyDigestTime`
 - `emailQuotaRemaining`
 - `recommendationInteractions`
+- `searchSuggestions`
+- `candidateCvs`
+- `fixedCandidateProfile`
+- `portfolioLinks`
+- `portfolioProjects`
+- `featuredEmployers`
+- `employerProfile`
+- `jobMarketSummary`
+- `jobMarketTrendPoints`
+- `jobDemandByRole`
+- `jobDemandBySalary`
 - `userTimezone`
 - `quietHours`
 - `notificationCooldown`
@@ -487,15 +638,19 @@ Làm theo thứ tự:
 1. Dựng project, package, config, security, migration
 2. Làm entity, repository, DTO, mapper
 3. Làm CV upload/manual + parsing + status flow
-4. Làm Job CRUD + ranking API
-5. Làm candidate recommendation API
-6. Làm automation policy + audit log nền
-7. Làm actionable email + magic-link confirm
-8. Làm job scan, high-match notification, daily digest, recommendation interaction
-9. Làm feedback learning bằng Rocchio
-10. Làm auto-apply và application tracking
-11. Làm analytics / trend endpoints
-12. Làm OpenAPI, logging, validation, tests
+4. Làm multi-CV management, set default CV, fixed profile và portfolio APIs
+5. Làm Job CRUD + ranking API
+6. Làm job search, search suggestions và job detail API
+7. Làm employer profile APIs
+8. Làm recruiter overview và HR workspace APIs
+9. Làm candidate recommendation API
+10. Làm automation policy + audit log nền
+11. Làm actionable email + magic-link confirm
+12. Làm job scan, high-match notification, daily digest, recommendation interaction
+13. Làm feedback learning bằng Rocchio
+14. Làm auto-apply và application tracking
+15. Làm analytics / trend / job-market endpoints
+16. Làm OpenAPI, logging, validation, tests
 
 ## 17. Testing Bắt Buộc
 
@@ -510,8 +665,15 @@ Phải có:
   - potential heuristic
 - Integration test cho:
   - upload CV
+  - multi-CV list and set default CV
+  - candidate fixed profile update
+  - candidate portfolio endpoints
   - ranking endpoint
   - recommendation endpoint
+  - job search endpoint
+  - search suggestion endpoint
+  - employer featured/detail endpoints
+  - job market analytics endpoints
   - feedback endpoint
   - automation policy endpoint
   - email action confirm
@@ -543,6 +705,7 @@ Không được để các phần này làm chậm core path.
 Backend chỉ coi là xong khi:
 
 - Upload CV xong có trạng thái rõ ràng
+- Candidate quản lý nhiều CV, chọn CV mặc định, hồ sơ cố định và portfolio được
 - Ranking job-to-candidate chạy được
 - Recommendation candidate-to-job chạy được
 - Điểm hiển thị theo %
@@ -556,7 +719,10 @@ Backend chỉ coi là xong khi:
 - Job scan/digest/high-match notification hoạt động đúng policy
 - Skip trên web ẩn ngay, skip qua email không spam job kế tiếp
 - Recruiter xem được applicant, matching cao, potential
-- Có chart / analytics data
+- Recruiter overview và HR job workspace có endpoint riêng
+- Candidate search có suggestion, search result page và filter data đúng
+- Employer featured/detail trả đúng dữ liệu public
+- Có chart / analytics data, trong đó job market chart dùng số job đăng tuyển thay vì matching count
 - JWT và role-based access chạy đúng
 - Swagger / OpenAPI có tài liệu
 - Test quan trọng pass

@@ -21,15 +21,23 @@ Spring Boot Backend Automation Agent
         |
         | Matching, Recommendation, AutoFit Policy, Audit, Feedback Learning
         v
-PostgreSQL / Supabase
+PostgreSQL
 ```
+
+Database triển khai theo hướng:
+
+- development/demo trực tiếp: PostgreSQL local chạy bằng Docker Compose,
+- schema migration: Flyway,
+- optional demo/deploy online: Supabase PostgreSQL hoặc PostgreSQL cloud khác,
+- file CV trong development: local storage,
+- auth: Spring Security JWT/passwordless do backend tự triển khai, không phụ thuộc Supabase Auth.
 
 ### 1.1. Web App
 
 Web app có hai vai trò:
 
-- Với candidate, web vẫn là một job portal bình thường: job feed, search, filter, job detail, CV upload, recommendations, applications.
-- Với recruiter/admin, web là control panel: JD management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics.
+- Với candidate, web vẫn là một job portal bình thường: job feed, search suggestion, search results, filter, job detail, employer detail, CV upload, Hồ sơ & CV, recommendations, applications.
+- Với recruiter/admin, web là control panel: dashboard tổng quan, HR-style job management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics.
 
 ### 1.2. Email Action Channel
 
@@ -64,6 +72,9 @@ Frontend không quyết định automation. Email không chứa logic nghiệp v
 - Ghi lại toàn bộ hành động vào audit log để kiểm tra lại được.
 - Dùng email như một kênh giao tiếp chính, giảm phụ thuộc vào việc mở web liên tục.
 - Dùng feedback từ web/email để cập nhật vector bằng Rocchio và cải thiện ranking/recommendation.
+- Dùng job market analytics để hiển thị tổng số job đăng tuyển, xu hướng theo thời gian và phân bố theo nhóm IT/mức lương. Phần này tách biệt với analytics về matching.
+- Tách rõ candidate CV, hồ sơ cố định và portfolio để tránh nhầm CV upload với dữ liệu profile dài hạn.
+- Tách recruiter dashboard tổng quan khỏi trang job management HR Dashboard.
 
 ---
 
@@ -188,6 +199,17 @@ Không có audit log thì automation rất khó kiểm soát.
 
 ## 5. Thành Phần Hệ Thống
 
+### 5.0. Infrastructure & Persistence
+
+Thành phần hạ tầng dữ liệu:
+
+- PostgreSQL là primary database.
+- Docker Compose chạy PostgreSQL local cho development và demo trên máy cá nhân.
+- Flyway chạy migration khi backend khởi động để tạo bảng, index, constraint và enum.
+- Local filesystem lưu file CV trong development, ví dụ `storage/cv`.
+- Storage service phải được abstract bằng interface để sau này đổi sang Supabase Storage hoặc S3 mà không đổi logic nghiệp vụ.
+- Spring Security quản lý JWT, role-based access và passwordless token, không dùng Supabase Auth làm nguồn sự thật.
+
 ### 5.1. Matching and Recommendation Services
 
 Trách nhiệm:
@@ -198,6 +220,44 @@ Trách nhiệm:
 - gắn nhãn `Low / Medium / High / Potential`,
 - tạo reason chips cho UI/email,
 - trigger AutoFit khi có kết quả quan trọng.
+
+### 5.1.1. Job Portal Search Service
+
+Trách nhiệm:
+
+- nhận keyword, filter và sort từ candidate-facing job portal,
+- trả danh sách job dạng phân trang,
+- trả search suggestions theo skill, job title và employer,
+- trả metadata phục vụ filter bar hoặc filter modal,
+- bảo đảm homepage chỉ cần tải một số job mới/nổi bật, còn danh sách đầy đủ nằm ở trang search results.
+
+### 5.1.2. Employer Profile Service
+
+Trách nhiệm:
+
+- trả danh sách nhà tuyển dụng nổi bật,
+- trả hồ sơ chi tiết nhà tuyển dụng,
+- trả danh sách job đang mở theo employer,
+- liên kết recruiter/company ownership với dữ liệu hiển thị public cho candidate.
+
+### 5.1.3. Candidate Profile & CV Service
+
+Trách nhiệm:
+
+- quản lý nhiều CV cho một candidate,
+- lưu nguồn CV: uploaded document hoặc manual creation,
+- chọn một CV mặc định cho matching chính,
+- lưu hồ sơ cố định của candidate,
+- lưu portfolio links và portfolio projects,
+- trả dữ liệu cho trang `Hồ sơ & CV` gồm 3 tab: `CV đã tạo`, `Hồ sơ cố định`, `Portfolio / Dự án`.
+
+### 5.1.4. Recruiter Workspace Service
+
+Trách nhiệm:
+
+- trả dữ liệu dashboard tổng quan cho `/recruiter`,
+- trả requisition list, job detail, Applied CVs và AI Potential Matches cho `/recruiter/jobs`,
+- giữ job management HR Dashboard tách khỏi overview dashboard.
 
 ### 5.2. Feedback Learning Service
 
@@ -294,11 +354,80 @@ Trách nhiệm:
 - log bất biến
 - phục vụ debug, tra soát, demo và kiểm toán
 
+### 5.10. Job Market Analytics Service
+
+Trách nhiệm:
+
+- tổng hợp snapshot số lượng job đăng tuyển theo ngày hoặc theo cấu hình demo,
+- trả summary gồm tổng job, job active, job mới và số employer có job,
+- trả trend line dựa trên tổng job đăng tuyển, không dựa trên matching count,
+- trả distribution theo nhóm vị trí IT hoặc salary band,
+- cung cấp tooltip data cho frontend khi hover biểu đồ.
+
 ---
 
 ## 6. Data Model Đề Xuất
 
-### 6.1. `automation_policy`
+### 6.1. `job`
+
+Lưu Job Description và metadata phục vụ job portal, matching, recommendation và email template.
+
+Trường gợi ý:
+
+- `id`
+- `recruiter_id`
+- `title`
+- `company`
+- `original_text`
+- `required_skills`
+- `nice_to_have_skills`
+- `seniority_level`
+- `employment_type`
+- `location`
+- `remote_type`
+- `salary_mode`
+- `salary_min`
+- `salary_max`
+- `salary_currency`
+- `salary_type`
+- `salary_is_visible`
+- `salary_display_text`
+- `learned_profile_vector` (JSONB)
+- `language`
+- `status`
+- `created_at`
+- `updated_at`
+
+Quy tắc salary:
+
+- `salary_mode` là bắt buộc, gồm `NEGOTIABLE`, `RANGE`, `UP_TO`, `FROM`, `HIDDEN`.
+- `salary_min` và `salary_max` được nullable tùy `salary_mode`.
+- `salary_display_text` dùng cho UI/email, còn min/max/currency/type dùng cho filter, sort và recommendation.
+
+### 6.1.1. `employer_profile`
+
+Lưu hồ sơ public của nhà tuyển dụng.
+
+Trường gợi ý:
+
+- `id`
+- `recruiter_id`
+- `company_name`
+- `slug`
+- `logo_url`
+- `cover_url`
+- `summary`
+- `description`
+- `industry`
+- `company_size`
+- `location`
+- `website_url`
+- `benefits` (JSONB)
+- `is_featured`
+- `created_at`
+- `updated_at`
+
+### 6.2. `automation_policy`
 
 Lưu policy automation theo user hoặc role.
 
@@ -329,7 +458,7 @@ Trường gợi ý:
 - `created_at`
 - `updated_at`
 
-### 6.2. `email_action`
+### 6.3. `email_action`
 
 Lưu một email có hành động.
 
@@ -348,7 +477,7 @@ Trường gợi ý:
 - `opened_at`
 - `executed_at`
 
-### 6.3. `email_token`
+### 6.4. `email_token`
 
 Lưu token xác thực cho action hoặc login.
 
@@ -366,7 +495,7 @@ Trường gợi ý:
 - `revoked_at`
 - `created_at`
 
-### 6.4. `audit_log`
+### 6.5. `audit_log`
 
 Lưu lịch sử hành động.
 
@@ -385,7 +514,7 @@ Trường gợi ý:
 - `metadata` (JSONB)
 - `created_at`
 
-### 6.5. `notification_job`
+### 6.6. `notification_job`
 
 Lưu job gửi email / digest.
 
@@ -399,7 +528,7 @@ Trường gợi ý:
 - `next_retry_at`
 - `created_at`
 
-### 6.6. `recommendation_interaction`
+### 6.7. `recommendation_interaction`
 
 Lưu hành vi của candidate với từng job để hệ thống không đề xuất lặp lại sai cách.
 
@@ -428,6 +557,58 @@ Trường gợi ý:
 - `EMAIL`
 - `DIGEST`
 - `AUTOPILOT`
+
+### 6.8. `candidate_portfolio_link`
+
+Lưu link cá nhân của candidate.
+
+Trường gợi ý:
+
+- `id`
+- `candidate_id`
+- `type`
+- `url`
+- `created_at`
+- `updated_at`
+
+### 6.9. `candidate_portfolio_project`
+
+Lưu dự án nổi bật của candidate.
+
+Trường gợi ý:
+
+- `id`
+- `candidate_id`
+- `name`
+- `role`
+- `summary`
+- `tech_stack` (JSONB)
+- `project_url`
+- `impact`
+- `created_at`
+- `updated_at`
+
+### 6.10. `job_market_snapshot`
+
+Lưu dữ liệu tổng hợp cho dashboard thị trường việc làm.
+
+Trường gợi ý:
+
+- `id`
+- `snapshot_date`
+- `total_posted_jobs`
+- `active_jobs`
+- `new_jobs`
+- `employer_count`
+- `distribution_by_role` (JSONB)
+- `distribution_by_salary` (JSONB)
+- `created_at`
+
+Quy tắc:
+
+- `total_posted_jobs` là số lượng job đăng tuyển trên hệ thống trong phạm vi thống kê.
+- Không dùng trường này để biểu diễn số CV-JD matching.
+- Nếu cần hiển thị matching analytics, dùng endpoint/DTO riêng với tên rõ ràng như `matchingCount`.
 
 ---
 
@@ -461,6 +642,23 @@ Luồng:
 4. Nếu cho phép, tạo `Application` nội bộ.
 5. Nếu chưa cho phép, gửi email Yes/No để candidate xác nhận.
 6. Audit log ghi nhận toàn bộ quyết định.
+
+### 7.2.1. Candidate quản lý Hồ sơ & CV
+
+Luồng:
+
+1. Candidate mở `/candidate/profile`.
+2. Frontend hiển thị tab `CV đã tạo` mặc định để quản lý nhiều CV.
+3. Candidate upload CV mới hoặc tạo CV bằng form ở `/candidate/upload`.
+4. Candidate chọn một CV mặc định cho matching chính.
+5. Candidate chuyển sang tab `Hồ sơ cố định` để chỉnh dữ liệu nền/preference.
+6. Candidate chuyển sang tab `Portfolio / Dự án` để khai báo link cá nhân và dự án nổi bật.
+
+Quy tắc:
+
+- Upload CV và Manual Creation là hai tab trong `/candidate/upload`.
+- Portfolio không nằm trong `/candidate/upload`; nó nằm trong `Hồ sơ & CV`.
+- Candidate profile không phải portfolio.
 
 ### 7.3. Feedback qua email
 
@@ -544,6 +742,51 @@ Quy tắc:
 - `Show Similar` là tín hiệu tích cực cho nhóm job tương tự.
 - `Bad Match` mới được dùng làm negative feedback mạnh cho Rocchio.
 
+### 7.8. Candidate search results
+
+Luồng:
+
+1. Candidate nhập keyword ở homepage hoặc trang việc làm.
+2. Frontend gọi suggestion API khi input focus và keyword đủ dài.
+3. Candidate bấm Search hoặc chọn suggestion.
+4. Frontend chuyển sang trang search results với keyword/filter trong query string.
+5. Backend trả danh sách job, tổng số kết quả, pagination và filter metadata.
+6. Candidate mở job detail bằng cách bấm card, tên job hoặc nút chi tiết.
+
+Quy tắc:
+
+- Suggestions không phải là phần cố định của trang kết quả; chỉ hiển thị trong trạng thái nhập liệu.
+- Trang tổng quan chỉ hiển thị một phần job mới/nổi bật và có link `Xem tất cả`.
+
+### 7.9. Employer detail
+
+Luồng:
+
+1. Frontend gọi danh sách featured employers cho candidate home/job page.
+2. Candidate bấm employer card.
+3. Frontend mở trang employer detail.
+4. Backend trả employer profile và danh sách job đang mở.
+5. Candidate có thể mở từng job để xem detail/apply.
+
+### 7.10. Job market dashboard
+
+Luồng:
+
+1. Scheduler hoặc analytics service tạo `job_market_snapshot`.
+2. Candidate/recruiter dashboard gọi job-market APIs.
+3. Frontend vẽ line chart bằng `total_posted_jobs`.
+4. Frontend vẽ bar chart theo `distribution_by_role` hoặc `distribution_by_salary`.
+5. Tooltip chỉ hiện khi hover và dùng nhãn `jobs đăng tuyển` hoặc `việc làm`.
+
+### 7.11. Recruiter overview và HR dashboard
+
+Luồng:
+
+1. `/recruiter` hiển thị dashboard tổng quan: job market chart, metric cards và ranking/applicant/potential summary.
+2. `/recruiter/jobs` hiển thị HR Dashboard chuyên cho job management.
+3. HR Dashboard có requisition list bên trái và job detail + Applied CVs/AI Potential Matches bên phải.
+4. Các route `/recruiter/jobs/{jobId}/ranking`, `/applicants`, `/potential` dùng cùng surface job management nhưng chọn đúng job/subview.
+
 ---
 
 ## 8. API Đề Xuất
@@ -572,12 +815,52 @@ Quy tắc:
 - `POST /api/recommendations/{jobId}/interactions`
 - `GET /api/recommendations/interactions`
 
-### 8.5. Feedback
+### 8.5. Candidate Profile & CV
+
+- `GET /api/cv/me`
+- `POST /api/cv/{cvId}/set-default`
+- `GET /api/candidates/me/profile`
+- `PUT /api/candidates/me/profile`
+- `GET /api/candidates/me/portfolio`
+- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/projects`
+- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `DELETE /api/candidates/me/portfolio/projects/{projectId}`
+
+### 8.6. Job Portal
+
+- `GET /api/jobs/search`
+- `GET /api/jobs/search/suggestions`
+
+### 8.7. Employer
+
+- `GET /api/employers/featured`
+- `GET /api/employers/{id}`
+- `GET /api/employers/{id}/jobs`
+
+### 8.8. Recruiter Workspace
+
+- `GET /api/recruiter/dashboard`
+- `GET /api/recruiter/jobs`
+- `GET /api/recruiter/jobs/{jobId}/workspace`
+
+### 8.9. Feedback
 
 - `POST /api/matchings/{matchingId}/feedback`
 - `POST /api/automation/actions/feedback`
 
-### 8.6. Audit
+### 8.10. Analytics
+
+- `GET /api/analytics/summary`
+- `GET /api/analytics/jobs/trends`
+- `GET /api/analytics/job-market/summary`
+- `GET /api/analytics/job-market/trends`
+- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+
+`/api/analytics/job-market/*` trả dữ liệu thị trường việc làm theo số job đăng tuyển.
+Các endpoint matching/ranking analytics phải dùng DTO và tên field riêng để tránh nhầm với job market.
+
+### 8.11. Audit
 
 - `GET /api/audit-logs`
 - `GET /api/audit-logs/{id}`
@@ -676,7 +959,11 @@ Xử lý:
 9. daily digest
 10. job scan + high-match notification policy
 11. recommendation interaction
-12. confirmation landing pages
+12. job portal search + employer profile APIs
+13. candidate CV/profile/portfolio APIs
+14. recruiter overview + HR workspace APIs
+15. job market analytics snapshots
+16. confirmation landing pages
 
 Lý do:
 
@@ -697,6 +984,11 @@ Kiến trúc automation chỉ coi là xong khi:
 - recruiter/candidate có thể yes/no qua email hoặc confirm page
 - high-match email chỉ gửi ngay khi vượt ngưỡng và không vượt quota
 - skip qua web ẩn job ngay, skip qua email không spam job kế tiếp
+- search suggestion và search results hoạt động đúng query/filter
+- employer detail trả được profile và job đang mở
+- candidate quản lý được nhiều CV, hồ sơ cố định và portfolio
+- recruiter overview tách khỏi HR job management dashboard
+- job market dashboard hiển thị số job đăng tuyển, không hiển thị nhầm matching count
 - audit log ghi được toàn bộ action
 - feedback từ web/email cập nhật được Rocchio vector
 - web có control panel để xem policy, queue, action history và audit summary

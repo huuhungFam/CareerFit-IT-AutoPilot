@@ -1,0 +1,21 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local CV/file storage
+storage/
+
+# Frontend build/dependency output
+Frontend/node_modules/
+Frontend/dist/
+
+# Backend build output
+Backend/target/
+Backend/build/
+
+# IDE/system files
+.idea/
+.vscode/
+*.log
+Thumbs.db
