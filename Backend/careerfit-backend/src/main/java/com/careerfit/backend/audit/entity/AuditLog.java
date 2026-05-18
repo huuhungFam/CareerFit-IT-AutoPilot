@@ -2,6 +2,8 @@ package com.careerfit.backend.audit.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -51,6 +53,7 @@ public class AuditLog {
     private String userAgent;
 
     /** JSONB: extra context (tokenPurpose, score, matchingId, etc.). */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")
     private String metadataJson;
 

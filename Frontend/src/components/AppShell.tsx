@@ -53,14 +53,14 @@ export function AppShell({ role }: { role: ShellRole }) {
   const homePath = role === 'guest' ? '/' : role === 'candidate' ? '/candidate' : '/recruiter';
 
   return (
-    <div className="app-shell">
-      <header className="site-header">
+    <div className={role === 'guest' ? 'app-shell guest-shell' : 'app-shell signed-shell'}>
+      <header className={role === 'guest' ? 'site-header guest-header' : 'site-header signed-header'}>
         <div className="header-inner">
           <button className="brand" onClick={() => navigate(homePath)}>
             <span className="brand-mark">CF</span>
             <span>
               <strong>CareerFit IT</strong>
-              <small>AutoPilot</small>
+              <small>{role === 'guest' ? t('guestAccess') : 'AutoPilot'}</small>
             </span>
           </button>
 
@@ -75,10 +75,13 @@ export function AppShell({ role }: { role: ShellRole }) {
 
           <div className="header-actions">
             {role === 'guest' ? (
-              <button className="login-link" onClick={() => navigate('/login')}>
-                <LogIn size={17} />
-                {t('login')}
-              </button>
+              <>
+                <span className="guest-chip">{t('guest')}</span>
+                <button className="login-link" onClick={() => navigate('/login')}>
+                  <LogIn size={17} />
+                  {t('login')}
+                </button>
+              </>
             ) : (
               <>
                 <div className="role-switch single" aria-label="Role">

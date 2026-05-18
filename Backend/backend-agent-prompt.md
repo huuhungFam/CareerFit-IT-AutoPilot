@@ -35,6 +35,7 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - actionable email + magic-link
   - passwordless login
   - audit log
+  - public guest job portal cho `/`, `/jobs`, public job detail và employer profile, không trả score/potential/reason cá nhân khi chưa đăng nhập
   - job scan scheduling, daily digest, high-match notification, skip interaction tracking
   - job portal search, search suggestions, employer profile và job market analytics
   - quản lý nhiều CV cho candidate, hồ sơ cố định và portfolio/dự án
@@ -42,6 +43,7 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - async processing bằng `@Async`
   - định kỳ cập nhật bằng `@Scheduled`
   - JWT security + role-based routing
+  - login-required contract và `next` redirect intent cho frontend sau khi đăng nhập
   - song ngữ tiếng Việt và tiếng Anh ở mức dữ liệu / pipeline / response
 
 ## 2. Stack Khuyến Nghị
@@ -211,14 +213,14 @@ Tầng xử lý:
 - `POST /api/auth/passwordless/request`
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
-- `GET /api/me`
+- `GET /api/auth/me`
 
 ### 5.2. Candidate
 
-- `GET /api/candidates/{candidateId}`
-- `PUT /api/candidates/{candidateId}`
-- `GET /api/candidates/{candidateId}/preferences`
-- `POST /api/candidates/{candidateId}/preferences`
+- `GET /api/candidates/me`
+- `PATCH /api/candidates/me`
+- `PATCH /api/candidates/me/account`
+- `GET /api/candidates/me/cvs`
 
 ### 5.3. CV
 
@@ -227,17 +229,16 @@ Tầng xử lý:
 - `GET /api/cv/me`
 - `GET /api/cv/{cvId}`
 - `GET /api/cv/{cvId}/status`
-- `GET /api/candidates/{candidateId}/cv`
 - `POST /api/cv/{cvId}/set-default`
 
 ### 5.4. Candidate Profile & Portfolio
 
-- `GET /api/candidates/me/profile`
-- `PUT /api/candidates/me/profile`
 - `GET /api/candidates/me/portfolio`
-- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/links`
+- `PATCH /api/candidates/me/portfolio/links/{linkId}`
+- `DELETE /api/candidates/me/portfolio/links/{linkId}`
 - `POST /api/candidates/me/portfolio/projects`
-- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `PATCH /api/candidates/me/portfolio/projects/{projectId}`
 - `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 
 ### 5.5. Job
@@ -246,9 +247,13 @@ Tầng xử lý:
 - `GET /api/jobs`
 - `GET /api/jobs/search`
 - `GET /api/jobs/search/suggestions`
+- `GET /api/jobs/suggestions`
 - `GET /api/jobs/{jobId}`
-- `PUT /api/jobs/{jobId}`
+- `PATCH /api/jobs/{jobId}`
+- `PATCH /api/jobs/{jobId}/status`
 - `DELETE /api/jobs/{jobId}`
+
+Public job endpoints may allow unauthenticated read-only access for guest UI. Guest responses must omit `normalizedScore`, `label`, `isPotential`, `matchReasons`, `potentialReason`, CV/application state and auto-apply state. Candidate job-card responses with personalized fields must be available through `GET /api/matches/me/cards`.
 
 ### 5.6. Employer
 
@@ -260,14 +265,16 @@ Tầng xử lý:
 
 - `GET /api/recruiter/dashboard`
 - `GET /api/recruiter/jobs`
-- `GET /api/recruiter/jobs/{jobId}/workspace`
+- `GET /api/recruiter/jobs/{jobId}/ranking`
+- `GET /api/recruiter/jobs/{jobId}/stats`
+- `GET /api/recruiter/jobs/{jobId}/top-candidates`
 
 ### 5.8. Matching / Recommendation
 
-- `GET /api/jobs/{jobId}/ranking`
-- `GET /api/candidates/{candidateId}/recommendations`
-- `GET /api/jobs/{jobId}/applicants`
-- `GET /api/jobs/{jobId}/potential`
+- `GET /api/matches/me`
+- `GET /api/matches/me/cards`
+- `GET /api/recommendations/jobs`
+- `GET /api/recommendations/jobs/{jobId}/similar`
 
 ### 5.9. Application / Invite
 
@@ -377,7 +384,7 @@ Quy tắc multi-CV:
 
 1. `/api/recruiter/dashboard` trả dữ liệu tổng quan.
 2. `/api/recruiter/jobs` trả danh sách requisitions cho HR Dashboard.
-3. `/api/recruiter/jobs/{jobId}/workspace` trả job detail, Applied CVs và AI Potential Matches.
+3. `/api/recruiter/jobs/{jobId}/ranking`, `/stats` và `/top-candidates` trả dữ liệu job detail, Applied CVs và AI Potential Matches.
 4. Không ép frontend dùng cùng response cho `/recruiter` và `/recruiter/jobs`.
 
 ### 6.3. AutoFit Automation
@@ -489,11 +496,13 @@ Mục tiêu:
 
 - JWT authentication bắt buộc.
 - Passwordless magic-link là core auth flow phụ trợ.
+- Unauthenticated guest là public read-only access, không phải persisted user role.
 - Role tối thiểu:
   - `CANDIDATE`
   - `RECRUITER`
 - Candidate chỉ được thao tác trên dữ liệu của mình.
 - Recruiter được xem job ranking, applicant, potential, analytics.
+- Guest chỉ được xem public dashboard/job search/job detail/employer data và không được nhận score, potential, match reasons, CV data hoặc application state.
 - Chặn đúng `401` và `403`.
 - Magic-link token phải one-time, có TTL, có purpose, lưu hash thay vì raw token.
 - GET confirm chỉ hiển thị dữ liệu, POST mới thay đổi state.
@@ -631,6 +640,12 @@ Backend phải trả dữ liệu đủ để frontend làm UI:
 - `quietHours`
 - `notificationCooldown`
 
+DTO theo auth context:
+
+- Guest/public DTO: chỉ gồm job/employer/search/market summary; không có score, label, potential, match reasons, CV hoặc application state.
+- Candidate DTO: có thể gồm personalized score, label, potential, match reasons, recommendation interactions và application state.
+- Recruiter DTO: có thể gồm requisition, applicant, ranking và potential pool data trong phạm vi job thuộc recruiter.
+
 ## 16. Ưu Tiên Triển Khai
 
 Làm theo thứ tự:
@@ -721,6 +736,8 @@ Backend chỉ coi là xong khi:
 - Recruiter xem được applicant, matching cao, potential
 - Recruiter overview và HR job workspace có endpoint riêng
 - Candidate search có suggestion, search result page và filter data đúng
+- Guest public dashboard/job search/job detail hoạt động, không thấy score/potential/reasons và Apply trả login-required flow
+- Login-required flow hỗ trợ `next` intent để frontend điều hướng sau đăng nhập nếu role phù hợp
 - Employer featured/detail trả đúng dữ liệu public
 - Có chart / analytics data, trong đó job market chart dùng số job đăng tuyển thay vì matching count
 - JWT và role-based access chạy đúng

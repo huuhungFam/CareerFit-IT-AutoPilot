@@ -147,6 +147,7 @@ public class JobDtos {
 
     public record SuggestionsResponse(
         List<String> titles,
-        List<String> companies
+        List<String> companies,
+        List<String> skills
     ) {}
 }

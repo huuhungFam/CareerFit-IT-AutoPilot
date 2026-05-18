@@ -3,7 +3,9 @@ package com.careerfit.backend.employer.entity;
 import com.careerfit.backend.auth.entity.UserAccount;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -55,6 +57,7 @@ public class EmployerProfile {
     private String websiteUrl;
 
     /** JSONB: list of benefit strings */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "benefits", columnDefinition = "jsonb")
     private String benefitsJson;
 

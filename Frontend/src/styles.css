@@ -113,6 +113,27 @@ small {
   backdrop-filter: blur(24px);
 }
 
+.guest-shell {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(114, 248, 232, 0.2), transparent 28%),
+    linear-gradient(135deg, #fbfdff, #f3fafb 58%, #eef6f8);
+}
+
+.signed-shell {
+  background:
+    radial-gradient(circle at top left, rgba(114, 248, 232, 0.16), transparent 30%),
+    linear-gradient(135deg, var(--surface), #ffffff 52%, #eef6f8);
+}
+
+.guest-header .header-inner {
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: inset 0 0 0 1px rgba(0, 68, 110, 0.06), 0 10px 32px -18px rgba(24, 28, 30, 0.24);
+}
+
+.signed-header .header-inner {
+  border: 1px solid rgba(0, 68, 110, 0.06);
+}
+
 .header-inner {
   min-height: 68px;
   padding: 8px;
@@ -243,6 +264,18 @@ small {
   min-width: 76px;
 }
 
+.guest-chip {
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: var(--secondary);
+  background: rgba(215, 251, 246, 0.74);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .page-stack {
   display: grid;
   gap: 24px;
@@ -282,6 +315,18 @@ small {
     linear-gradient(135deg, rgba(0, 68, 110, 0.98), rgba(30, 92, 139, 0.92)),
     radial-gradient(circle at 82% 18%, rgba(114, 248, 232, 0.22), transparent 28%);
   box-shadow: var(--shadow);
+}
+
+.portal-hero.guest-hero {
+  min-height: 278px;
+  background:
+    linear-gradient(135deg, rgba(0, 68, 110, 0.9), rgba(0, 106, 98, 0.72)),
+    radial-gradient(circle at 88% 12%, rgba(114, 248, 232, 0.28), transparent 30%);
+  box-shadow: 0 16px 44px -22px rgba(0, 68, 110, 0.42);
+}
+
+.portal-hero.signed-hero {
+  outline: 1px solid rgba(114, 248, 232, 0.1);
 }
 
 .portal-hero.centered {
@@ -878,6 +923,11 @@ small {
 
 .job-market-panel {
   overflow: visible;
+}
+
+.guest-shell .job-market-panel {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(0, 68, 110, 0.06), var(--soft-shadow);
 }
 
 .top-employers {

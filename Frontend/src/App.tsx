@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Area,
@@ -53,6 +53,7 @@ import { MatchingBadge, PotentialBadge, ReasonChips } from './components/Badges'
 import { JobCard } from './components/JobCard';
 import { StatCard } from './components/StatCard';
 import { useLanguage } from './i18n/LanguageProvider';
+import { careerfitApi, type SearchSuggestionGroup } from './lib/api';
 import {
   applications,
   automationPolicy,
@@ -144,25 +145,33 @@ const topEmployers = [
 ];
 
 export function App() {
-  const [account, setAccount] = useState<MockAccount | null>(null);
+  const [account, setAccount] = useState<MockAccount | null>(() => careerfitApi.restoreAccount());
+  const location = useLocation();
 
-  function handleLogin(username: string, password: string) {
-    const nextAccount = mockAccounts.find((item) => item.username === username.trim() && item.password === password);
-    if (!nextAccount) {
-      return null;
+  async function handleLogin(username: string, password: string) {
+    try {
+      const apiAccount = await careerfitApi.login(username, password);
+      setAccount(apiAccount);
+      return apiAccount;
+    } catch {
+      const nextAccount = mockAccounts.find((item) => item.username === username.trim() && item.password === password);
+      if (!nextAccount) {
+        return null;
+      }
+
+      setAccount(nextAccount);
+      return nextAccount;
     }
-
-    setAccount(nextAccount);
-    return nextAccount;
   }
 
   function handleLogout() {
+    careerfitApi.clearSession();
     setAccount(null);
   }
 
   function protectedRoute(role: Role, element: ReactNode) {
     if (!account) {
-      return <LoginRequiredPage />;
+      return <LoginRequiredPage nextPath={`${location.pathname}${location.search}`} />;
     }
 
     if (account.role !== role) {
@@ -217,22 +226,31 @@ function LoginPage({
   onLogin,
 }: {
   mode?: 'login' | 'register';
-  onLogin: (username: string, password: string) => MockAccount | null;
+  onLogin: (username: string, password: string) => Promise<MockAccount | null>;
 }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const nextPath = searchParams.get('next');
 
-  function submitLogin() {
-    const account = onLogin(username, password);
-    if (!account) {
-      setError(t('invalidLogin'));
-      return;
+  async function submitLogin() {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const account = await onLogin(username, password);
+      if (!account) {
+        setError(t('invalidLogin'));
+        return;
+      }
+
+      navigate(resolvePostLoginPath(account, nextPath));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    navigate(account.role === 'candidate' ? '/candidate' : '/recruiter');
   }
 
   return (
@@ -260,7 +278,7 @@ function LoginPage({
           />
         </label>
         {error ? <p className="validation-error">{error}</p> : null}
-        <button className="primary-action full" onClick={submitLogin}>
+        <button className="primary-action full" onClick={submitLogin} disabled={isSubmitting}>
           {t('signIn')}
         </button>
         <small>{t('mockLoginHint')}</small>
@@ -273,7 +291,23 @@ function LoginPage({
   );
 }
 
-function LoginRequiredPage() {
+function resolvePostLoginPath(account: MockAccount, nextPath: string | null) {
+  if (nextPath?.startsWith('/candidate') && account.role === 'candidate') {
+    return nextPath;
+  }
+
+  if (nextPath?.startsWith('/recruiter') && account.role === 'recruiter') {
+    return nextPath;
+  }
+
+  if (nextPath === '/' || nextPath?.startsWith('/jobs')) {
+    return account.role === 'candidate' ? '/candidate' : '/recruiter';
+  }
+
+  return account.role === 'candidate' ? '/candidate' : '/recruiter';
+}
+
+function LoginRequiredPage({ nextPath }: { nextPath?: string }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -284,7 +318,7 @@ function LoginRequiredPage() {
         <h2>{t('loginRequiredTitle')}</h2>
         <p>{t('loginRequiredCopy')}</p>
       </div>
-      <button className="primary-action" onClick={() => navigate('/login')}>
+      <button className="primary-action" onClick={() => navigate(nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : '/login')}>
         <LogIn size={17} />
         {t('login')}
       </button>
@@ -295,10 +329,10 @@ function LoginRequiredPage() {
 function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { data = jobs } = useMockQuery('candidate-home-jobs', jobs);
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const { data = jobs } = useJobs({ isPublic });
   const suggestions = useSearchSuggestions(query);
   const newJobs = data.slice(0, 3);
 
@@ -321,6 +355,7 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
         onFilter={() => setIsFilterOpen(true)}
         onSearch={runSearch}
         suggestions={suggestions}
+        variant={isPublic ? 'guest' : 'signed'}
       />
 
       <JobMarketDashboard />
@@ -367,9 +402,17 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
-  const [visibleJobs, setVisibleJobs] = useState(jobs);
-  const filteredJobs = useFilteredJobs(visibleJobs, query);
+  const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
+  const { data: sourceJobs = jobs } = useJobs({ isPublic, keyword: initialKeyword });
+  const filteredJobs = useFilteredJobs(
+    sourceJobs.filter((job) => !hiddenJobIds.includes(job.id)),
+    query,
+  );
   const suggestions = useSearchSuggestions(query);
+
+  useEffect(() => {
+    setQuery(initialKeyword);
+  }, [initialKeyword]);
 
   function runSearch() {
     const keyword = query.trim();
@@ -429,7 +472,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
         <JobListWithPreview
           jobs={filteredJobs}
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
-          onSkip={(id) => setVisibleJobs((current) => current.filter((item) => item.id !== id))}
+          onSkip={(id) => setHiddenJobIds((current) => [...current, id])}
           onApply={isPublic ? () => setIsLoginPromptOpen(true) : undefined}
           showMatchMeta={!isPublic}
         />
@@ -477,7 +520,8 @@ function JobDetailPage({ isPublic = false }: { isPublic?: boolean }) {
   const { t } = useLanguage();
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
-  const job = jobs.find((item) => item.id === jobId) ?? jobs[0];
+  const fallbackJob = jobs.find((item) => item.id === jobId) ?? jobs[0];
+  const { data: job = fallbackJob } = useJobDetail(jobId, fallbackJob, isPublic);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -1418,6 +1462,7 @@ function SettingToggle({ title, detail, checked = false }: { title: string; deta
 
 function RecruiterHomePage() {
   const { t } = useLanguage();
+  const { data: summary = recruiterSummary } = useRecruiterSummary();
   return (
     <div className="page-stack">
       <SearchHero
@@ -1430,10 +1475,10 @@ function RecruiterHomePage() {
       />
       <JobMarketDashboard />
       <section className="stats-grid feature-stats recruiter-feature-stats">
-        <StatCard label={t('activeJobs')} value={recruiterSummary.activeJobs} detail={t('fourClosingThisWeek')} />
-        <StatCard label={t('pendingApprovals')} value={recruiterSummary.pendingApprovals} detail="HITL queue" />
-        <StatCard label={t('highMatches')} value={recruiterSummary.highMatches} detail="score >= 85%" />
-        <StatCard label={t('invitesSent')} value={recruiterSummary.invitesSent} detail={t('lastSevenDays')} />
+        <StatCard label={t('activeJobs')} value={summary.activeJobs} detail={t('fourClosingThisWeek')} />
+        <StatCard label={t('pendingApprovals')} value={summary.pendingApprovals} detail="HITL queue" />
+        <StatCard label={t('highMatches')} value={summary.highMatches} detail="score >= 85%" />
+        <StatCard label={t('invitesSent')} value={summary.invitesSent} detail={t('lastSevenDays')} />
       </section>
       <RecruiterOverviewPanel />
     </div>
@@ -1443,6 +1488,7 @@ function RecruiterHomePage() {
 function RecruiterOverviewPanel() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { data: recruiterJobs = jobs } = useRecruiterJobs();
 
   return (
     <section className="panel recruiter-workspace-panel">
@@ -1476,7 +1522,7 @@ function RecruiterOverviewPanel() {
           <span>{t('potential')}</span>
           <span>{t('status')}</span>
         </div>
-        {jobs.map((job, index) => (
+        {recruiterJobs.map((job, index) => (
           <button className="table-row recruiter-row" key={job.id} onClick={() => navigate(`/recruiter/jobs/${job.id}/ranking`)}>
             <span>
               {job.title}
@@ -1499,7 +1545,8 @@ function RecruiterJobsPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { jobId } = useParams();
-  const selectedJob = jobs.find((job) => job.id === jobId) ?? jobs[0];
+  const { data: recruiterJobs = jobs } = useRecruiterJobs();
+  const selectedJob = recruiterJobs.find((job) => job.id === jobId) ?? recruiterJobs[0] ?? jobs[0];
   const candidates = [
     {
       initials: 'MA',
@@ -1559,7 +1606,7 @@ function RecruiterJobsPage() {
             </button>
           </div>
           <div className="requisition-list">
-            {jobs.map((job, index) => (
+            {recruiterJobs.map((job, index) => (
               <button
                 className={job.id === selectedJob.id ? 'requisition-row active' : 'requisition-row'}
                 key={job.id}
@@ -1613,7 +1660,7 @@ function RecruiterJobsPage() {
           </article>
 
           <div className="candidate-tabs">
-            <button className="active">{t('appliedCvs')} ({18 + jobs.findIndex((job) => job.id === selectedJob.id) * 7})</button>
+            <button className="active">{t('appliedCvs')} ({18 + recruiterJobs.findIndex((job) => job.id === selectedJob.id) * 7})</button>
             <button>{t('aiPotentialMatches')} ({selectedJob.isPotential ? 15 : 8})</button>
           </div>
 
@@ -1917,7 +1964,9 @@ function FilterModal({ onClose }: { onClose: () => void }) {
 
 function LoginPromptModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  const nextPath = `${location.pathname}${location.search}`;
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t('loginRequiredTitle')}>
@@ -1929,7 +1978,7 @@ function LoginPromptModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="filter-modal-actions">
           <button onClick={onClose}>{t('cancel')}</button>
-          <button className="primary-action" onClick={() => navigate('/login')}>
+          <button className="primary-action" onClick={() => navigate(`/login?next=${encodeURIComponent(nextPath)}`)}>
             <LogIn size={17} />
             {t('login')}
           </button>
@@ -2140,6 +2189,7 @@ function SearchHero({
   onFilter,
   onSearch,
   suggestions = [],
+  variant = 'signed',
 }: {
   eyebrow: string;
   title: string;
@@ -2152,12 +2202,13 @@ function SearchHero({
   onFilter?: () => void;
   onSearch?: () => void;
   suggestions?: Array<{ group: string; items: string[] }>;
+  variant?: 'guest' | 'signed';
 }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { t } = useLanguage();
 
   return (
-    <section className={centered ? 'portal-hero centered' : 'portal-hero'}>
+    <section className={`${centered ? 'portal-hero centered' : 'portal-hero'} ${variant === 'guest' ? 'guest-hero' : 'signed-hero'}`}>
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h2>{title}</h2>
@@ -2408,8 +2459,7 @@ function useFilteredJobs(sourceJobs: Job[], query: string) {
   }, [sourceJobs, query]);
 }
 
-function useSearchSuggestions(query: string) {
-  return useMemo(() => {
+function getMockSearchSuggestions(query: string): SearchSuggestionGroup {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return [];
 
@@ -2429,16 +2479,111 @@ function useSearchSuggestions(query: string) {
       { group: 'searchGroupJobTitle', items: roleItems },
       { group: 'searchGroupCompany', items: companyItems },
     ];
-  }, [query]);
 }
 
-function useMockQuery<T>(key: string, data: T) {
+function useSearchSuggestions(query: string) {
+  const fallback = useMemo(() => getMockSearchSuggestions(query), [query]);
+  const { data } = useQuery({
+    queryKey: ['job-search-suggestions', query],
+    enabled: query.trim().length > 0,
+    queryFn: () => careerfitApi.getSearchSuggestions(query),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  return data?.some((group) => group.items.length > 0) ? data : fallback;
+}
+
+function useJobs({ isPublic, keyword = '' }: { isPublic: boolean; keyword?: string }) {
   return useQuery({
-    queryKey: [key],
+    queryKey: [isPublic ? 'public-jobs' : 'candidate-jobs', keyword],
     queryFn: async () => {
-      await delay(200);
-      return data;
+      try {
+        return isPublic ? await careerfitApi.searchJobs(keyword) : await careerfitApi.getCandidateJobs();
+      } catch {
+        await delay(160);
+        return keyword ? getLocallyFilteredJobs(jobs, keyword) : jobs;
+      }
     },
     refetchInterval: 60_000,
   });
+}
+
+function useJobDetail(jobId: string | undefined, fallbackJob: Job, isPublic: boolean) {
+  return useQuery({
+    queryKey: ['job-detail', jobId, isPublic ? 'public' : 'candidate'],
+    enabled: Boolean(jobId),
+    queryFn: async () => {
+      if (!jobId) return fallbackJob;
+      try {
+        const [publicJob, candidateJobs] = await Promise.all([
+          careerfitApi.getJob(jobId),
+          isPublic ? Promise.resolve([]) : careerfitApi.getCandidateJobs().catch(() => []),
+        ]);
+        const personalizedJob = candidateJobs.find((item) => item.id === jobId);
+        return personalizedJob
+          ? {
+              ...publicJob,
+              normalizedScore: personalizedJob.normalizedScore,
+              label: personalizedJob.label,
+              isPotential: personalizedJob.isPotential,
+              reasons: personalizedJob.reasons,
+            }
+          : publicJob;
+      } catch {
+        await delay(120);
+        return fallbackJob;
+      }
+    },
+  });
+}
+
+function useRecruiterSummary() {
+  return useQuery({
+    queryKey: ['recruiter-summary'],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getRecruiterDashboard();
+      } catch {
+        await delay(120);
+        return recruiterSummary;
+      }
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+function useRecruiterJobs() {
+  return useQuery({
+    queryKey: ['recruiter-jobs'],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getRecruiterJobs();
+      } catch {
+        await delay(120);
+        return jobs;
+      }
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+function getLocallyFilteredJobs(sourceJobs: Job[], query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return sourceJobs;
+  return sourceJobs.filter((job) =>
+    [
+      job.title,
+      job.company,
+      job.location,
+      job.seniority,
+      job.language,
+      ...job.requiredSkills,
+      ...job.optionalSkills,
+      ...job.reasons,
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(normalized),
+  );
 }

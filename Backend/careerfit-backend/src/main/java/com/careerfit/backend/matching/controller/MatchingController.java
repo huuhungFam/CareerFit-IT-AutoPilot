@@ -36,4 +36,16 @@ public class MatchingController {
         return ResponseEntity.ok(ApiResponse.ok(
                 queryService.getMatchedJobs(userId, page, size, label, potentialOnly)));
     }
+
+    @GetMapping("/me/cards")
+    @Operation(summary = "Get candidate job-card DTOs with score, potential flag and reasons")
+    public ResponseEntity<ApiResponse<MatchingDtos.CandidateJobCardPageResponse>> getMyJobCards(
+            @RequestAttribute("userId") UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String label,
+            @RequestParam(defaultValue = "false") boolean potentialOnly) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                queryService.getCandidateJobCards(userId, page, size, label, potentialOnly)));
+    }
 }

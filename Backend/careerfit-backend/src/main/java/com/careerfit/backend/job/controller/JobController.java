@@ -25,7 +25,7 @@ public class JobController {
 
     // ── Public: Search ────────────────────────────────────────────────────
 
-    @GetMapping("/search")
+    @GetMapping({"", "/search"})
     @Operation(summary = "Search active jobs with multi-filter (keyword, location, level, language)")
     public ResponseEntity<ApiResponse<JobDtos.JobListResponse>> search(
             @RequestParam(required = false) String keyword,
@@ -44,8 +44,8 @@ public class JobController {
         return ResponseEntity.ok(ApiResponse.ok(jobService.search(req)));
     }
 
-    @GetMapping("/suggestions")
-    @Operation(summary = "Autocomplete suggestions for job titles and company names")
+    @GetMapping({"/suggestions", "/search/suggestions"})
+    @Operation(summary = "Autocomplete suggestions for job titles, company names and skills")
     public ResponseEntity<ApiResponse<JobDtos.SuggestionsResponse>> suggestions(
             @RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(ApiResponse.ok(jobService.getSuggestions(keyword)));

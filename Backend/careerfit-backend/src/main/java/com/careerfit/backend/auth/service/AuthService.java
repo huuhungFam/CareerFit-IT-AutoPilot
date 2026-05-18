@@ -98,7 +98,8 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthDtos.AuthResponse login(AuthDtos.LoginRequest req) {
-        var user = userRepo.findByEmail(req.email())
+        String identifier = normalizeLoginIdentifier(req.email());
+        var user = userRepo.findByEmail(identifier)
                 .orElseThrow(() -> AppException.unauthorized("Invalid credentials"));
 
         if (!user.isActive()) {
@@ -113,6 +114,16 @@ public class AuthService {
                 .withChannel(AuditLog.SourceChannel.WEB));
 
         return buildAuthResponse(user);
+    }
+
+    private String normalizeLoginIdentifier(String identifier) {
+        if (identifier == null) return null;
+        String normalized = identifier.trim();
+        return switch (normalized.toLowerCase()) {
+            case "ca" -> "ca";
+            case "re" -> "re";
+            default -> normalized;
+        };
     }
 
     // ── Passwordless ──────────────────────────────────────────────────────

@@ -3,9 +3,9 @@ spring:
     name: careerfit-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/careerfit
-    username: careerfit
-    password: careerfit
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:careerfit}}
+    username: ${SPRING_DATASOURCE_USERNAME:careerfit}
+    password: ${SPRING_DATASOURCE_PASSWORD:careerfit}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

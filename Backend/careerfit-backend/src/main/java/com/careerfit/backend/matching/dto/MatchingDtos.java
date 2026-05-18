@@ -71,6 +71,35 @@ public class MatchingDtos {
 
     // ── Feedback ──────────────────────────────────────────────────────────
 
+    public record CandidateJobCardResponse(
+        String matchingId,
+        String id,
+        String title,
+        String company,
+        String companyLogoUrl,
+        String location,
+        String remoteType,
+        String seniorityLevel,
+        String employmentType,
+        String salaryDisplay,
+        List<String> requiredSkills,
+        List<String> optionalSkills,
+        BigDecimal normalizedScore,
+        String label,
+        boolean isPotential,
+        List<String> reasons,
+        String potentialReason,
+        Instant matchedAt
+    ) {}
+
+    public record CandidateJobCardPageResponse(
+        List<CandidateJobCardResponse> jobs,
+        long total,
+        int page,
+        int size,
+        int totalPages
+    ) {}
+
     public record FeedbackRequest(
         String feedbackType   // GOOD_MATCH | POTENTIAL | BAD_MATCH | NOT_INTERESTED
     ) {}

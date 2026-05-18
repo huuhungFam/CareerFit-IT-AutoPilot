@@ -3,7 +3,9 @@ package com.careerfit.backend.candidate.entity;
 import com.careerfit.backend.auth.entity.UserAccount;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -36,6 +38,7 @@ public class Candidate {
     private String desiredSeniority;
 
     /** JSONB: list of desired skills */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "desired_skills", columnDefinition = "jsonb")
     private String desiredSkillsJson;
 
@@ -65,6 +68,9 @@ public class Candidate {
 
     @Column(name = "preferred_language", length = 10)
     private String preferredLanguage = "vi";
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -112,6 +118,8 @@ public class Candidate {
     public void setAutoApplyThreshold(BigDecimal t){ this.autoApplyThreshold = t; }
     public String getPreferredLanguage()         { return preferredLanguage; }
     public void setPreferredLanguage(String l)   { this.preferredLanguage = l; }
+    public String getAvatarUrl()                 { return avatarUrl; }
+    public void setAvatarUrl(String u)           { this.avatarUrl = u; }
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
 }

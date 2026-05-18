@@ -5,6 +5,8 @@ type Dictionary = Record<string, string>;
 
 const vi: Dictionary = {
   brand: 'CareerFit IT AutoPilot',
+  guest: 'Guest',
+  guestAccess: 'Guest access',
   candidate: 'Ứng viên',
   recruiter: 'Nhà tuyển dụng',
   dashboard: 'Tổng quan',
@@ -302,6 +304,8 @@ const vi: Dictionary = {
 
 const en: Dictionary = {
   brand: 'CareerFit IT AutoPilot',
+  guest: 'Guest',
+  guestAccess: 'Guest access',
   candidate: 'Candidate',
   recruiter: 'Recruiter',
   dashboard: 'Dashboard',

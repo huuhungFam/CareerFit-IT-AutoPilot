@@ -1,21 +1,46 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: careerfit-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: careerfit
-      POSTGRES_USER: careerfit
-      POSTGRES_PASSWORD: careerfit
+      POSTGRES_DB: ${DB_NAME:-careerfit}
+      POSTGRES_USER: ${DB_USER:-careerfit}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-careerfit}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - careerfit_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U careerfit -d careerfit"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  backend:
+    profiles:
+      - backend
+    build:
+      context: ./Backend/careerfit-backend
+      dockerfile: Dockerfile
+    container_name: careerfit-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-careerfit}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-careerfit}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-careerfit}
+      JWT_SECRET: ${JWT_SECRET:-careerfit-dev-secret-key-must-be-at-least-32-chars-long}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      STORAGE_PATH: /app/storage/cv
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - careerfit_backend_storage:/app/storage
+
 volumes:
   careerfit_postgres_data:
+  careerfit_backend_storage:

@@ -58,33 +58,52 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // ── Fully public ───────────────────────────────────────────
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/api/employers/featured",
                     "/api/email-action/redeem",     // tokenized — no JWT needed
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",
                     "/actuator/health"
                 ).permitAll()
-                // Public GET-only routes (jobs / employers)
-                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                .requestMatchers(HttpMethod.POST,
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/passwordless/request",
+                    "/api/auth/passwordless/verify"
+                ).permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/api/auth/passwordless/verify"
+                ).permitAll()
+                // Protected routes that would otherwise look like public slug/id routes.
+                .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                .requestMatchers("/api/employers/me", "/api/employers/me/**").hasRole("RECRUITER")
+                .requestMatchers(HttpMethod.GET, "/api/recommendations/jobs").hasRole("CANDIDATE")
+                // Public GET-only routes (jobs / employers / analytics / similar jobs)
+                .requestMatchers(HttpMethod.GET,
                     "/api/jobs",
                     "/api/jobs/search",
                     "/api/jobs/suggestions",
+                    "/api/jobs/search/suggestions",
                     "/api/jobs/{id}",
+                    "/api/employers/featured",
                     "/api/employers/{slug}",
                     "/api/employers/{slug}/jobs",
-                    "/api/analytics/**"
+                    "/api/analytics/**",
+                    "/api/recommendations/jobs/*/similar"
                 ).permitAll()
                 // ── Candidate-only ─────────────────────────────────────────
                 .requestMatchers("/api/cv/**", "/api/matches/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/candidates/**").hasRole("CANDIDATE")
+                .requestMatchers("/api/applications/me", "/api/applications").hasRole("CANDIDATE")
+                .requestMatchers("/api/applications/{id}").hasRole("CANDIDATE")
                 // ── Recruiter-only ─────────────────────────────────────────
                 .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
-                .requestMatchers("/api/employers/me/**").hasRole("RECRUITER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("RECRUITER")
+                .requestMatchers(HttpMethod.PATCH, "/api/jobs/**").hasRole("RECRUITER")
+                .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("RECRUITER")
                 // ── Admin-only ─────────────────────────────────────────────
                 .requestMatchers("/api/admin/**", "/api/audit-logs/**").hasRole("ADMIN")
-                // ── Authenticated (jobs write + employer write) ─────────────
+                // ── Authenticated (jobs write + automation + email-action post) ──
+                .requestMatchers("/api/automation/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

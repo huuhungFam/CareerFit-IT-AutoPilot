@@ -5,6 +5,7 @@ import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.cv.dto.CvDtos;
 import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.cv.repository.CVRepository;
+import com.careerfit.backend.common.util.StorageService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -25,13 +26,16 @@ public class CvManagementService {
     private final CVRepository cvRepo;
     private final CandidateRepository candidateRepo;
     private final ObjectMapper objectMapper;
+    private final StorageService storageService;
 
     public CvManagementService(CVRepository cvRepo,
                                CandidateRepository candidateRepo,
-                               ObjectMapper objectMapper) {
+                               ObjectMapper objectMapper,
+                               StorageService storageService) {
         this.cvRepo = cvRepo;
         this.candidateRepo = candidateRepo;
         this.objectMapper = objectMapper;
+        this.storageService = storageService;
     }
 
     // ── List CVs ──────────────────────────────────────────────────────────
@@ -111,6 +115,17 @@ public class CvManagementService {
         }
 
         cvRepo.delete(cv);
+        
+        // Delete physical file if it exists
+        if (cv.getFilePath() != null) {
+            try {
+                storageService.delete(cv.getFilePath());
+            } catch (Exception e) {
+                // Log and swallow so DB tx still commits
+                // e.g., file was already removed manually
+                System.err.println("Failed to delete CV file: " + cv.getFilePath());
+            }
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

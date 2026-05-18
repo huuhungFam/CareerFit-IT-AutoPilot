@@ -3,7 +3,9 @@ package com.careerfit.backend.cv.entity;
 import com.careerfit.backend.candidate.entity.Candidate;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -44,10 +46,12 @@ public class CV {
     private String parsedSummary;
 
     /** JSONB array of top skills extracted from CV. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "top_skills", columnDefinition = "jsonb")
     private String topSkillsJson;
 
     /** JSONB: tokenized terms with TF-IDF weights. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "extracted_terms", columnDefinition = "jsonb")
     private String extractedTermsJson;
 

@@ -12,7 +12,7 @@ Nó bổ sung cho [proposal.md](proposal.md) và [srs.md](srs.md), tập trung v
 ## 1. Kiến Trúc Sản Phẩm
 
 ```text
-Candidate / Recruiter
+Guest / Candidate / Recruiter
         |
         | Web: job portal + control panel
         | Email: action channel
@@ -36,6 +36,7 @@ Database triển khai theo hướng:
 
 Web app có hai vai trò:
 
+- Với guest, web là job portal public: dashboard public, job market chart, job list, job detail và employer detail. Guest không thấy score/potential cá nhân và mọi action cần tài khoản phải đi qua login-required guard/modal.
 - Với candidate, web vẫn là một job portal bình thường: job feed, search suggestion, search results, filter, job detail, employer detail, CV upload, Hồ sơ & CV, recommendations, applications.
 - Với recruiter/admin, web là control panel: dashboard tổng quan, HR-style job management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics.
 
@@ -225,6 +226,7 @@ Trách nhiệm:
 
 Trách nhiệm:
 
+- trả dữ liệu public cho guest mà không kèm score/potential cá nhân,
 - nhận keyword, filter và sort từ candidate-facing job portal,
 - trả danh sách job dạng phân trang,
 - trả search suggestions theo skill, job title và employer,
@@ -747,7 +749,7 @@ Quy tắc:
 Luồng:
 
 1. Candidate nhập keyword ở homepage hoặc trang việc làm.
-2. Frontend gọi suggestion API khi input focus và keyword đủ dài.
+2. Frontend gọi `GET /api/jobs/search/suggestions` khi input focus và keyword đủ dài; nếu backend chưa sẵn sàng, UI fallback sang suggestions từ dữ liệu mock.
 3. Candidate bấm Search hoặc chọn suggestion.
 4. Frontend chuyển sang trang search results với keyword/filter trong query string.
 5. Backend trả danh sách job, tổng số kết quả, pagination và filter metadata.
@@ -757,6 +759,22 @@ Quy tắc:
 
 - Suggestions không phải là phần cố định của trang kết quả; chỉ hiển thị trong trạng thái nhập liệu.
 - Trang tổng quan chỉ hiển thị một phần job mới/nổi bật và có link `Xem tất cả`.
+
+### 7.8.1. Guest access và login redirect
+
+Luồng:
+
+1. Guest mở `/` hoặc `/jobs`.
+2. Frontend hiển thị dashboard/job list public và ẩn score, potential, reason match cá nhân.
+3. Guest bấm Apply trên job public.
+4. Frontend mở modal yêu cầu đăng nhập với nút Login và Cancel.
+5. Guest mở tab cần tài khoản như Upload CV, Hồ sơ & CV, Applications hoặc AutoFit.
+6. Frontend hiển thị login-required guard.
+7. Guard/modal truyền `next` vào `/login?next=...`.
+8. Sau login, frontend/backend session chuyển người dùng về `next` nếu role phù hợp; nếu không phù hợp thì chuyển về dashboard của role đăng nhập.
+
+Backend thật phải enforce cùng rule bằng role-based authorization; frontend guard chỉ là UX.
+Frontend hiện lưu access token và account summary trong `localStorage`. `POST /api/auth/login` là đường chính; mock account `ca`/`re` chỉ là fallback development khi backend chưa chạy.
 
 ### 7.9. Employer detail
 
@@ -800,6 +818,8 @@ Luồng:
 
 ### 8.2. Magic-Link Login
 
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 - `POST /api/auth/passwordless/request`
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
@@ -818,19 +838,26 @@ Luồng:
 ### 8.5. Candidate Profile & CV
 
 - `GET /api/cv/me`
+- `GET /api/candidates/me`
+- `PATCH /api/candidates/me`
+- `GET /api/candidates/me/cvs`
 - `POST /api/cv/{cvId}/set-default`
-- `GET /api/candidates/me/profile`
-- `PUT /api/candidates/me/profile`
 - `GET /api/candidates/me/portfolio`
-- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/links`
+- `PATCH /api/candidates/me/portfolio/links/{linkId}`
+- `DELETE /api/candidates/me/portfolio/links/{linkId}`
 - `POST /api/candidates/me/portfolio/projects`
-- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `PATCH /api/candidates/me/portfolio/projects/{projectId}`
 - `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 
 ### 8.6. Job Portal
 
 - `GET /api/jobs/search`
+- `GET /api/jobs`
 - `GET /api/jobs/search/suggestions`
+- `GET /api/jobs/suggestions`
+- `GET /api/jobs/{jobId}`
+- `GET /api/matches/me/cards`
 
 ### 8.7. Employer
 
@@ -842,7 +869,9 @@ Luồng:
 
 - `GET /api/recruiter/dashboard`
 - `GET /api/recruiter/jobs`
-- `GET /api/recruiter/jobs/{jobId}/workspace`
+- `GET /api/recruiter/jobs/{jobId}/ranking`
+- `GET /api/recruiter/jobs/{jobId}/stats`
+- `GET /api/recruiter/jobs/{jobId}/top-candidates`
 
 ### 8.9. Feedback
 
@@ -895,6 +924,7 @@ Email client hoặc gateway có thể tự mở link.
 
 ### 9.4. Role guard
 
+- guest chỉ truy cập public endpoints, không được nhận score/reason/potential cá nhân,
 - recruiter chỉ xem / duyệt dữ liệu thuộc phạm vi được cấp
 - candidate chỉ thao tác trên hồ sơ của mình
 - admin mới xem audit rộng

@@ -12,6 +12,7 @@ Frontend/dist/
 
 # Backend build output
 Backend/target/
+Backend/careerfit-backend/target/
 Backend/build/
 
 # IDE/system files

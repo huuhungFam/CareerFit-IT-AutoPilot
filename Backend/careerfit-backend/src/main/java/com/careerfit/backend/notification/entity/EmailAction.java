@@ -18,10 +18,11 @@ import java.util.UUID;
  *   GET /api/email-action/redeem?token=<UUID>&type=GOOD_MATCH
  */
 @Entity
-@Table(name = "email_action",
+@Table(name = "email_action_token",
         indexes = {
-            @Index(name = "idx_email_action_token", columnList = "token"),
-            @Index(name = "idx_email_action_expires", columnList = "expires_at")
+            @Index(name = "idx_email_action_token_token",   columnList = "token"),
+            @Index(name = "idx_email_action_token_expires", columnList = "expires_at"),
+            @Index(name = "idx_email_action_token_recip",   columnList = "recipient_id")
         })
 public class EmailAction {
 

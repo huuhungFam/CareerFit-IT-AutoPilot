@@ -14,6 +14,11 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
     List<Job> findByRecruiterIdAndStatus(UUID recruiterId, Job.JobStatus status);
 
+    /** All jobs for a recruiter, regardless of status. */
+    List<Job> findByRecruiterId(UUID recruiterId);
+
+    long countByRecruiterId(UUID recruiterId);
+
     @Query("""
         SELECT j FROM Job j
         WHERE j.status = 'ACTIVE'
@@ -36,18 +41,16 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         WHERE j.status = 'ACTIVE'
           AND LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
         ORDER BY j.title
-        LIMIT :limit
         """)
-    List<String> findTitleSuggestions(@Param("keyword") String keyword, @Param("limit") int limit);
+    List<String> findTitleSuggestions(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("""
         SELECT DISTINCT j.company FROM Job j
         WHERE j.status = 'ACTIVE'
           AND LOWER(j.company) LIKE LOWER(CONCAT('%', :keyword, '%'))
         ORDER BY j.company
-        LIMIT :limit
         """)
-    List<String> findCompanySuggestions(@Param("keyword") String keyword, @Param("limit") int limit);
+    List<String> findCompanySuggestions(@Param("keyword") String keyword, Pageable pageable);
 
     List<Job> findByStatus(Job.JobStatus status);
 

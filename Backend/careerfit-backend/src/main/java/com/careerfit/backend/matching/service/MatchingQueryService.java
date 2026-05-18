@@ -127,6 +127,36 @@ public class MatchingQueryService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public MatchingDtos.CandidateJobCardPageResponse getCandidateJobCards(UUID userId, int page, int size,
+                                                                          String label, boolean potentialOnly) {
+        Candidate candidate = candidateRepo.findByUserId(userId)
+                .orElseThrow(() -> AppException.notFound("Candidate", userId));
+        CV defaultCv = cvRepo.findByCandidateIdAndIsDefaultTrue(candidate.getId())
+                .orElseThrow(() -> AppException.badRequest(
+                        "No default CV found. Please upload a CV and set it as default."));
+
+        int pageSize = Math.min(50, Math.max(1, size == 0 ? 20 : size));
+        Pageable pageable = PageRequest.of(Math.max(0, page), pageSize);
+        List<Matching> matches = matchingRepo.findTopMatchesByCvId(defaultCv.getId(), pageable);
+
+        List<Matching> filtered = label != null && !label.isBlank()
+                ? matches.stream()
+                    .filter(m -> m.getLabel().name().equalsIgnoreCase(label))
+                    .toList()
+                : matches;
+
+        if (potentialOnly) {
+            filtered = filtered.stream().filter(Matching::isPotential).toList();
+        }
+
+        List<MatchingDtos.CandidateJobCardResponse> jobs = filtered.stream()
+                .map(this::toCandidateJobCard)
+                .toList();
+
+        return new MatchingDtos.CandidateJobCardPageResponse(jobs, jobs.size(), page, pageSize, 1);
+    }
+
     // ── Mappers ───────────────────────────────────────────────────────────
 
     private MatchingDtos.RankedCandidateResponse toRanked(Matching m, CV cv) {
@@ -173,6 +203,33 @@ public class MatchingQueryService {
                 job.getSeniorityLevel(),
                 salaryDisplay,
                 parseList(job.getRequiredSkillsJson()),
+                m.getNormalizedScore(),
+                m.getLabel().name(),
+                m.isPotential(),
+                parseList(m.getMatchReasonsJson()),
+                m.getPotentialReasonJson() != null
+                        ? m.getPotentialReasonJson().replace("\"", "") : null,
+                m.getCreatedAt()
+        );
+    }
+
+    private MatchingDtos.CandidateJobCardResponse toCandidateJobCard(Matching m) {
+        Job job = m.getJob();
+        EmployerProfile employer = employerRepo
+                .findByRecruiterId(job.getRecruiter().getId()).orElse(null);
+        return new MatchingDtos.CandidateJobCardResponse(
+                m.getId().toString(),
+                job.getId().toString(),
+                job.getTitle(),
+                job.getCompany(),
+                employer != null ? employer.getLogoUrl() : null,
+                job.getLocation(),
+                job.getRemoteType(),
+                job.getSeniorityLevel(),
+                job.getEmploymentType(),
+                buildSalaryText(job),
+                parseList(job.getRequiredSkillsJson()),
+                parseList(job.getNiceToHaveSkillsJson()),
                 m.getNormalizedScore(),
                 m.getLabel().name(),
                 m.isPotential(),

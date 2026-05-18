@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+app:
+  mail:
+    enabled: true
+
+logging:
+  level:
+    com.careerfit: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+  file:
+    name: /app/logs/careerfit.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"

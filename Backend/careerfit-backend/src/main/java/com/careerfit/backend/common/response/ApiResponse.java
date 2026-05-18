@@ -51,4 +51,13 @@ public record ApiResponse<T>(
                 new ErrorPayload("VALIDATION_ERROR", message, null, fieldErrors),
                 new Meta(UUID.randomUUID().toString()));
     }
+
+    /** Alias for fail() — preferred in controllers for clarity. */
+    public static <T> ApiResponse<T> error(String code, String message) {
+        return fail(code, message);
+    }
+
+    public static <T> ApiResponse<T> error(String code, String message, Object details) {
+        return fail(code, message, details);
+    }
 }

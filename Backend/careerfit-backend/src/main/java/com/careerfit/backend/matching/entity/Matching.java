@@ -4,7 +4,9 @@ import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.job.entity.Job;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -48,10 +50,12 @@ public class Matching {
     private boolean isPotential = false;
 
     /** JSONB: list of human-readable reason chips for UI/email. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "match_reasons", columnDefinition = "jsonb")
     private String matchReasonsJson;
 
     /** JSONB: potential reason string (why it's flagged as potential). */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "potential_reason", columnDefinition = "jsonb")
     private String potentialReasonJson;
 

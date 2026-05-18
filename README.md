@@ -7,6 +7,7 @@ Project uu tien dung PostgreSQL local qua Docker cho development va demo truc ti
 Chay PostgreSQL local:
 
 ```powershell
+Copy-Item .env.example .env
 docker compose up -d
 ```
 
@@ -14,7 +15,7 @@ Thong tin ket noi mac dinh:
 
 ```text
 Host: localhost
-Port: 5432
+Port: 5433
 Database: careerfit
 Username: careerfit
 Password: careerfit
@@ -33,6 +34,22 @@ docker compose down -v
 ```
 
 Luu y: `down -v` se xoa volume PostgreSQL local. Schema backend nen duoc tao bang Flyway migration, khong tao bang thu cong.
+
+Backend doc datasource tu cac bien `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` neu duoc set. Neu khong set, backend mac dinh ket noi vao PostgreSQL Docker tai `jdbc:postgresql://localhost:5433/careerfit`.
+
+Chay backend bang Docker neu can:
+
+```powershell
+docker compose --profile backend up -d --build
+```
+
+Khi chay bang profile `backend`, backend container se ket noi PostgreSQL qua Docker network bang `jdbc:postgresql://postgres:5432/careerfit`. Port PostgreSQL tren may host van la `5433`, con port `5432` chi dung noi bo giua cac container.
+
+Xem log backend:
+
+```powershell
+docker compose logs -f backend
+```
 
 Huong database chinh:
 
@@ -75,7 +92,7 @@ http://127.0.0.1:5173/login
 http://127.0.0.1:5173/candidate
 http://127.0.0.1:5173/candidate/jobs
 http://127.0.0.1:5173/candidate/jobs?keyword=React
-http://127.0.0.1:5173/candidate/jobs/senior-frontend-engineer
+http://127.0.0.1:5173/candidate/jobs/{jobId}
 http://127.0.0.1:5173/candidate/employers/northstar-healthtech
 http://127.0.0.1:5173/candidate/upload
 http://127.0.0.1:5173/candidate/profile
@@ -90,8 +107,10 @@ http://127.0.0.1:5173/automation/confirm
 Hien tai UI candidate co cac luong chinh:
 
 - Mac dinh vao trang guest tai `/`: hien tong quan va viec lam public, khong hien cac khoi ca nhan nhu Goi y, Tu dong ung tuyen, Ung tuyen.
-- Guest chi thay nut Dang nhap va chuyen ngon ngu tren header; cac route tinh nang se hien man hinh yeu cau dang nhap.
-- Tai khoan demo: `ca` / `1` vao Candidate, `re` / `1` vao Recruiter.
+- Guest co nav gan giong Candidate de xem duoc Dashboard va Jobs public; cac tab Upload CV, Ho so & CV, Goi y, Ung tuyen va AutoFit se hien man hinh yeu cau dang nhap.
+- Header guest chi co Guest chip, nut Dang nhap va chuyen ngon ngu. Sau khi dang nhap, header hien workspace day du va logout/delete account nam trong Settings.
+- Login guard va Apply modal truyen `next` intent de sau login quay lai trang vua dinh mo neu role phu hop.
+- Login uu tien goi backend `POST /api/auth/login`; token va account duoc luu trong `localStorage`. Neu backend chua chay, frontend fallback ve mock `ca` / `1` cho Candidate va `re` / `1` cho Recruiter de UI van demo duoc.
 - Trang tong quan hien search hero, mot so job moi va nut xem tat ca.
 - Khi go keyword se hien goi y tim kiem trong luc o input dang focus.
 - Bam Search se chuyen sang trang ket qua `/candidate/jobs?keyword=...`.
@@ -101,10 +120,11 @@ Hien tai UI candidate co cac luong chinh:
 - Upload CV co 2 tab: Document Parser va Manual Creation.
 - Ho so & CV quan ly nhieu CV, ho so co dinh va Portfolio / Du an.
 - Candidate Settings quan ly tai khoan, job alerts, privacy va security.
-- Recruiter tong quan (`/recruiter`) tach rieng voi trang Viec lam HR Dashboard (`/recruiter/jobs`).
+- Candidate job feed uu tien `GET /api/matches/me/cards` de lay score/potential/reasons; public job feed/detail uu tien `GET /api/jobs/search` va `GET /api/jobs/{jobId}`.
+- Recruiter tong quan (`/recruiter`) tach rieng voi trang Viec lam HR Dashboard (`/recruiter/jobs`) va uu tien `GET /api/recruiter/dashboard`, `GET /api/recruiter/jobs`.
 - Recruiter Settings quan ly company profile, team permissions, JD defaults va recruiting notifications.
 
-Luu y backend contract can dong bo voi cac API search, employer, candidate CV/profile/portfolio, recruiter workspace va job-market analytics trong `srs.md`, `architecture.md` va `Backend/backend-implementation-guide.md`.
+Frontend API client nam tai `Frontend/src/lib/api.ts`. Mac dinh client goi `http://localhost:8080/api`; co the doi bang bien moi truong Vite `VITE_API_BASE_URL`.
 
 ### Build kiem tra
 
@@ -117,8 +137,8 @@ Build output se nam trong `Frontend/dist`.
 
 ### Ghi chu hien tai
 
-- Frontend dang dung mock data de chay doc lap khi backend chua noi that.
-- Backend base URL sau nay nen dat qua bien moi truong Vite, vi du `VITE_API_BASE_URL`.
+- Frontend da co API client that cho auth, public/candidate jobs, suggestions va recruiter dashboard/jobs.
+- Mock data hien chi la fallback khi backend chua chay, request loi hoac database chua co seed du lieu.
 - Neu port `5173` dang bi dung, chay port khac bang:
 
 ```powershell

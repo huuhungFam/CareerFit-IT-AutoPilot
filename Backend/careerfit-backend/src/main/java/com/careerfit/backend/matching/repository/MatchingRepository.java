@@ -32,5 +32,12 @@ public interface MatchingRepository extends JpaRepository<Matching, UUID> {
 
     List<Matching> findByJobId(UUID jobId);
 
+    /** Top N candidates for a job by score (recruiter dashboard). */
+    @Query("SELECT m FROM Matching m WHERE m.job.id = :jobId ORDER BY m.normalizedScore DESC")
+    List<Matching> findTopByJobIdOrderByNormalizedScoreDesc(
+            @Param("jobId") UUID jobId, Pageable pageable);
+
+    long countByJobId(UUID jobId);
+
     void deleteByCvId(UUID cvId);
 }

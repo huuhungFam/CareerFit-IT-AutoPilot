@@ -13,14 +13,14 @@ import java.nio.charset.StandardCharsets;
 /**
  * Thin wrapper around JavaMailSender with HTML support and async dispatch.
  *
- * Active only when spring.mail.host is configured.
- * No-op implementation is used automatically when mail is not configured.
+ * Active only when app.mail.enabled=true.
+ * No-op implementation is used automatically when mail is disabled.
  *
  * Templates: inline HTML strings built in the calling service.
  * For production: swap to Thymeleaf template engine.
  */
 @Service
-@ConditionalOnProperty(name = "spring.mail.host")
+@ConditionalOnProperty(name = "app.mail.enabled", havingValue = "true")
 public class MailService implements IMailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);

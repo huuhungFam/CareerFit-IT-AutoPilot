@@ -47,6 +47,7 @@ Tên sản phẩm:
 
 | Thuật ngữ | Ý nghĩa |
 |---|---|
+| Guest | Người chưa đăng nhập. Guest xem được dashboard public và job list public nhưng không thấy score/potential cá nhân, không apply trực tiếp và bị yêu cầu đăng nhập khi mở tính năng cần tài khoản. |
 | Candidate | Ứng viên tìm kiếm việc làm. |
 | Recruiter | Nhà tuyển dụng đăng Job Description và xem danh sách ứng viên phù hợp. |
 | Admin | Người quản trị hệ thống, có quyền xem toàn cục và cấu hình hệ thống. |
@@ -103,6 +104,14 @@ Hệ thống cũng không chỉ là một công cụ chấm điểm CV-JD.
 `Job Portal + CV-JD Matching + Job Recommendation + AutoFit Automation + Human-in-the-Loop Email Actions`
 
 ### 2.3. Mô Hình Trải Nghiệm
+
+Đối với guest:
+
+- web hiển thị như một job portal public,
+- guest xem được dashboard tổng quan, biểu đồ thị trường việc làm, job mới, featured employers và danh sách job,
+- guest không thấy match score, potential badge, recommendation cá nhân hoặc các khối Gợi ý/Tự động ứng tuyển/Ứng tuyển,
+- khi guest bấm Apply hoặc mở tính năng candidate/recruiter cần tài khoản, frontend phải hiển thị yêu cầu đăng nhập,
+- sau khi đăng nhập từ màn hình guard hoặc popup, hệ thống nên quay lại trang/tính năng người dùng vừa định mở nếu role phù hợp.
 
 Đối với candidate:
 
@@ -174,6 +183,17 @@ Mục tiêu:
 - apply job,
 - bật/tắt auto-apply,
 - phản hồi job phù hợp hoặc không phù hợp.
+
+### 3.1.1. Guest
+
+Guest là người chưa đăng nhập.
+
+Mục tiêu:
+
+- xem dashboard public và thị trường việc làm,
+- tìm kiếm và xem danh sách job public,
+- xem job detail và employer detail,
+- được hướng dẫn đăng nhập khi muốn apply, upload CV, quản lý hồ sơ, dùng AutoFit hoặc xem dashboard recruiter.
 
 ### 3.2. Recruiter
 
@@ -310,6 +330,21 @@ Trách nhiệm:
 ## 5. Yêu Cầu Chức Năng
 
 ### 5.1. Authentication Và Authorization
+
+#### FR-AUTH-00: Guest access
+
+Hệ thống phải cho phép guest truy cập các route public:
+
+- `/`
+- `/jobs`
+- `/jobs/{jobId}`
+- employer public pages nếu có.
+
+Guest chỉ được xem dữ liệu public. Guest không được thấy `normalizedScore`, `label`, `isPotential`, reason match cá nhân hoặc các metric cá nhân như recommendation count, auto-apply status và application count.
+
+Khi guest mở route cần tài khoản, hệ thống phải hiển thị login-required guard thay vì cho thao tác trực tiếp.
+Khi guest bấm Apply trên job public, hệ thống phải mở modal yêu cầu đăng nhập với hai hành động: đăng nhập và hủy.
+Login guard và modal nên truyền `next` để sau khi đăng nhập thành công quay lại intent ban đầu nếu role phù hợp.
 
 #### FR-AUTH-01: Đăng ký tài khoản
 
@@ -470,6 +505,7 @@ Portfolio nằm trong trang `Hồ sơ & CV` như một tab riêng, không nằm 
 #### FR-JOB-01: Hiển thị job feed
 
 Candidate phải xem được danh sách job như một web tìm việc thông thường.
+Guest cũng xem được job feed public nhưng không thấy score, potential badge hoặc lý do match cá nhân.
 
 Thông tin hiển thị:
 
@@ -481,6 +517,13 @@ Thông tin hiển thị:
 - language,
 - salary nếu có,
 - normalized recommendation score nếu user đã có profile.
+
+Với guest, frontend phải ẩn:
+
+- match score phần trăm,
+- `Potential`,
+- reason match/recommendation cá nhân,
+- các CTA tạo side effect trực tiếp. Apply phải mở modal yêu cầu đăng nhập.
 
 #### FR-JOB-02: Tìm kiếm job
 
@@ -1529,12 +1572,15 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - `POST /api/auth/passwordless/request`
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
-- `GET /api/me`
+- `GET /api/auth/me`
+- Frontend hiện ưu tiên gọi `POST /api/auth/login`, lưu token/account summary trong `localStorage` và vẫn hỗ trợ redirect `next` sau login. Mock login `ca` / `1` cho Candidate và `re` / `1` cho Recruiter chỉ là fallback development khi backend chưa chạy.
 
 ### 10.2. Candidate
 
 - `GET /api/candidates/me`
-- `PUT /api/candidates/me`
+- `PATCH /api/candidates/me`
+- `PATCH /api/candidates/me/account`
+- `GET /api/candidates/me/cvs`
 - `GET /api/candidates/me/preferences`
 - `PUT /api/candidates/me/preferences`
 
@@ -1548,14 +1594,14 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - `GET /api/cv/{id}/matchings`
 - `POST /api/cv/{id}/set-default`
 
-### 10.3.1. Candidate Profile & Portfolio
+### 10.3.1. Candidate Portfolio
 
-- `GET /api/candidates/me/profile`
-- `PUT /api/candidates/me/profile`
 - `GET /api/candidates/me/portfolio`
-- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/links`
+- `PATCH /api/candidates/me/portfolio/links/{linkId}`
+- `DELETE /api/candidates/me/portfolio/links/{linkId}`
 - `POST /api/candidates/me/portfolio/projects`
-- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `PATCH /api/candidates/me/portfolio/projects/{projectId}`
 - `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 
 ### 10.4. Job
@@ -1563,9 +1609,11 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - `GET /api/jobs`
 - `GET /api/jobs/search`
 - `GET /api/jobs/search/suggestions`
+- `GET /api/jobs/suggestions`
 - `GET /api/jobs/{id}`
 - `POST /api/jobs`
-- `PUT /api/jobs/{id}`
+- `PATCH /api/jobs/{id}`
+- `PATCH /api/jobs/{id}/status`
 - `DELETE /api/jobs/{id}`
 
 ### 10.4.1. Employer
@@ -1576,10 +1624,13 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 
 ### 10.5. Matching Và Recommendation
 
-- `GET /api/jobs/{jobId}/ranking`
-- `GET /api/candidates/me/recommendations`
-- `GET /api/jobs/{jobId}/applicants`
-- `GET /api/jobs/{jobId}/potential`
+- `GET /api/matches/me`
+- `GET /api/matches/me/cards`
+- `GET /api/recommendations/jobs`
+- `GET /api/recommendations/jobs/{jobId}/similar`
+- `GET /api/recruiter/jobs/{jobId}/ranking`
+- `GET /api/recruiter/jobs/{jobId}/top-candidates`
+- `GET /api/recruiter/jobs/{jobId}/applicants`
 
 ### 10.6. Application
 
@@ -1761,6 +1812,11 @@ Cần test:
 
 Cần test:
 
+- guest dashboard, guest nav và login-required guard,
+- guest không thấy score/potential trên job list và job detail,
+- guest bấm Apply sẽ mở login modal có nút đăng nhập và hủy,
+- login redirect bằng `next` quay lại intent ban đầu nếu role phù hợp,
+- frontend API client gọi được auth, public jobs, candidate job cards, suggestions và recruiter dashboard/jobs; mock chỉ dùng làm fallback khi backend không sẵn sàng,
 - upload flow,
 - job search/filter,
 - search suggestions,

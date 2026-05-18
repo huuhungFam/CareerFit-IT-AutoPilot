@@ -13,6 +13,7 @@ Spring Boot 3.x + Java 21 backend cho hệ thống CareerFit IT AutoPilot.
 **Bước 1: Khởi động PostgreSQL**
 ```powershell
 # Từ thư mục gốc c:\CODING\Thesis
+Copy-Item .env.example .env
 docker compose up -d
 ```
 
@@ -25,6 +26,15 @@ mvn spring-boot:run
 
 Backend khởi động tại: `http://localhost:8080`
 Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+**Tùy chọn: chạy backend bằng Docker**
+```powershell
+# Từ thư mục gốc c:\CODING\Thesis
+docker compose --profile backend up -d --build
+docker compose logs -f backend
+```
+
+Khi backend chạy trong container, datasource dùng host nội bộ Docker `postgres:5432`. Khi backend chạy trực tiếp trên máy bằng Maven, datasource dùng `localhost:5433`.
 
 ## Build
 
@@ -77,6 +87,15 @@ com.careerfit.backend
 | Biến | Mặc định | Mô tả |
 |------|----------|-------|
 | `JWT_SECRET` | dev-secret (32+ chars) | JWT signing key |
+| `SPRING_DATASOURCE_URL` | jdbc:postgresql://localhost:5433/careerfit | JDBC URL khi chạy backend trên host |
+| `SPRING_DATASOURCE_USERNAME` | careerfit | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | careerfit | Database password |
+| `DB_NAME` | careerfit | Database name cho Docker Compose |
+| `DB_USER` | careerfit | Database user cho Docker Compose |
+| `DB_PASSWORD` | careerfit | Database password cho Docker Compose |
+| `DB_PORT` | 5433 | Port PostgreSQL expose ra host |
+| `BACKEND_PORT` | 8080 | Port backend expose ra host khi chạy Docker |
+| `SPRING_PROFILES_ACTIVE` | dev | Spring profile mặc định |
 | `MAIL_HOST` | smtp.gmail.com | Mail server |
 | `MAIL_USERNAME` | no-reply@careerfit.dev | Sender email |
 | `MAIL_PASSWORD` | (empty) | Mail password |

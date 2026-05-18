@@ -1,6 +1,7 @@
 package com.careerfit.backend.job.service;
 
 import com.careerfit.backend.auth.repository.UserAccountRepository;
+import com.careerfit.backend.auth.entity.UserAccount;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
@@ -62,6 +63,9 @@ public class JobService {
     public JobDtos.JobDetailResponse createJob(UUID userId, JobDtos.CreateJobRequest req) {
         var recruiter = userRepo.findById(userId)
                 .orElseThrow(() -> AppException.notFound("User", userId));
+        if (recruiter.getRole() != UserAccount.Role.RECRUITER) {
+            throw AppException.forbidden("Only recruiters can create job postings");
+        }
 
         Job.SalaryMode salaryMode;
         try {
@@ -197,13 +201,23 @@ public class JobService {
 
     @Transactional(readOnly = true)
     public JobDtos.SuggestionsResponse getSuggestions(String keyword) {
-        List<String> titles = keyword == null || keyword.isBlank()
+        String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
+        List<String> titles = normalizedKeyword.isBlank()
                 ? List.of()
-                : jobRepo.findTitleSuggestions(keyword, 8);
-        List<String> companies = keyword == null || keyword.isBlank()
+                : jobRepo.findTitleSuggestions(keyword, PageRequest.of(0, 8));
+        List<String> companies = normalizedKeyword.isBlank()
                 ? List.of()
-                : jobRepo.findCompanySuggestions(keyword, 5);
-        return new JobDtos.SuggestionsResponse(titles, companies);
+                : jobRepo.findCompanySuggestions(keyword, PageRequest.of(0, 5));
+        List<String> skills = normalizedKeyword.isBlank()
+                ? List.of()
+                : jobRepo.findByStatus(Job.JobStatus.ACTIVE).stream()
+                    .flatMap(j -> parseSkills(j.getRequiredSkillsJson()).stream())
+                    .filter(s -> s.toLowerCase().contains(normalizedKeyword))
+                    .distinct()
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .limit(8)
+                    .toList();
+        return new JobDtos.SuggestionsResponse(titles, companies, skills);
     }
 
     // ── Recruiter's Own Jobs ──────────────────────────────────────────────

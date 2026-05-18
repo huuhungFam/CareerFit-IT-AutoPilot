@@ -35,6 +35,7 @@ Trong đó:
 
 Xây dựng một nền tảng tuyển dụng IT có khả năng:
 
+* Cho guest xem dashboard public và job list public như một job portal, nhưng không thấy score/potential cá nhân và được yêu cầu đăng nhập khi muốn apply hoặc dùng tính năng tài khoản.
 * Cho candidate tìm kiếm, lọc, xem chi tiết và apply Job như một web tìm việc thông thường.
 * Cho candidate nhập keyword, nhận gợi ý tìm kiếm, chuyển sang trang kết quả và lọc job theo điều kiện.
 * Cho candidate xem nhà tuyển dụng nổi bật, mở trang chi tiết công ty và xem các job đang tuyển của công ty đó.
@@ -163,6 +164,26 @@ Candidate vẫn có trải nghiệm như một web tìm việc bình thường:
 * Applications history.
 * AutoFit settings: bật/tắt auto-apply, đặt threshold, giới hạn số auto-apply/ngày.
 * Notification/history cho các action tự động.
+
+### Guest Web Experience
+
+Guest là trạng thái mặc định trước khi đăng nhập.
+
+Guest có thể:
+
+* mở dashboard public tại `/`,
+* xem job market chart, job mới và featured employers,
+* tìm kiếm job và mở `/jobs`,
+* xem job detail public.
+
+Guest không thấy:
+
+* match score phần trăm,
+* `Potential` badge,
+* recommendation cá nhân,
+* các khối Gợi ý / Tự động ứng tuyển / Ứng tuyển.
+
+Khi guest bấm Apply hoặc mở tab cần tài khoản như Upload CV, Hồ sơ & CV, Applications hoặc AutoFit, frontend hiển thị login-required guard/modal. Login nên giữ `next` để sau khi đăng nhập đúng role thì quay lại intent ban đầu.
 
 ### Recruiter Web Experience
 
@@ -447,22 +468,24 @@ Sau khi MVP chạy ổn, có thể bổ sung:
 
 Luồng demo đề xuất:
 
-1. Candidate mở homepage như web tìm việc, tìm kiếm/lọc job.
-2. Candidate bấm Search để chuyển sang trang kết quả, dùng filter và mở job detail.
-3. Candidate mở nhà tuyển dụng nổi bật và xem job đang mở của công ty.
-4. Candidate mở Upload CV, chuyển giữa `Document Parser` và `Manual Creation`.
-5. Candidate mở Hồ sơ & CV, chọn CV mặc định và bổ sung portfolio dự án.
-6. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
-7. Candidate xem job recommendation với score %, label và lý do match.
-8. Recruiter mở tổng quan để xem chart/metrics/ranking summary.
-9. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
-10. Candidate bật auto-apply threshold, ví dụ 95%.
-11. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
-12. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
-13. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
-14. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
-15. Mở audit log để chứng minh mọi automation đều truy vết được.
-16. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
+1. Guest mở homepage public như web tìm việc, thấy dashboard/job list nhưng không thấy score hoặc potential.
+2. Guest bấm Apply để thấy modal yêu cầu đăng nhập.
+3. Đăng nhập qua backend bằng `ca` / `1` hoặc account candidate đã seed; frontend lưu token/account và quay lại luồng candidate theo `next`.
+4. Candidate bấm Search để chuyển sang trang kết quả, dùng filter và mở job detail.
+5. Candidate mở nhà tuyển dụng nổi bật và xem job đang mở của công ty.
+6. Candidate mở Upload CV, chuyển giữa `Document Parser` và `Manual Creation`.
+7. Candidate mở Hồ sơ & CV, chọn CV mặc định và bổ sung portfolio dự án.
+8. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
+9. Candidate xem job feed cá nhân từ `/api/matches/me/cards` với score %, label và lý do match.
+10. Đăng nhập bằng `re` / `1` hoặc account recruiter đã seed; recruiter mở tổng quan để xem chart/metrics/ranking summary từ backend.
+11. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
+12. Candidate bật auto-apply threshold, ví dụ 95%.
+13. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
+14. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
+15. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
+16. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
+17. Mở audit log để chứng minh mọi automation đều truy vết được.
+18. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
 
 ## CÂU CHỐT KHI BẢO VỆ
 

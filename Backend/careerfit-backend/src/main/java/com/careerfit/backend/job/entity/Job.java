@@ -3,7 +3,9 @@ package com.careerfit.backend.job.entity;
 import com.careerfit.backend.auth.entity.UserAccount;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,10 +41,12 @@ public class Job {
     private String originalText;
 
     /** JSONB: list of required skills. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "required_skills", columnDefinition = "jsonb")
     private String requiredSkillsJson;
 
     /** JSONB: list of nice-to-have skills. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "nice_to_have_skills", columnDefinition = "jsonb")
     private String niceToHaveSkillsJson;
 
@@ -85,10 +89,12 @@ public class Job {
     // ── AI / Vectorization fields ──────────────────────────────────────────
 
     /** JSONB: Rocchio-learned profile vector (updated by feedback). */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "learned_profile_vector", columnDefinition = "jsonb")
     private String learnedProfileVectorJson;
 
     /** JSONB: TF-IDF term weights for this JD. */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "tfidf_vector", columnDefinition = "jsonb")
     private String tfidfVectorJson;
 

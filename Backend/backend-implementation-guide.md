@@ -10,6 +10,7 @@ Tài liệu này bám theo [proposal.md](../proposal.md), [srs.md](../srs.md) v�
 
 Backend là nguồn sự thật chính và automation agent của hệ thống. Nó chịu trách nhiệm:
 
+- phục vụ public guest job portal data, không expose score/potential/reason cá nhân khi chưa đăng nhập
 - nhận dữ liệu CV, JD, profile mong muốn
 - validate dữ liệu đầu vào
 - trích xuất text từ PDF
@@ -69,6 +70,7 @@ Chịu trách nhiệm:
 - JWT
 - passwordless login
 - role-based access
+- hỗ trợ login redirect intent (`next`) ở frontend/session flow; backend vẫn phải validate role và quyền truy cập sau login
 - token lifecycle
 
 ### 3.2. `candidate`
@@ -104,6 +106,7 @@ Chịu trách nhiệm:
 - search results with filters
 - search/filter/sort job
 - job detail
+- public job DTO cho guest phải ẩn `normalizedScore`, `label`, `isPotential` và match reasons cá nhân
 - store learned profile vector
 - store job metadata
 - store structured salary fields with conditional validation
@@ -391,11 +394,12 @@ Chịu trách nhiệm:
 
 ### Steps
 
-1. Frontend sends keyword, pagination, sort and optional filter query.
+1. Frontend sends keyword, pagination, sort, optional filter query and authentication context if available.
 2. Backend normalizes keyword and detects whether it matches skill, title, company or JD text.
 3. Backend applies filters such as level, working model, salary band, job domain and location.
 4. Backend returns one-column result data for frontend, total count and filter metadata.
-5. When keyword input is focused, frontend may call suggestions endpoint separately.
+5. If request is unauthenticated, backend returns only public fields and omits score labels, potential flags and personal match reasons.
+6. When keyword input is focused, frontend may call suggestions endpoint separately.
 
 ### Suggested function split
 
@@ -562,13 +566,15 @@ It should not use:
 
 1. `/api/recruiter/dashboard` returns overview metrics, chart data and ranking summary.
 2. `/api/recruiter/jobs` returns requisition list for the HR Dashboard.
-3. `/api/recruiter/jobs/{jobId}/workspace` returns selected job details, applied CVs and AI potential matches.
+3. `/api/recruiter/jobs/{jobId}/ranking`, `/stats` and `/top-candidates` return selected job detail data, Applied CVs and AI potential matches.
 
 ### Suggested function split
 
 - `RecruiterDashboardService.getOverview(...)`
 - `RecruiterWorkspaceService.listRequisitions(...)`
-- `RecruiterWorkspaceService.getJobWorkspace(...)`
+- `RecruiterWorkspaceService.getRanking(...)`
+- `RecruiterWorkspaceService.getStats(...)`
+- `RecruiterWorkspaceService.getTopCandidates(...)`
 - `RecruiterCandidateReviewService.getAppliedCvs(...)`
 - `RecruiterCandidateReviewService.getPotentialMatches(...)`
 
@@ -696,14 +702,14 @@ Do not hide it inside the raw score.
 - `POST /api/auth/passwordless/request`
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
-- `GET /api/me`
+- `GET /api/auth/me`
 
 ### 8.2. Candidate
 
-- `GET /api/candidates/{id}`
-- `PUT /api/candidates/{id}`
-- `GET /api/candidates/{id}/preferences`
-- `POST /api/candidates/{id}/preferences`
+- `GET /api/candidates/me`
+- `PATCH /api/candidates/me`
+- `PATCH /api/candidates/me/account`
+- `GET /api/candidates/me/cvs`
 
 ### 8.3. CV
 
@@ -712,17 +718,16 @@ Do not hide it inside the raw score.
 - `GET /api/cv/me`
 - `GET /api/cv/{id}`
 - `GET /api/cv/{id}/status`
-- `GET /api/candidates/{candidateId}/cv`
 - `POST /api/cv/{id}/set-default`
 
 ### 8.3.1. Candidate Profile & Portfolio
 
-- `GET /api/candidates/me/profile`
-- `PUT /api/candidates/me/profile`
 - `GET /api/candidates/me/portfolio`
-- `PUT /api/candidates/me/portfolio/links`
+- `POST /api/candidates/me/portfolio/links`
+- `PATCH /api/candidates/me/portfolio/links/{linkId}`
+- `DELETE /api/candidates/me/portfolio/links/{linkId}`
 - `POST /api/candidates/me/portfolio/projects`
-- `PUT /api/candidates/me/portfolio/projects/{projectId}`
+- `PATCH /api/candidates/me/portfolio/projects/{projectId}`
 - `DELETE /api/candidates/me/portfolio/projects/{projectId}`
 
 ### 8.4. Job
@@ -731,8 +736,10 @@ Do not hide it inside the raw score.
 - `GET /api/jobs`
 - `GET /api/jobs/search`
 - `GET /api/jobs/search/suggestions`
+- `GET /api/jobs/suggestions`
 - `GET /api/jobs/{id}`
-- `PUT /api/jobs/{id}`
+- `PATCH /api/jobs/{id}`
+- `PATCH /api/jobs/{id}/status`
 - `DELETE /api/jobs/{id}`
 
 Recommended `GET /api/jobs/search` query params:
@@ -758,6 +765,14 @@ Suggestion response groups:
 - `JOB_TITLE`
 - `COMPANY`
 
+Guest/public access:
+
+- `GET /api/jobs`, `GET /api/jobs/search`, `GET /api/jobs/search/suggestions` and `GET /api/jobs/{id}` may support unauthenticated read-only access.
+- `/api/jobs/suggestions` is kept as an alias for `/api/jobs/search/suggestions`.
+- Public job responses must not include `normalizedScore`, `label`, `isPotential`, candidate-specific match reasons or auto-apply state.
+- Authenticated candidate job cards are exposed through `GET /api/matches/me/cards`, and the frontend can merge those fields into public job detail for a logged-in candidate.
+- Authenticated recruiter responses may include recruiter-side applicant/ranking data only through recruiter-scoped endpoints.
+
 ### 8.4.1. Employer
 
 - `GET /api/employers/featured`
@@ -768,14 +783,16 @@ Suggestion response groups:
 
 - `GET /api/recruiter/dashboard`
 - `GET /api/recruiter/jobs`
-- `GET /api/recruiter/jobs/{jobId}/workspace`
+- `GET /api/recruiter/jobs/{jobId}/ranking`
+- `GET /api/recruiter/jobs/{jobId}/stats`
+- `GET /api/recruiter/jobs/{jobId}/top-candidates`
 
 ### 8.5. Matching / Recommendation
 
-- `GET /api/jobs/{jobId}/ranking`
-- `GET /api/candidates/{candidateId}/recommendations`
-- `GET /api/jobs/{jobId}/applicants`
-- `GET /api/jobs/{jobId}/potential`
+- `GET /api/matches/me`
+- `GET /api/matches/me/cards`
+- `GET /api/recommendations/jobs`
+- `GET /api/recommendations/jobs/{jobId}/similar`
 
 ### 8.6. Application
 
@@ -1027,6 +1044,8 @@ If a job runs twice:
 - use JWT for web session access
 - use role claims
 - separate candidate and recruiter permissions
+- unauthenticated guest access is read-only and limited to public job/employer/dashboard data
+- never return personal score, potential flag, match reasons, CV data or application state to guest requests
 
 ### Magic-link
 

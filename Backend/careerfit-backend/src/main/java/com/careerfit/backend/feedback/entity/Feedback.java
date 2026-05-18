@@ -4,6 +4,8 @@ import com.careerfit.backend.auth.entity.UserAccount;
 import com.careerfit.backend.matching.entity.Matching;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -44,6 +46,7 @@ public class Feedback {
     private SourceChannel sourceChannel;
 
     /** JSONB: optional extra context (threshold change value, etc.) */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")
     private String metadataJson;
 

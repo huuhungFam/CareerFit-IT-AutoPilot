@@ -1,1 +1,3 @@
+com\careerfit\backend\ApplicationContextTest.class
 com\careerfit\backend\TfIdfPipelineTest.class
+com\careerfit\backend\BaseIntegrationTest.class
