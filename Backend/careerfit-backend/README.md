@@ -27,6 +27,16 @@ mvn spring-boot:run
 Backend khởi động tại: `http://localhost:8080`
 Swagger UI: `http://localhost:8080/swagger-ui.html`
 
+Kiểm tra nhanh sau khi backend chạy:
+
+```powershell
+curl.exe -i http://localhost:8080/api/auth/me
+curl.exe -i "http://localhost:8080/api/jobs/search?page=0&size=20"
+curl.exe -i "http://localhost:8080/api/jobs/search/suggestions?keyword=React"
+```
+
+`/api/auth/me` không token nên trả `401`. Hai endpoint public job search/suggestion nên trả `200`.
+
 **Tùy chọn: chạy backend bằng Docker**
 ```powershell
 # Từ thư mục gốc c:\CODING\Thesis
@@ -81,6 +91,8 @@ com.careerfit.backend
 - Primary: PostgreSQL (Docker Compose)
 - Migration: Flyway tự động chạy khi khởi động
 - File CV: local filesystem `./storage/cv`
+- Demo seed: account `ca` / `1` là Candidate, account `re` / `1` là Recruiter.
+- Migration `V7__demo_candidate_default_cv.sql` tạo default CV và matching cards mẫu cho `ca`, giúp `GET /api/matches/me/cards` trả dữ liệu thật ngay sau khi backend chạy.
 
 ## Các biến môi trường
 

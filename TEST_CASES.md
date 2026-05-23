@@ -47,7 +47,7 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | `ACTIVE_JOB_ID` | Job có `status = ACTIVE` |
 | `CLOSED_JOB_ID` | Job có `status = CLOSED` |
 | `DRAFT_JOB_ID` | Job có `status = DRAFT` |
-| `CANDIDATE_CV_ID` | CV thuộc Candidate hiện tại |
+| `CANDIDATE_CV_ID` | CV thuộc Candidate hiện tại; với DB đã chạy Flyway đến V7, account `ca` có default CV seeded |
 | `OTHER_CV_ID` | CV thuộc Candidate khác |
 | `APPLICATION_ID` | Application thuộc Candidate hiện tại |
 | `OTHER_APPLICATION_ID` | Application thuộc Candidate khác |
@@ -546,4 +546,3 @@ mvn test
 | Admin UI | CRUD user, audit viewer, token monitor, email queue monitor |
 | Advanced recommendation | A/B ranking, personalization vector drift, cold start |
 | Production deploy | HTTPS, reverse proxy headers, DB cloud connection, storage S3/Supabase |
-

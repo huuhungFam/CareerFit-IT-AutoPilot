@@ -22,13 +22,13 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query("""
         SELECT j FROM Job j
         WHERE j.status = 'ACTIVE'
-          AND (:keyword IS NULL OR
+          AND (:keyword = '' OR
                LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(j.company) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(j.originalText) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%')))
-          AND (:level IS NULL OR LOWER(j.seniorityLevel) = LOWER(:level))
-          AND (:language IS NULL OR j.language = :language)
+          AND (:location = '' OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%')))
+          AND (:level = '' OR LOWER(j.seniorityLevel) = LOWER(:level))
+          AND (:language = '' OR j.language = :language)
         """)
     Page<Job> searchJobs(@Param("keyword") String keyword,
                          @Param("location") String location,

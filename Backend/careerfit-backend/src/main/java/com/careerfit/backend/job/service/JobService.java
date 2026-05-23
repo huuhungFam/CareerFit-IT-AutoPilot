@@ -189,7 +189,11 @@ public class JobService {
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
         Page<Job> page = jobRepo.searchJobs(
-                req.keyword(), req.location(), req.level(), req.language(), pageable);
+                normalizeFilter(req.keyword()),
+                normalizeFilter(req.location()),
+                normalizeFilter(req.level()),
+                normalizeFilter(req.language()),
+                pageable);
 
         List<JobDtos.JobCardResponse> cards = page.getContent().stream()
                 .map(j -> toCard(j, employerRepo.findByRecruiterId(j.getRecruiter().getId()).orElse(null)))
@@ -355,5 +359,9 @@ public class JobService {
         if (json == null || json.isBlank()) return List.of();
         try { return objectMapper.readValue(json, LIST_TYPE); }
         catch (Exception e) { return List.of(); }
+    }
+
+    private String normalizeFilter(String value) {
+        return value == null ? "" : value.trim();
     }
 }

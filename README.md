@@ -57,8 +57,19 @@ Huong database chinh:
 - Development DB: PostgreSQL local qua Docker Compose.
 - Optional demo/deploy DB: Supabase PostgreSQL hoac PostgreSQL cloud khac.
 - Migration: Flyway.
+- Demo seed: Flyway seed tao account `ca` / `1` va `re` / `1`; account `ca` co default CV va matching cards mau de test `GET /api/matches/me/cards`.
 - File CV: local storage trong development, co the doi sang Supabase Storage/S3 sau.
 - Auth: Spring Security JWT/passwordless tu lam, khong phu thuoc Supabase Auth.
+
+Kiem tra nhanh backend/API sau khi chay PostgreSQL va backend:
+
+```powershell
+curl.exe -i http://localhost:8080/api/auth/me
+curl.exe -i "http://localhost:8080/api/jobs/search?page=0&size=20"
+curl.exe -i "http://localhost:8080/api/jobs/search/suggestions?keyword=React"
+```
+
+`/api/auth/me` khong token nen ky vong tra `401`; hai endpoint job public nen tra `200`.
 
 ## Frontend
 
@@ -120,7 +131,8 @@ Hien tai UI candidate co cac luong chinh:
 - Upload CV co 2 tab: Document Parser va Manual Creation.
 - Ho so & CV quan ly nhieu CV, ho so co dinh va Portfolio / Du an.
 - Candidate Settings quan ly tai khoan, job alerts, privacy va security.
-- Candidate job feed uu tien `GET /api/matches/me/cards` de lay score/potential/reasons; public job feed/detail uu tien `GET /api/jobs/search` va `GET /api/jobs/{jobId}`.
+- Candidate job feed uu tien `GET /api/matches/me/cards` de lay score/potential/reasons. Account demo `ca` / `1` da co default CV va matching seed nen route Candidate Jobs co the lay data that khi backend dang chay.
+- Public job feed/detail uu tien `GET /api/jobs/search` va `GET /api/jobs/{jobId}`.
 - Recruiter tong quan (`/recruiter`) tach rieng voi trang Viec lam HR Dashboard (`/recruiter/jobs`) va uu tien `GET /api/recruiter/dashboard`, `GET /api/recruiter/jobs`.
 - Recruiter Settings quan ly company profile, team permissions, JD defaults va recruiting notifications.
 
@@ -138,7 +150,7 @@ Build output se nam trong `Frontend/dist`.
 ### Ghi chu hien tai
 
 - Frontend da co API client that cho auth, public/candidate jobs, suggestions va recruiter dashboard/jobs.
-- Mock data hien chi la fallback khi backend chua chay, request loi hoac database chua co seed du lieu.
+- Mock data hien chi la fallback khi backend chua chay, request loi hoac database chua co seed du lieu. Voi DB da chay Flyway den V7, public search va candidate demo job cards nen dung du lieu backend.
 - Neu port `5173` dang bi dung, chay port khac bang:
 
 ```powershell
