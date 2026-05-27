@@ -1,20 +1,21 @@
-# Huong Dan Doc Hieu Frontend CareerFit Cho Backend Developer
+# Hướng Dẫn Đọc Hiểu Frontend CareerFit Cho Backend Developer
 
-Tai lieu nay khong nham bien ban thanh frontend developer. Muc tieu la giup ban, voi huong di backend Java Spring, doc hieu frontend du sau de:
+Tài liệu này viết cho hướng đi backend developer. Mục tiêu không phải biến bạn thành frontend developer chuyên sâu, mà giúp bạn đọc hiểu frontend đủ tốt để:
 
-- biet frontend dang goi API nao cua backend;
-- hieu duong di cua data tu backend response den UI;
-- debug loi contract giua frontend/backend;
-- vibe coding voi Agent mot cach co kiem soat;
-- doc React/TypeScript vua du, khong can tu code UI chuyen sau.
+- biết frontend đang gọi API nào của backend;
+- hiểu dữ liệu đi từ backend response tới UI như thế nào;
+- debug lỗi contract giữa frontend và backend;
+- biết phần nào đã nối backend thật, phần nào còn mock;
+- nhờ Agent sửa frontend có kiểm soát;
+- vibe coding frontend ở mức đủ dùng.
 
-Frontend nam tai:
+Frontend nằm tại:
 
 ```text
 Frontend
 ```
 
-File nen mo truoc:
+Các file quan trọng nhất:
 
 ```text
 package.json
@@ -28,41 +29,40 @@ src/i18n/LanguageProvider.tsx
 src/styles.css
 ```
 
-## 1. Frontend Nay La Gi?
+## 1. Frontend Này Là Gì?
 
-Frontend la React single-page app cho CareerFit IT AutoPilot.
+Frontend CareerFit là React single-page app cho hệ thống CareerFit IT AutoPilot.
 
-Nhiem vu cua no:
+Nó phục vụ các luồng:
 
-- hien thi public job portal;
-- login candidate/recruiter;
-- hien candidate dashboard/job feed/job detail/upload/profile/applications/automation;
-- hien recruiter dashboard/jobs/ranking/applicants/analytics/settings;
-- goi backend Spring API khi co backend;
-- fallback sang mock data khi backend loi/chua chay.
+- Public user xem danh sách job và job detail.
+- Candidate đăng nhập, xem job feed, upload CV, hồ sơ, ứng tuyển, automation.
+- Recruiter đăng nhập, xem dashboard, jobs, ranking/applicants, analytics, settings.
+- Gọi backend Spring API nếu backend đang chạy.
+- Fallback sang mock data nếu backend lỗi hoặc chưa chạy.
 
 Tech stack:
 
-- React 18: UI component.
-- TypeScript: type checking.
-- Vite: dev server/build tool.
-- React Router: client-side routing.
-- TanStack React Query: fetch/cache/refetch API.
-- Recharts: chart.
-- Lucide React: icon.
-- CSS thuong trong `styles.css`.
+| Công nghệ | Vai trò |
+| --- | --- |
+| React 18 | Xây UI bằng component |
+| TypeScript | Kiểm tra kiểu dữ liệu |
+| Vite | Dev server và build tool |
+| React Router | Điều hướng route trong SPA |
+| TanStack React Query | Fetch, cache, refetch API |
+| Recharts | Chart |
+| Lucide React | Icon |
+| CSS thường | Toàn bộ style trong `styles.css` |
 
-Backend developer can dac biet quan tam 3 file:
+Với backend developer, trục đọc quan trọng là:
 
 ```text
-src/lib/api.ts    -> noi map backend DTO sang frontend type
-src/App.tsx       -> noi route/page/hook goi api
-src/types.ts      -> shape data UI dang can
+Route -> Page component -> React Query hook -> careerfitApi method -> DTO mapper -> UI type -> component hiển thị
 ```
 
-## 2. Chay Frontend
+## 2. Chạy Frontend
 
-Tu thu muc frontend:
+Từ thư mục frontend:
 
 ```powershell
 cd Frontend
@@ -70,7 +70,7 @@ npm install
 npm run dev
 ```
 
-Mac dinh:
+Mặc định Vite chạy tại:
 
 ```text
 http://127.0.0.1:5173/
@@ -82,29 +82,28 @@ Build check:
 npm run build
 ```
 
-`package.json` co scripts:
+Nếu port 5173 bận:
 
-```json
-{
-  "dev": "vite --host 127.0.0.1",
-  "build": "tsc --NoEmit && vite build",
-  "preview": "vite preview --host 127.0.0.1"
-}
+```powershell
+npm run dev -- --port 5174
 ```
 
-Luu y: trong file that la `tsc --noEmit`, y nghia la TypeScript chi type-check, khong tao JS output.
+Lưu ý CORS: backend mặc định cho phép `http://localhost:5173` và `http://127.0.0.1:5173`. Nếu đổi port frontend, cần cập nhật `CORS_ORIGINS` ở backend.
 
-## 3. Tu Duy Doc Frontend Neu Ban La Backend Dev
+## 3. Cách Đọc Frontend Nếu Bạn Là Backend Dev
 
-Khi doc mot man hinh frontend, dung 5 cau hoi:
+Đừng bắt đầu từ CSS. Hãy bắt đầu từ route và API.
 
-1. Route nao render man hinh nay?
-2. Component/page nao xu ly route do?
-3. Page do lay data tu hook nao?
-4. Hook do goi method nao trong `careerfitApi`?
-5. Method API do expect backend response shape nao va map sang `types.ts` ra sao?
+Khi thấy một màn hình, hỏi:
 
-Vi du public job search:
+1. Route nào render màn hình này?
+2. Component/page nào xử lý route đó?
+3. Page đó lấy data từ hook nào?
+4. Hook đó gọi method nào trong `careerfitApi`?
+5. Method đó gọi endpoint backend nào?
+6. Backend response được map sang UI type ra sao?
+
+Ví dụ public job search:
 
 ```text
 /jobs?keyword=React
@@ -117,11 +116,11 @@ Vi du public job search:
   -> JobListWithPreview / JobCard
 ```
 
-Day la cach doc dung cho backend dev. Dung bat dau bang CSS.
+Đây là cách đọc frontend hiệu quả nhất cho người làm backend.
 
-## 4. Package Va Build System
+## 4. Package Và Build System
 
-Mo:
+Mở:
 
 ```text
 package.json
@@ -130,21 +129,23 @@ tsconfig.json
 index.html
 ```
 
-### 4.1 package.json
+`package.json` có scripts:
 
-Dependencies quan trong:
+```json
+{
+  "dev": "vite --host 127.0.0.1",
+  "build": "tsc --noEmit && vite build",
+  "preview": "vite preview --host 127.0.0.1"
+}
+```
 
-| Package | Can hieu gi |
-| --- | --- |
-| `react`, `react-dom` | Nen UI |
-| `react-router-dom` | Route frontend |
-| `@tanstack/react-query` | Goi API, cache, refetch |
-| `lucide-react` | Icons |
-| `recharts` | Chart |
-| `typescript` | Static type |
-| `vite` | Dev server/build |
+Ý nghĩa:
 
-### 4.2 vite.config.ts
+- `npm run dev`: chạy dev server.
+- `npm run build`: TypeScript type-check rồi build production.
+- `npm run preview`: preview build output.
+
+`vite.config.ts`:
 
 ```ts
 export default defineConfig({
@@ -155,40 +156,24 @@ export default defineConfig({
 });
 ```
 
-Vite chay frontend port `5173`.
-
-Backend API khong proxy qua Vite. Client goi truc tiep:
-
-```text
-http://localhost:8080/api
-```
-
-Neu can doi API base URL, dung env:
-
-```text
-VITE_API_BASE_URL=http://localhost:8080/api
-```
-
-### 4.3 index.html
-
-File HTML goc chi co:
+`index.html` chỉ có root:
 
 ```html
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 ```
 
-React se render app vao `#root`.
+React sẽ render toàn bộ app vào `#root`.
 
 ## 5. Entry Point: main.tsx
 
-Mo:
+Mở:
 
 ```text
 src/main.tsx
 ```
 
-Luong khoi tao:
+Code chính:
 
 ```tsx
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -204,14 +189,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 ```
 
-Can hieu:
+Ý nghĩa:
 
-- `ReactDOM.createRoot(...).render(...)`: mount React app vao HTML.
-- `React.StrictMode`: dev mode check them mot so loi/lifecycle.
-- `QueryClientProvider`: cung cap React Query cho toan app.
-- `LanguageProvider`: cung cap i18n `t(key)`.
-- `BrowserRouter`: cho phep route `/jobs`, `/candidate`, `/recruiter`.
-- `<App />`: component chinh.
+- `ReactDOM.createRoot(...).render(...)`: mount app vào HTML.
+- `React.StrictMode`: kiểm tra thêm trong dev mode.
+- `QueryClientProvider`: cung cấp React Query toàn app.
+- `LanguageProvider`: cung cấp hàm dịch `t(key)`.
+- `BrowserRouter`: bật routing kiểu `/jobs`, `/candidate`, `/recruiter`.
+- `<App />`: component chính.
 
 React Query config:
 
@@ -226,48 +211,51 @@ const queryClient = new QueryClient({
 });
 ```
 
-Y nghia:
+Ý nghĩa:
 
-- Data duoc coi la fresh trong 30 giay.
-- Khi quay lai tab browser, query co the refetch.
+- Data được coi là fresh trong 30 giây.
+- Khi focus lại tab browser, query có thể refetch.
 
-Backend note: neu ban thay API bi goi lai khi focus browser, day la React Query behavior, khong phai bug backend.
+Backend note: nếu thấy API bị gọi lại khi quay lại tab, đó là hành vi bình thường của React Query.
 
-## 6. App.tsx La File Gi?
+## 6. App.tsx Là File Gì?
 
-Mo:
+Mở:
 
 ```text
 src/App.tsx
 ```
 
-File nay hien dang lam nhieu viec:
+File này hiện đang khá lớn. Nó chứa:
 
-- khai bao routes;
-- quan ly login account state;
-- chua hau het page components;
-- chua custom hooks goi API;
-- chua mot so UI helper.
+- session/account state;
+- route config;
+- protected route;
+- hầu hết page components;
+- custom hooks gọi API;
+- một số UI helper.
 
-Day la file lon nhat. Backend dev khong can doc tung dong JSX. Hay doc theo cum:
+Không cần đọc từ trên xuống dưới một lần. Hãy đọc theo cụm:
 
-| Cum | Vi tri/kien thuc |
+| Cụm | Cần hiểu |
 | --- | --- |
-| `App()` | session, route, protectedRoute |
+| `App()` | session, routes, protectedRoute |
 | `LoginPage` | login flow |
-| `CandidateHomePage`, `CandidateJobsPage`, `JobDetailPage` | public/candidate job flow |
-| `RecruiterHomePage`, `RecruiterJobsPage` | recruiter flow |
-| `useJobs`, `useJobDetail`, `useSearchSuggestions` | API hooks candidate/public |
-| `useRecruiterSummary`, `useRecruiterJobs` | API hooks recruiter |
-| `JobListWithPreview`, `JobDetailContent`, `StickyApplyBar` | display data only |
+| `CandidateHomePage` | home/dashboard public/candidate |
+| `CandidateJobsPage` | job search/feed |
+| `JobDetailPage` | job detail |
+| `RecruiterHomePage` | recruiter dashboard |
+| `RecruiterJobsPage` | recruiter job workspace |
+| `useJobs`, `useJobDetail`, `useSearchSuggestions` | data fetching |
+| `useRecruiterSummary`, `useRecruiterJobs` | recruiter API hooks |
 
-Dung `rg` de tim nhanh:
+Tìm nhanh bằng:
 
 ```powershell
 rg -n "function useJobs|function CandidateJobsPage|careerfitApi" src/App.tsx
 ```
 
-## 7. Routing Va Role Guard
+## 7. Routing Và Role Guard
 
 Trong `App()`:
 
@@ -275,7 +263,7 @@ Trong `App()`:
 const [account, setAccount] = useState<MockAccount | null>(() => careerfitApi.restoreAccount());
 ```
 
-`account` la frontend session object. No lay tu localStorage khi reload page.
+`account` là session object phía frontend. Nó được restore từ localStorage khi reload page.
 
 Role guard:
 
@@ -293,17 +281,17 @@ function protectedRoute(role: Role, element: ReactNode) {
 }
 ```
 
-Can hieu:
+Ý nghĩa:
 
-- Neu chua login: hien page yeu cau dang nhap.
-- Neu sai role: redirect ve dashboard dung role.
-- Day la guard o frontend, khong thay the backend security.
+- Chưa login: hiện màn hình yêu cầu đăng nhập.
+- Sai role: redirect về dashboard đúng role.
+- Đúng role: render page.
 
-Backend security van nam o `SecurityConfig`.
+Quan trọng: đây chỉ là guard UX ở frontend. Backend vẫn phải tự bảo vệ endpoint bằng Spring Security.
 
-### 7.1 Route Map
+## 8. Route Map
 
-Routes public:
+Public routes:
 
 | Path | Component |
 | --- | --- |
@@ -343,25 +331,25 @@ Recruiter routes:
 | `/recruiter/automation` | `AutomationPage` |
 | `/recruiter/settings` | `RecruiterSettingsPage` |
 
-## 8. AppShell: Layout Va Navigation
+## 9. AppShell: Layout Và Navigation
 
-Mo:
+Mở:
 
 ```text
 src/components/AppShell.tsx
 ```
 
-`AppShell` la layout chung gom:
+`AppShell` là layout chung:
 
 - header;
 - brand;
-- top nav;
+- top navigation;
 - role chip;
-- notification/settings button;
+- notification/settings buttons;
 - language switch;
-- `<Outlet />` de render route con.
+- `<Outlet />` để render route con.
 
-React Router note:
+React Router pattern:
 
 ```tsx
 <Route element={<AppShell role={account?.role ?? 'guest'} />}>
@@ -369,27 +357,25 @@ React Router note:
 </Route>
 ```
 
-`Outlet` trong `AppShell` la noi route con hien ra.
+`Outlet` trong `AppShell` là nơi route con được hiển thị.
 
-Nav link theo role:
+Navigation thay đổi theo role:
 
 - guest: dashboard, jobs, upload, profile, recommendations, applications, automation;
-- candidate: dashboard, jobs, upload, profile, recommendations, applications, automation;
+- candidate: giống guest nhưng các route protected dùng account candidate;
 - recruiter: dashboard, jobs, analytics, automation.
 
-Guest click feature protected se vao `LoginRequiredPage`.
+## 10. API Client: File Quan Trọng Nhất Với Backend Dev
 
-## 9. API Client: File Quan Trong Nhat Cho Backend Dev
-
-Mo:
+Mở:
 
 ```text
 src/lib/api.ts
 ```
 
-Day la noi contract frontend-backend gap nhau.
+Đây là nơi contract frontend-backend gặp nhau.
 
-### 9.1 API Base URL
+### 10.1 API Base URL
 
 ```ts
 const API_BASE_URL = (importMeta.env?.VITE_API_BASE_URL ?? 'http://localhost:8080/api').replace(/\/$/, '');
@@ -401,16 +387,16 @@ Default:
 http://localhost:8080/api
 ```
 
-Neu backend chay port khac:
+Nếu cần đổi backend URL:
 
 ```powershell
 $env:VITE_API_BASE_URL="http://localhost:8081/api"
 npm run dev
 ```
 
-Vite env note: bien env frontend phai bat dau bang `VITE_` moi doc duoc trong browser.
+Vite chỉ expose env bắt đầu bằng `VITE_`.
 
-### 9.2 Local Storage Keys
+### 10.2 LocalStorage Keys
 
 ```ts
 const TOKEN_KEY = 'careerfit.accessToken';
@@ -419,23 +405,16 @@ const ACCOUNT_KEY = 'careerfit.account';
 
 Sau login:
 
-- token JWT luu vao `careerfit.accessToken`;
-- account UI luu vao `careerfit.account`.
+- JWT lưu ở `careerfit.accessToken`.
+- Account UI lưu ở `careerfit.account`.
 
-Logout:
+Logout sẽ xóa cả hai.
 
-```ts
-clearSession() {
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(ACCOUNT_KEY);
-}
-```
+Security note: localStorage tiện cho dev/demo nhưng có rủi ro XSS. Production có thể cần chiến lược token khác.
 
-Security note: localStorage de demo/dev thi don gian, nhung co rui ro XSS. Production co the can chien luoc token khac.
+### 10.3 request<T>
 
-### 9.3 request<T>
-
-Ham trung tam:
+Hàm trung tâm:
 
 ```ts
 async function request<T>(path: string, options: RequestInit = {}) {
@@ -465,11 +444,7 @@ async function request<T>(path: string, options: RequestInit = {}) {
 }
 ```
 
-Y nghia voi backend:
-
-- Frontend mac dinh gui `Content-Type: application/json`.
-- Neu co token, gui `Authorization: Bearer <token>`.
-- Frontend ky vong backend response la envelope:
+Điều này nghĩa là frontend kỳ vọng backend response luôn có envelope:
 
 ```ts
 type ApiEnvelope<T> = {
@@ -479,15 +454,13 @@ type ApiEnvelope<T> = {
 };
 ```
 
-Nghia la backend phai tra dung dang `ApiResponse<T>` nhu backend guide da noi.
+Nếu backend trả raw object không có `success` và `data`, frontend sẽ coi là lỗi.
 
-Neu backend tra raw object khong co `success/data`, frontend se coi la loi.
+## 11. API Methods Đang Có
 
-### 9.4 API Methods Dang Co
+Trong `careerfitApi` hiện có:
 
-`careerfitApi` hien co:
-
-| Method frontend | Backend endpoint |
+| Frontend method | Backend endpoint |
 | --- | --- |
 | `login(identifier, password)` | `POST /api/auth/login` |
 | `searchJobs(keyword)` | `GET /api/jobs/search` |
@@ -497,45 +470,45 @@ Neu backend tra raw object khong co `success/data`, frontend se coi la loi.
 | `getRecruiterDashboard()` | `GET /api/recruiter/dashboard` |
 | `getRecruiterJobs()` | `GET /api/recruiter/jobs` |
 
-Nhieu UI action khac hien van mock/static, chua goi backend:
+Các phần UI còn chủ yếu mock/static:
 
-- apply job button;
-- upload CV real multipart;
-- profile update;
-- automation update;
-- applications list;
-- recruiter create/edit JD;
-- feedback good/bad match.
+- Apply job.
+- Upload CV thật.
+- Manual CV submit.
+- Candidate profile update.
+- CV management.
+- Applications list.
+- Automation policy update.
+- Feedback good/bad/potential.
+- Recruiter ranking/applicants chi tiết.
+- Analytics thật.
 
-Day la thong tin quan trong khi vibe coding: khong gia dinh tat ca UI da connected backend.
+## 12. DTO Mapping: Backend Shape Sang UI Shape
 
-## 10. DTO Mapping: Backend Shape -> UI Shape
-
-Trong `api.ts`, frontend dinh nghia DTO rieng cho backend response:
+Trong `api.ts`, frontend định nghĩa DTO theo backend response:
 
 ```ts
 type JobCardDto = {
   id: string;
   title: string;
   company: string;
-  companyLogoUrl?: string | null;
   location?: string | null;
   remoteType?: string | null;
   seniorityLevel?: string | null;
   employmentType?: string | null;
   salary?: SalaryDisplayDto | null;
   requiredSkills?: string[] | null;
-  domain?: string | null;
   language?: string | null;
   status?: string | null;
   createdAt?: string | null;
 };
 ```
 
-Sau do map sang UI type `Job`:
+Sau đó map sang UI type `Job`:
 
 ```ts
 export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
+  const fallback = publicJobFallback(index);
   return {
     id: dto.id,
     title: dto.title,
@@ -547,66 +520,47 @@ export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
 }
 ```
 
-### 10.1 Vi Sao Can Map?
+Vì sao cần mapper?
 
-Backend DTO va UI model khong phai luc nao giong nhau.
+- Backend DTO thường giữ field nghiệp vụ rõ ràng.
+- UI type thường đã format sẵn để render.
+- Một field UI có thể ghép từ nhiều field backend.
 
-Vi du backend job detail:
+Ví dụ:
 
-```json
-{
-  "id": "...",
-  "title": "Senior Java Developer",
-  "company": "FPT Software",
-  "location": "Ho Chi Minh",
-  "remoteType": "Hybrid",
-  "seniorityLevel": "Senior",
-  "salary": {
-    "mode": "RANGE",
-    "min": 2000,
-    "max": 3500,
-    "currency": "USD"
-  }
-}
+```text
+backend: location + remoteType
+frontend: location string đã ghép
 ```
 
-Frontend `Job` can:
-
-```ts
-{
-  location: "Ho Chi Minh, Hybrid",
-  seniority: "Senior",
-  salary: "USD 2000 - 3500"
-}
+```text
+backend: salary object
+frontend: salary string
 ```
 
-`mapPublicJob` la adapter.
+Backend developer nên đọc mapper để biết frontend thực sự cần field nào.
 
-Backend developer can doc adapter de biet frontend can field nao that su.
+## 13. Fallback Mock Trong Mapper
 
-### 10.2 Fallback Mock Trong Mapping
-
-Cac mapper hay dung:
+Mapper dùng fallback:
 
 ```ts
 const fallback = publicJobFallback(index);
 ```
 
-Neu backend field null/empty, frontend lay mock fallback.
-
-Vi du:
+Ví dụ:
 
 ```ts
 requiredSkills: dto.requiredSkills?.length ? dto.requiredSkills : fallback.requiredSkills
 ```
 
-He qua:
+Hệ quả:
 
-- UI van dep khi backend data thieu.
-- Nhung bug backend "thieu field" co the bi che boi fallback.
-- Khi test contract that, can check network response, khong chi nhin UI.
+- UI vẫn đẹp khi backend thiếu field.
+- Nhưng lỗi backend thiếu field có thể bị che.
+- Khi test contract thật, phải xem Network response, không chỉ nhìn UI.
 
-### 10.3 Label Mapping
+## 14. Label Mapping
 
 Backend label:
 
@@ -632,19 +586,17 @@ function normalizeLabel(label?: string | null): MatchLabel {
 }
 ```
 
-Neu backend tra label la null/unknown, frontend mac dinh `High`. Khi debug diem matching, can chu y diem nay.
+Nếu backend trả label null hoặc unknown, frontend mặc định là `High`. Khi debug điểm matching, cần nhớ điểm này.
 
-## 11. types.ts: UI Domain Model
+## 15. types.ts: UI Domain Model
 
-Mo:
+Mở:
 
 ```text
 src/types.ts
 ```
 
-Day la model frontend dung de render.
-
-Quan trong nhat:
+Type quan trọng nhất:
 
 ```ts
 export interface Job {
@@ -667,27 +619,19 @@ export interface Job {
 }
 ```
 
-Backend DTO co the rat nhieu field, nhung UI job card/detail hien dung field tren.
+Nhiều backend DTO cuối cùng đều bị map về `Job` để UI render card/detail.
 
-Type khac:
+Các type khác:
 
-- `MockAccount`: frontend account session.
+- `MockAccount`: session frontend.
 - `Role`: `candidate | recruiter`.
-- `AutomationPolicy`: shape panel AutoFit hien tai.
-- `Application`: application mock list.
-- `RecruiterSummary`: dashboard stats.
-- `TrendPoint`: chart data.
-- `EmailAction`: mock email action confirm page.
+- `AutomationPolicy`: shape panel AutoFit.
+- `Application`: application mock.
+- `RecruiterSummary`: stats recruiter.
+- `TrendPoint`: data chart.
+- `EmailAction`: mock email action confirm.
 
-Backend dev nen so sanh:
-
-```text
-Backend DTO -> api.ts DTO -> mapper -> types.ts -> component props
-```
-
-Day la cach tim mismatch.
-
-## 12. Login Flow
+## 16. Login Flow
 
 Trong `App.tsx`:
 
@@ -712,15 +656,15 @@ async function handleLogin(username: string, password: string) {
 Flow:
 
 ```text
-1. User nhap username/password.
-2. Goi careerfitApi.login.
+1. User nhập username/password.
+2. Gọi careerfitApi.login.
 3. API client POST /auth/login.
-4. Neu thanh cong: save JWT + account vao localStorage.
-5. setAccount de UI chuyen role.
-6. Neu backend loi: fallback mock ca/1 hoac re/1.
+4. Nếu thành công, lưu JWT + account vào localStorage.
+5. setAccount để UI đổi role.
+6. Nếu backend lỗi, fallback mock ca/1 hoặc re/1.
 ```
 
-Backend can tra:
+Backend expected response:
 
 ```json
 {
@@ -740,24 +684,18 @@ Backend can tra:
 }
 ```
 
-`toAccount(payload)` map:
+`toAccount(payload)` map role backend sang role frontend:
 
-```ts
-return {
-  username: payload.user.email,
-  password: '',
-  role: normalizeRole(payload.user.role),
-  displayName: payload.user.fullName,
-};
+```text
+CANDIDATE -> candidate
+RECRUITER -> recruiter
 ```
 
-Role backend `CANDIDATE` thanh frontend `candidate`; `RECRUITER` thanh `recruiter`.
+## 17. React Query Hooks
 
-## 13. React Query Hooks
+Các hook cuối `App.tsx` là nơi gọi API.
 
-Cac hook cuoi `App.tsx` la noi page lay data.
-
-### 13.1 useSearchSuggestions
+### 17.1 useSearchSuggestions
 
 ```tsx
 function useSearchSuggestions(query: string) {
@@ -774,14 +712,13 @@ function useSearchSuggestions(query: string) {
 }
 ```
 
-Y nghia:
+Ý nghĩa:
 
-- Query rong thi khong goi API.
-- Goi backend suggestions.
-- Neu backend khong tra item nao, dung mock fallback.
-- `retry: false`: loi khong retry.
+- Query rỗng thì không gọi API.
+- Gọi backend suggestions.
+- Nếu backend trả rỗng hoặc lỗi, dùng mock suggestions.
 
-### 13.2 useJobs
+### 17.2 useJobs
 
 ```tsx
 function useJobs({ isPublic, keyword = '' }) {
@@ -800,39 +737,41 @@ function useJobs({ isPublic, keyword = '' }) {
 }
 ```
 
-Neu public:
+Nếu public:
 
 ```text
 GET /api/jobs/search
 ```
 
-Neu candidate:
+Nếu candidate:
 
 ```text
 GET /api/matches/me/cards
 ```
 
-Neu loi:
+Nếu lỗi:
 
 ```text
 mock jobs
 ```
 
-Quan trong: candidate route can JWT. Neu token invalid, API loi, UI fallback mock nen nguoi dung van thay data. Khi debug auth, hay xem Network tab.
+Quan trọng: candidate route cần JWT. Nếu token sai, API lỗi, UI vẫn có thể fallback mock. Đừng kết luận backend đúng chỉ vì UI vẫn có data.
 
-### 13.3 useJobDetail
+### 17.3 useJobDetail
+
+Public detail:
 
 ```text
 GET /api/jobs/{jobId}
 ```
 
-Neu route candidate, hook goi them:
+Candidate detail gọi thêm:
 
 ```text
 GET /api/matches/me/cards
 ```
 
-Muc dich: public job detail lay thong tin JD, candidate jobs lay score/reasons ca nhan. Sau do merge:
+Mục tiêu là merge job detail public với score cá nhân:
 
 ```ts
 {
@@ -844,20 +783,20 @@ Muc dich: public job detail lay thong tin JD, candidate jobs lay score/reasons c
 }
 ```
 
-Backend note: job detail endpoint public khong can score. Score den tu matching endpoint.
+Backend note: endpoint job detail public không cần trả score cá nhân. Score đến từ matching endpoint.
 
-### 13.4 useRecruiterSummary va useRecruiterJobs
+### 17.4 useRecruiterSummary và useRecruiterJobs
 
 ```text
 GET /api/recruiter/dashboard
 GET /api/recruiter/jobs
 ```
 
-Can role `RECRUITER`. Neu loi thi fallback mock.
+Cần JWT role recruiter.
 
-## 14. Data Flow Cac Man Hinh Chinh
+## 18. Data Flow Các Màn Hình Chính
 
-### 14.1 Public Home
+### 18.1 Public Home
 
 Route:
 
@@ -879,24 +818,17 @@ useJobs({ isPublic: true })
   -> GET /api/jobs/search?page=0&size=20&sort=recent
 ```
 
-UI:
-
-- `SearchHero`
-- `JobMarketDashboard`
-- `TopEmployers`
-- `JobListWithPreview`
-
 Backend connected:
 
 - public job search;
-- suggestions khi search.
+- search suggestions.
 
-Backend not connected/static:
+Static/mock:
 
-- market numbers trong `JobMarketDashboard` dang hardcoded trong component.
-- top employers la local `topEmployers`.
+- market dashboard numbers;
+- top employers list.
 
-### 14.2 Public Jobs Search
+### 18.2 Public Jobs Search
 
 Route:
 
@@ -916,26 +848,20 @@ Data:
 useJobs({ isPublic: true, keyword })
 ```
 
-Search action:
+Search update URL bằng:
 
 ```tsx
 setSearchParams(keyword ? { keyword } : {});
 ```
 
-React Router update URL, hook refetch theo `queryKey`.
+Khi URL query đổi, React Query refetch theo `queryKey`.
 
-### 14.3 Candidate Job Feed
+### 18.3 Candidate Job Feed
 
 Route:
 
 ```text
 /candidate/jobs
-```
-
-Component:
-
-```text
-CandidateJobsPage
 ```
 
 Data:
@@ -958,30 +884,31 @@ type CandidateJobListDto = {
 };
 ```
 
-Moi job card can:
+Mỗi candidate job card cần:
 
-- id/title/company;
-- location/remoteType/seniority/employmentType;
-- salaryDisplay;
-- requiredSkills/optionalSkills;
-- normalizedScore;
-- label;
-- isPotential;
-- reasons;
-- potentialReason;
-- matchedAt.
+- `id`
+- `title`
+- `company`
+- `location`
+- `remoteType`
+- `seniorityLevel`
+- `employmentType`
+- `salaryDisplay`
+- `requiredSkills`
+- `optionalSkills`
+- `normalizedScore`
+- `label`
+- `isPotential`
+- `reasons`
+- `potentialReason`
+- `matchedAt`
 
-### 14.4 Job Detail
+### 18.4 Job Detail
 
-Public:
+Routes:
 
 ```text
 /jobs/:jobId
-```
-
-Candidate:
-
-```text
 /candidate/jobs/:jobId
 ```
 
@@ -1001,27 +928,16 @@ UI:
 
 - `JobDetailContent`
 - `StickyApplyBar`
-- `LoginPromptModal` neu public apply.
+- `LoginPromptModal` nếu public user bấm apply.
 
-Backend connected:
+Apply button hiện chưa submit backend application thật.
 
-- job detail;
-- candidate matching overlay neu logged in candidate.
-
-Apply button hien chua submit backend application.
-
-### 14.5 Recruiter Dashboard
+### 18.5 Recruiter Dashboard
 
 Route:
 
 ```text
 /recruiter
-```
-
-Component:
-
-```text
-RecruiterHomePage
 ```
 
 Data:
@@ -1042,11 +958,11 @@ return {
 };
 ```
 
-Backend field name khac UI field name, map o api.ts.
+Backend field name và UI field name khác nhau, nên mapper là nơi cần đọc.
 
-### 14.6 Recruiter Jobs
+### 18.6 Recruiter Jobs
 
-Route:
+Routes:
 
 ```text
 /recruiter/jobs
@@ -1056,38 +972,40 @@ Route:
 /recruiter/jobs/:jobId/potential
 ```
 
-Tat ca render:
+Tất cả render:
 
 ```text
 RecruiterJobsPage
 ```
 
-Data:
+Data hiện có:
 
 ```text
 useRecruiterJobs()
   -> GET /api/recruiter/jobs
 ```
 
-Luu y: cac sub-route ranking/applicants/potential hien chu yeu thay UI tab/detail trong cung page, chua goi rieng:
+Các route ranking/applicants/potential hiện chưa gọi endpoint riêng như:
 
-- `/api/recruiter/jobs/{jobId}/ranking`
-- `/api/recruiter/jobs/{jobId}/applicants`
-- `/api/recruiter/jobs/{jobId}/top-candidates`
+```text
+GET /api/recruiter/jobs/{jobId}/ranking
+GET /api/recruiter/jobs/{jobId}/applicants
+GET /api/recruiter/jobs/{jobId}/top-candidates
+```
 
-Neu can connect that, bat dau o `RecruiterJobsPage` va them methods vao `api.ts`.
+Nếu cần nối thật, bắt đầu từ `api.ts` và `RecruiterJobsPage`.
 
-## 15. Mock Data Va Fallback
+## 19. Mock Data Và Fallback
 
-Mo:
+Mở:
 
 ```text
 src/data/mock.ts
 ```
 
-Mock chua:
+Mock gồm:
 
-- `mockAccounts`: `ca/1`, `re/1`.
+- `mockAccounts`
 - `candidate`
 - `preference`
 - `automationPolicy`
@@ -1098,26 +1016,27 @@ Mock chua:
 - `emailAction`
 - `delay`
 
-Mock dung trong 3 truong hop:
+Mock được dùng khi:
 
-1. UI static/prototype chua connect API.
-2. API loi/chua chay backend.
-3. Backend response thieu data, mapper fallback field.
+1. UI chưa nối backend thật.
+2. Backend chưa chạy hoặc request lỗi.
+3. Backend response thiếu field, mapper fallback.
 
-Backend dev can nho: UI hien data khong dong nghia la backend da tra data.
+Cách kiểm tra data thật:
 
-Cach check that:
+```text
+1. Mở DevTools Network.
+2. Filter "api".
+3. Xem request có gọi localhost:8080/api không.
+4. Xem response JSON.
+5. Xem Authorization header.
+```
 
-- Mo DevTools Network.
-- Check request co goi `localhost:8080/api` khong.
-- Check response co field dung khong.
-- Tam thoi stop backend xem UI fallback ra sao.
+## 20. Components Cơ Bản
 
-## 16. Component Co Ban
+### 20.1 JobCard
 
-### 16.1 JobCard
-
-Mo:
+Mở:
 
 ```text
 src/components/JobCard.tsx
@@ -1135,64 +1054,62 @@ interface JobCardProps {
 }
 ```
 
-`JobCard` chi render `Job` UI type. No khong biet backend DTO.
+`JobCard` chỉ biết render UI type `Job`. Nó không biết backend DTO.
 
-Button action:
+Button:
 
-- Apply: goi `onApply`.
-- Save: hien UI only.
-- Skip: goi `onSkip`.
-- Detail: goi `onOpen`.
+- Apply gọi `onApply`.
+- Save hiện UI, chưa nối backend.
+- Skip gọi `onSkip`.
+- Detail gọi `onOpen`.
 
-`event.stopPropagation()` ngan button click kich hoat card click.
+### 20.2 Badges
 
-### 16.2 Badges
-
-Mo:
+Mở:
 
 ```text
 src/components/Badges.tsx
 ```
 
-`MatchingBadge` hien:
+`MatchingBadge` hiển thị:
 
 ```text
-score% · High/Medium
+score% · Cao / Trung bình
 ```
 
-Color theo score.
+Màu phụ thuộc vào score.
 
-Luu y:
+Lưu ý:
 
 ```ts
 const labelText = label === 'High' ? t('matchHigh') : t('matchMedium');
 ```
 
-Neu label la `Low` hoac `Potential`, text van rơi vao `matchMedium`. Neu can hien dung label hon, sua o day.
+Nếu label là `Low` hoặc `Potential`, text vẫn rơi vào `matchMedium`. Nếu cần hiển thị chính xác hơn, sửa ở đây.
 
-### 16.3 AutomationPolicyPanel
+### 20.3 AutomationPolicyPanel
 
-Mo:
+Mở:
 
 ```text
 src/components/AutomationPolicyPanel.tsx
 ```
 
-Hien policy tu `AutomationPolicy` type. Hien tai input/range/time la uncontrolled `defaultValue`, chua submit backend.
+Hiển thị `AutomationPolicy`. Các input/range/time hiện dùng `defaultValue`, chưa submit backend.
 
-### 16.4 StatCard
+### 20.4 StatCard
 
-Small display component. Khong co backend concern.
+Component hiển thị label/value/detail. Không có logic backend.
 
-## 17. i18n: LanguageProvider
+## 21. i18n: LanguageProvider
 
-Mo:
+Mở:
 
 ```text
 src/i18n/LanguageProvider.tsx
 ```
 
-Co dictionary:
+Có hai dictionary:
 
 ```ts
 const vi: Dictionary = { ... }
@@ -1205,138 +1122,136 @@ Hook:
 const { language, setLanguage, t } = useLanguage();
 ```
 
-Dung:
+Sử dụng:
 
 ```tsx
 {t('jobs')}
 ```
 
-Neu key thieu:
+Nếu thiếu key:
 
 ```ts
 t: (key) => dictionary[key] ?? key
 ```
 
-UI se hien chinh key. Khi thay text nhu `someMissingKey`, nghia la thieu translation.
+UI sẽ hiện chính key. Nếu bạn thấy text như `missingKeyName`, nghĩa là thiếu translation.
 
-Language luu localStorage:
+Ngôn ngữ lưu ở localStorage:
 
 ```text
 careerfit-language
 ```
 
-## 18. CSS Va Visual Layer
+## 22. CSS Và Visual Layer
 
-Mo:
+Mở:
 
 ```text
 src/styles.css
 ```
 
-Backend dev khong can hoc CSS sau, nhung can biet:
+Backend dev không cần học sâu CSS, nhưng cần biết:
 
-- Toan bo style nam mot file lon.
-- Class name trong JSX phai match CSS.
-- Responsive co `@media (max-width: 1080px)` va `@media (max-width: 720px)`.
-- UI dung CSS variables o `:root`.
-- Cac class quan trong:
-  - `.app-shell`
-  - `.site-header`
-  - `.portal-hero`
-  - `.job-card`
-  - `.match-badge`
-  - `.jd-detail-page`
-  - `.sticky-apply-bar`
-  - `.recruiter-hr-dashboard`
-  - `.settings-route`
+- Toàn bộ style nằm trong một file lớn.
+- Class name trong JSX phải khớp CSS.
+- Responsive có `@media (max-width: 1080px)` và `@media (max-width: 720px)`.
+- CSS variables nằm ở `:root`.
 
-Khi vibe coding UI:
+Class quan trọng:
 
-- Neu them component moi, can class name va CSS tuong ung.
-- Neu thay layout vo, search class trong `styles.css`.
-- Neu text tran/out of layout, sua CSS chinh xac class do, khong sua data.
+```text
+.app-shell
+.site-header
+.portal-hero
+.job-card
+.match-badge
+.jd-detail-page
+.sticky-apply-bar
+.recruiter-hr-dashboard
+.settings-route
+```
 
-## 19. TypeScript Kien Thuc Vua Du
+Khi UI vỡ layout:
 
-### 19.1 type vs interface
+```text
+1. Tìm class trong JSX.
+2. Search class trong styles.css.
+3. Sửa đúng block CSS đó.
+4. Chạy lại UI và kiểm tra responsive.
+```
 
-Trong project:
+## 23. TypeScript Vừa Đủ Dùng
+
+### 23.1 type và interface
 
 ```ts
 export type Role = 'candidate' | 'recruiter';
 ```
 
-Union string type: chi cho 2 gia tri.
+Chỉ cho phép hai giá trị.
 
 ```ts
 export interface Job { ... }
 ```
 
-Interface mo ta object shape.
+Mô tả shape object.
 
-### 19.2 Optional va Null
-
-Backend DTO hay co:
+### 23.2 Optional và null
 
 ```ts
 companyLogoUrl?: string | null;
 ```
 
-Y nghia:
+Field có thể không tồn tại hoặc tồn tại nhưng null.
 
-- field co the khong ton tai;
-- hoac ton tai nhung null.
-
-Frontend thuong dung:
+Fallback:
 
 ```ts
 dto.location ?? fallback.location
 ```
 
-`??` chi fallback khi null/undefined.
+`??` chỉ fallback khi giá trị là `null` hoặc `undefined`.
 
-### 19.3 Generic
+### 23.3 Generic
 
 ```ts
 async function request<T>(...): Promise<T>
 ```
 
-`T` la type data response. Goi:
+Gọi:
 
 ```ts
 request<JobListDto>('/jobs/search')
 ```
 
-Nghia la payload data duoc type-check nhu `JobListDto`.
+Nghĩa là data response được type-check như `JobListDto`.
 
-### 19.4 JSX
-
-JSX la syntax HTML-like trong TypeScript:
+### 23.4 JSX
 
 ```tsx
 return <JobCard job={job} onOpen={...} />;
 ```
 
-Props la tham so component.
+JSX là syntax giống HTML trong TypeScript.
 
-### 19.5 Hook
+### 23.5 Hook
 
-Hook la function React bat dau bang `use...`:
+Hook thường bắt đầu bằng `use`:
 
-- `useState`: local state.
-- `useEffect`: side effect sau render.
-- `useMemo`: cache computed value.
-- `useQuery`: fetch/cache server state.
-- `useNavigate`, `useParams`, `useSearchParams`: React Router.
-- `useLanguage`: custom context hook.
+- `useState`
+- `useEffect`
+- `useMemo`
+- `useQuery`
+- `useNavigate`
+- `useParams`
+- `useSearchParams`
+- `useLanguage`
 
-Quy tac: hook chi goi o top-level cua component/hook, khong goi trong if/loop.
+Quy tắc: hook phải được gọi ở top-level của component/hook, không gọi trong if/loop.
 
-## 20. React Kien Thuc Vua Du
+## 24. React Vừa Đủ Dùng
 
-### 20.1 Component
-
-Component la function tra JSX:
+Component:
 
 ```tsx
 function StatCard({ label, value, detail }: StatCardProps) {
@@ -1344,17 +1259,13 @@ function StatCard({ label, value, detail }: StatCardProps) {
 }
 ```
 
-Doc nhu method render.
-
-### 20.2 State
+State:
 
 ```tsx
 const [query, setQuery] = useState('');
 ```
 
-`query` la gia tri hien tai. `setQuery` cap nhat va trigger re-render.
-
-### 20.3 Effect
+Effect:
 
 ```tsx
 useEffect(() => {
@@ -1362,29 +1273,23 @@ useEffect(() => {
 }, [job.id]);
 ```
 
-Chay khi `job.id` doi.
-
-### 20.4 Derived Data
-
-```tsx
-const filteredJobs = useFilteredJobs(sourceJobs, query);
-```
-
-`useFilteredJobs` filter local data theo query.
-
-### 20.5 Conditional Render
+Conditional render:
 
 ```tsx
 {isFilterOpen ? <FilterModal /> : null}
 ```
 
-Neu state true thi hien modal.
+Derived data:
 
-## 21. Contract Backend-Frontend Dang Dung
+```tsx
+const filteredJobs = useFilteredJobs(sourceJobs, query);
+```
 
-### 21.1 Auth
+## 25. Contract Backend-Frontend Đang Dùng
 
-Frontend request:
+### 25.1 Auth
+
+Request:
 
 ```http
 POST /api/auth/login
@@ -1413,7 +1318,7 @@ type AuthResponseDto = {
 };
 ```
 
-### 21.2 Public Job List
+### 25.2 Public Job List
 
 Request:
 
@@ -1433,7 +1338,7 @@ type JobListDto = {
 };
 ```
 
-### 21.3 Public Job Detail
+### 25.3 Public Job Detail
 
 Request:
 
@@ -1451,7 +1356,7 @@ type JobDetailDto = JobCardDto & {
 };
 ```
 
-### 21.4 Candidate Matching Cards
+### 25.4 Candidate Matching Cards
 
 Request:
 
@@ -1472,7 +1377,7 @@ type CandidateJobListDto = {
 };
 ```
 
-Candidate job card:
+Card DTO:
 
 ```ts
 type CandidateJobCardDto = {
@@ -1497,7 +1402,7 @@ type CandidateJobCardDto = {
 };
 ```
 
-### 21.5 Search Suggestions
+### 25.5 Search Suggestions
 
 Request:
 
@@ -1515,7 +1420,7 @@ type SuggestionsDto = {
 };
 ```
 
-### 21.6 Recruiter Dashboard
+### 25.6 Recruiter Dashboard
 
 Request:
 
@@ -1536,7 +1441,7 @@ type RecruiterDashboardDto = {
 };
 ```
 
-### 21.7 Recruiter Jobs
+### 25.7 Recruiter Jobs
 
 Request:
 
@@ -1561,25 +1466,26 @@ type RecruiterJobDto = {
 };
 ```
 
-## 22. Cach Debug Loi Backend-Frontend
+## 26. Debug Lỗi Backend-Frontend
 
-### 22.1 UI van hien data nhung backend loi
+### 26.1 UI vẫn có data dù backend lỗi
 
-Nguyen nhan thuong gap:
+Nguyên nhân thường gặp:
 
-- frontend fallback sang mock.
-- mapper dung fallback field.
-- React Query cache data cu.
+- fallback mock;
+- mapper fallback field;
+- React Query cache;
+- request bị catch rồi trả mock.
 
-Can lam:
+Cách kiểm tra:
 
 ```text
-1. Mo DevTools Network.
+1. Mở DevTools Network.
 2. Filter "api".
-3. Check status code.
-4. Check response JSON co success/data khong.
-5. Check Authorization header neu endpoint protected.
-6. Clear localStorage neu nghi token/account cu.
+3. Xem status code.
+4. Xem response có success/data không.
+5. Xem Authorization header.
+6. Clear localStorage nếu nghi token/account cũ.
 ```
 
 LocalStorage keys:
@@ -1590,116 +1496,66 @@ careerfit.account
 careerfit-language
 ```
 
-### 22.2 401 Unauthorized
+### 26.2 401 Unauthorized
 
-Kiem tra:
+Kiểm tra:
 
-- Da login backend thanh cong chua?
-- LocalStorage co `careerfit.accessToken` khong?
-- Request co header `Authorization: Bearer ...` khong?
-- Backend route co role dung khong?
-- Token role la `CANDIDATE` hay `RECRUITER`?
+- Đã login backend thành công chưa?
+- localStorage có `careerfit.accessToken` không?
+- Request có `Authorization: Bearer ...` không?
+- JWT hết hạn chưa?
+- Backend route có yêu cầu role không?
 
-### 22.3 403 Forbidden
+### 26.3 403 Forbidden
 
-Thuong do:
+Thường do:
 
-- login candidate nhung goi recruiter route;
-- login recruiter nhung goi candidate route;
+- candidate gọi recruiter route;
+- recruiter gọi candidate route;
+- user không sở hữu resource;
 - backend service check ownership fail.
 
-Frontend guard giup redirect sai role, nhung request van co the 403 neu UI/hook goi sai endpoint.
+### 26.4 CORS Error
 
-### 22.4 CORS Error
-
-Backend `application.yml` cho phep:
+Backend config mặc định:
 
 ```yaml
 app.cors.allowed-origins: http://localhost:5173,http://127.0.0.1:5173
 ```
 
-Frontend chay `127.0.0.1:5173`. Neu doi port 5174, can set:
+Nếu frontend chạy port 5174, cần cập nhật CORS ở backend.
 
-```text
-CORS_ORIGINS=http://localhost:5174,http://127.0.0.1:5174
-```
+### 26.5 Response Shape Mismatch
 
-hoac sua backend config/env.
-
-### 22.5 Response shape mismatch
-
-Neu backend tra:
+Frontend kỳ vọng:
 
 ```json
-{ "jobs": [] }
+{
+  "success": true,
+  "data": {}
+}
 ```
 
-Frontend fail vi expect:
+Nếu backend trả:
 
 ```json
-{ "success": true, "data": { "jobs": [] } }
+{
+  "jobs": []
+}
 ```
 
-Neu backend field name khac, sua 1 trong 2:
+Frontend sẽ fail vì `payload.success` không tồn tại.
 
-- backend DTO field;
+Khi mismatch, sửa một trong hai nơi:
+
+- backend DTO/response;
 - frontend DTO/mapper trong `api.ts`.
 
-Voi vai tro backend dev, uu tien giu backend API contract on dinh va cap nhat mapper neu UI naming khac.
+Với vai trò backend dev, nên ưu tiên giữ API contract nhất quán và chỉ sửa mapper khi UI naming khác.
 
-## 23. Khi Can Nho Agent Sua Frontend, Nen Yeu Cau The Nao?
+## 27. Những Phần Đã Nối Backend Thật
 
-Dung format nay de vibe coding hieu qua:
-
-```text
-Sua frontend route X de goi backend endpoint Y.
-Backend response shape la ...
-Map sang UI type ... nhu sau ...
-Neu API loi thi fallback mock nhu pattern hien tai.
-Khong doi layout lon, chi update api.ts + hook/page lien quan.
-Chay npm run build sau khi sua.
-```
-
-Vi du:
-
-```text
-Connect nut Apply tren JobDetailPage vao POST /api/applications.
-Request body: { jobId, cvId?, coverLetter? }.
-Response data: MyApplicationResponse.
-Sau khi success hien trang thai Applied tren UI.
-Giu fallback mock neu backend loi.
-Sua toi thieu trong src/lib/api.ts va src/App.tsx.
-```
-
-Checklist review output cua Agent:
-
-- Co them method trong `careerfitApi` khong?
-- Method do dung endpoint backend chua?
-- Request body dung DTO backend chua?
-- Co gui JWT tu `request<T>` khong?
-- Mapper co xu ly null/empty khong?
-- UI co fallback hop ly khong?
-- `npm run build` pass khong?
-
-## 24. Neu Muon Connect Them API That
-
-Thu tu lam an toan:
-
-1. Doc backend controller/service/DTO.
-2. Ghi expected request/response JSON.
-3. Them DTO type vao `src/lib/api.ts`.
-4. Them method vao `careerfitApi`.
-5. Them mapper backend DTO -> UI type neu can.
-6. Trong `App.tsx`, thay mock/hardcoded bang `useQuery` hoac mutation.
-7. Giu fallback mock neu frontend can demo khi backend down.
-8. Test Network tab.
-9. Chay `npm run build`.
-
-Backend dev khong can tu viet CSS neu feature chi la connect API. Hay giu UI hien co.
-
-## 25. Nhung Phan Chua Fully Connected Backend
-
-Theo code hien tai, cac phan da co API client that:
+Đã có API client thật:
 
 - Login.
 - Public job search.
@@ -1709,99 +1565,151 @@ Theo code hien tai, cac phan da co API client that:
 - Recruiter dashboard.
 - Recruiter jobs list.
 
-Cac phan chu yeu van mock/static:
+Chưa nối đầy đủ backend:
 
-- Upload CV UI chua POST multipart `/api/cv/upload`.
-- Manual CV form chua POST `/api/cv/manual`.
-- Candidate profile update chua PATCH `/api/candidates/me`.
-- CV management chua GET/POST/PATCH/DELETE real.
-- Apply button chua POST `/api/applications`.
-- Applications page chua GET `/api/applications/me`.
-- Automation policy panel chua GET/PATCH `/api/automation/policy`.
-- Feedback good/bad/potential chua POST `/api/matches/{matchingId}/feedback`.
-- Recruiter ranking/applicants detail chua goi endpoints rieng.
-- Analytics page con dung mock trends/static chart.
-- Employer detail/top employers con local static data.
+- Upload CV.
+- Manual CV.
+- Candidate profile update.
+- CV management.
+- Apply job.
+- Applications page.
+- Automation policy update.
+- Feedback good/bad/potential.
+- Recruiter ranking/applicants chi tiết.
+- Analytics page.
+- Employer detail/top employers.
 
-Day la roadmap ket noi frontend-backend sau nay.
+Đây là roadmap thực tế nếu muốn tiếp tục nối frontend-backend.
 
-## 26. Luu Y Ve Naming Contract
+## 28. Khi Nhờ Agent Sửa Frontend
 
-Backend dung Java naming trong DTO record, Jackson tra camelCase:
+Nên yêu cầu theo format:
 
-```java
+```text
+Sửa frontend route X để gọi backend endpoint Y.
+Backend request body là ...
+Backend response data là ...
+Map sang UI type ... như sau ...
+Giữ fallback mock nếu API lỗi.
+Không đổi layout lớn.
+Chạy npm run build sau khi sửa.
+```
+
+Ví dụ:
+
+```text
+Connect nút Apply trên JobDetailPage vào POST /api/applications.
+Request body: { jobId, cvId?, coverLetter? }.
+Response data: MyApplicationResponse.
+Sau khi success hiển thị trạng thái Applied.
+Giữ fallback mock nếu backend lỗi.
+Sửa tối thiểu trong src/lib/api.ts và src/App.tsx.
+Chạy npm run build.
+```
+
+Checklist review:
+
+- Có method mới trong `careerfitApi` không?
+- Endpoint đúng backend không?
+- Request body đúng DTO backend không?
+- Có gửi JWT không?
+- Mapper xử lý null/empty không?
+- UI có fallback hợp lý không?
+- `npm run build` pass không?
+
+## 29. Nếu Muốn Connect Thêm API Thật
+
+Thứ tự an toàn:
+
+1. Đọc backend controller/service/DTO.
+2. Ghi request/response JSON expected.
+3. Thêm DTO type vào `src/lib/api.ts`.
+4. Thêm method vào `careerfitApi`.
+5. Thêm mapper backend DTO -> UI type nếu cần.
+6. Trong `App.tsx`, thay mock/hardcoded bằng `useQuery` hoặc mutation.
+7. Giữ fallback mock nếu cần demo khi backend down.
+8. Test bằng DevTools Network.
+9. Chạy `npm run build`.
+
+Không cần viết lại UI nếu chỉ đang connect API.
+
+## 30. Naming Contract Cần Chú Ý
+
+Backend Java DTO trả camelCase:
+
+```text
 normalizedScore
 isPotential
 requiredSkills
 salaryDisplay
+createdAt
 ```
 
-Frontend DTO cung camelCase.
-
-Nhung frontend UI type co ten khac:
+Frontend UI type có thể đổi tên:
 
 ```text
 seniorityLevel -> seniority
 salaryDisplay / salary object -> salary string
-matchReasons -> reasons
-createdAt/matchedAt -> postedAt
+matchReasons / reasons -> reasons
+createdAt / matchedAt -> postedAt
 ```
 
-Vi vay mismatch thuong nam o mapper, khong nam o component.
+Vì vậy mismatch thường nằm ở mapper, không nằm ở component.
 
-## 27. Thu Tu Doc Code De Hoc Nhanh
+## 31. Thứ Tự Đọc Code Khuyến Nghị
 
-Doc theo thu tu:
-
-1. `package.json`: biet stack.
+1. `package.json`: biết stack.
 2. `src/main.tsx`: providers.
 3. `src/types.ts`: UI model.
-4. `src/lib/api.ts`: backend contract va mapping.
-5. `src/App.tsx` phan `App()` route/protectedRoute.
-6. `src/App.tsx` cac hook cuoi file.
+4. `src/lib/api.ts`: API contract và mapping.
+5. `src/App.tsx` phần `App()` routes/protectedRoute.
+6. `src/App.tsx` các hook cuối file.
 7. `src/components/AppShell.tsx`: layout/nav.
 8. `src/components/JobCard.tsx`: card render `Job`.
-9. `src/i18n/LanguageProvider.tsx`: `t(key)`.
+9. `src/i18n/LanguageProvider.tsx`: translation.
 10. `src/data/mock.ts`: fallback.
-11. `src/styles.css`: chi doc class lien quan khi can.
+11. `src/styles.css`: chỉ đọc class liên quan khi cần.
 
-Khong can doc het `App.tsx` tu tren xuong duoi trong mot lan. Hay tim theo route/hook.
+## 32. Bài Tập Đọc Hiểu
 
-## 28. Bai Tap Doc Hieu Cho Backend Dev
+1. Login `ca / 1`, xem localStorage có token/account không.
+2. Mở `/jobs?keyword=React`, xem request `/api/jobs/search`.
+3. Mở `/candidate/jobs`, xem request `/api/matches/me/cards` có Authorization không.
+4. Trong `api.ts`, đọc `mapCandidateJob`.
+5. Stop backend, reload frontend, xem fallback mock hoạt động ra sao.
+6. Login `re / 1`, mở `/recruiter`, xem request `/api/recruiter/dashboard`.
+7. Tìm một text trên UI trong `LanguageProvider.tsx`.
+8. Tìm một class trong JSX rồi sang `styles.css`.
+9. Chạy `npm run build` để thấy type-check hoạt động.
+10. Chọn một button chưa nối backend và lần ngược xem nó đang gọi handler nào.
 
-Lam cac bai nay de nam frontend:
+## 33. Các Điểm Cần Cẩn Thận
 
-1. Login `ca / 1`, xem localStorage co token/account khong.
-2. Mo `/jobs?keyword=React`, xem Network request `/api/jobs/search`.
-3. Mo `/candidate/jobs`, xem request `/api/matches/me/cards` co Authorization khong.
-4. Trong `api.ts`, xem `mapCandidateJob` map `normalizedScore`, `label`, `reasons` the nao.
-5. Doi backend endpoint search tra thieu `requiredSkills`, xem UI fallback ra sao.
-6. Login `re / 1`, mo `/recruiter`, xem request `/api/recruiter/dashboard`.
-7. Stop backend, reload frontend, xem UI fallback mock.
-8. Tim mot text tren UI trong `LanguageProvider.tsx`.
-9. Tim mot class UI trong JSX roi sang `styles.css` xem style.
-10. Chay `npm run build` de biet type error hien ra nhu the nao.
+- Frontend fallback mock nhiều, nên UI có data không đảm bảo backend đúng.
+- `src/lib/api.ts` là source of truth cho contract hiện tại.
+- `App.tsx` lớn, khi sửa nên scoped theo route/hook cụ thể.
+- Protected route frontend chỉ là UX guard; backend security vẫn bắt buộc.
+- Token lưu localStorage, khi test role nên clear localStorage nếu thấy hành vi lạ.
+- React Query có cache/refetch, request có thể không gọi lại ngay nếu data còn fresh.
+- Một số button có UI nhưng chưa nối backend.
+- Analytics/market dashboard còn nhiều data hardcoded.
+- Label unknown đang fallback thành `High`.
+- Mapper fallback mock có thể che lỗi field null từ backend.
 
-## 29. Cac Diem Nen Can Than
+## 34. Tóm Tắt
 
-- Frontend fallback mock rat nhieu, nen nhin UI khong du de ket luan backend dung.
-- `api.ts` la source of truth cho frontend-backend contract hien tai.
-- `App.tsx` dang qua lon, khi sua nen scoped theo function/hook cu the.
-- Protected route frontend chi la UX guard, backend security van bat buoc.
-- Token luu localStorage, neu test role bi la, clear localStorage.
-- React Query co cache/refetch, nen request co the khong goi lai ngay neu data con fresh.
-- Mot so UI action co button nhung chua connect backend.
-- Recharts/market dashboard co nhieu data hardcoded, khong phai tat ca den tu backend analytics.
-- Label mapping mac dinh unknown -> `High`, can chu y khi test matching label.
-- Mapper fallback mock co the che bug field null.
-
-## 30. Tom Tat Mot Cau
-
-Voi backend developer, frontend CareerFit can doc theo truc:
+Với backend developer, hãy đọc frontend theo trục:
 
 ```text
-Route -> Page component -> React Query hook -> careerfitApi method -> DTO mapper -> UI type -> presentational component
+Route
+  -> Page component
+  -> React Query hook
+  -> careerfitApi method
+  -> Backend endpoint
+  -> DTO mapper
+  -> UI type
+  -> Presentational component
 ```
 
-Neu nam duoc truc nay, ban co the review contract, debug API, va vibe coding frontend mot cach an toan ma khong can tro thanh nguoi code UI chuyen sau.
+Nắm được trục này là đủ để bạn debug API, review contract, và nhờ Agent sửa frontend một cách an toàn mà không cần tự trở thành frontend developer chuyên sâu.
 
