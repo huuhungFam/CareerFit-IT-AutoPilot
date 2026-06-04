@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,7 +64,7 @@ public class ApplicationService {
             ApplicationDtos.SubmitApplicationRequest req) {
 
         Candidate candidate = resolveCandidate(userId);
-        Job job = jobRepo.findById(req.jobId())
+        Job job = jobRepo.findByIdWithRecruiter(req.jobId())
                 .orElseThrow(() -> AppException.notFound("Job", req.jobId()));
 
         if (job.getStatus() != Job.JobStatus.ACTIVE) {
@@ -84,7 +85,11 @@ public class ApplicationService {
         Application application = new Application(candidate, job, cv, matching, false);
         if (req.coverLetter() != null) application.setCoverLetter(req.coverLetter());
 
-        appRepo.save(application);
+        try {
+            appRepo.saveAndFlush(application);
+        } catch (DataIntegrityViolationException e) {
+            throw AppException.conflict("You have already applied to this job");
+        }
 
         auditRepo.save(new AuditLog(AuditLog.ActorType.USER, userId, "APPLICATION_SUBMITTED")
                 .withTarget("Job", req.jobId())
@@ -138,7 +143,7 @@ public class ApplicationService {
     public ApplicationDtos.ApplicantPageResponse getJobApplicants(UUID jobId, UUID recruiterId,
             String statusFilter, int page, int size) {
 
-        Job job = jobRepo.findById(jobId)
+        Job job = jobRepo.findByIdWithRecruiter(jobId)
                 .orElseThrow(() -> AppException.notFound("Job", jobId));
 
         if (!job.getRecruiter().getId().equals(recruiterId)) {
@@ -169,7 +174,7 @@ public class ApplicationService {
     @Transactional
     public void updateStatus(UUID applicationId, UUID recruiterId,
                               ApplicationDtos.UpdateApplicationStatusRequest req) {
-        Application app = appRepo.findById(applicationId)
+        Application app = appRepo.findByIdWithDetails(applicationId)
                 .orElseThrow(() -> AppException.notFound("Application", applicationId));
 
         if (!app.getJob().getRecruiter().getId().equals(recruiterId)) {
@@ -185,7 +190,11 @@ public class ApplicationService {
 
         app.setStatus(newStatus);
         if (req.recruiterNotes() != null) app.setRecruiterNotes(req.recruiterNotes());
-        appRepo.save(app);
+        try {
+            appRepo.saveAndFlush(app);
+        } catch (DataIntegrityViolationException e) {
+            throw AppException.conflict("Application status update conflicted with another write");
+        }
 
         auditRepo.save(new AuditLog(AuditLog.ActorType.USER, recruiterId, "APPLICATION_STATUS_UPDATED")
                 .withTarget("Application", applicationId)
@@ -261,7 +270,7 @@ public class ApplicationService {
     }
 
     private Application resolveAndAuthorizeCandidate(UUID applicationId, UUID userId) {
-        Application app = appRepo.findById(applicationId)
+        Application app = appRepo.findByIdWithDetails(applicationId)
                 .orElseThrow(() -> AppException.notFound("Application", applicationId));
         Candidate candidate = resolveCandidate(userId);
         if (!app.getCandidate().getId().equals(candidate.getId())) {

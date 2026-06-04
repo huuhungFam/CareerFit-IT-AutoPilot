@@ -31,6 +31,7 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 - Candidate có trang `Hồ sơ & CV` để quản lý nhiều CV, hồ sơ cố định và portfolio/dự án.
 - Trang Upload CV có 2 tab chuyển qua lại: `Document Parser` và `Manual Creation`.
 - Recruiter dashboard tổng quan phải tách khỏi trang Việc làm HR Dashboard.
+- Advanced Analytics phải là UI riêng cho từng role, không thay thế trang Thống kê cũ của recruiter.
 - Hỗ trợ 2 vai trò:
   - Candidate
   - Recruiter
@@ -44,8 +45,10 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên theo thứ tự:
 - Có UI xem action history/audit summary phù hợp với role.
 - Có UI cho passwordless magic-link.
 - Có biểu đồ xu hướng công việc.
+- Có route Phân tích nâng cao theo role: `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`.
 - Có auto refresh / polling để luôn lấy được JD và ranking mới nhất.
 - UI phải đẹp, có chủ đích, không generic SaaS, không màu tím mặc định.
+- UX hiện tại đã được polish: job card có company avatar, metadata icon, insight row; search suggestions và modal có animation; job list có skeleton loading; focus visible và reduced-motion support phải được giữ.
 
 ## 2. Stack Khuyến Nghị
 
@@ -107,6 +110,7 @@ Candidate phải có các màn hình sau:
 - Trang gợi ý JD theo hồ sơ
 - Trang xem trạng thái xử lý hồ sơ
 - Trang xem lịch sử matching / application
+- Trang phân tích nâng cao theo role, gồm market overview, skill demand, salary distribution, profile gaps và match/application trend
 - Trang cài ngưỡng auto-apply
 - Trang cài tần suất scan job, daily digest, high-match email, giới hạn email/ngày
 - Trang thông báo/action history
@@ -128,6 +132,7 @@ Recruiter phải có các màn hình sau:
 - Trang approval queue / email action history
 - Trang audit summary
 - Trang thống kê và biểu đồ xu hướng
+- Trang phân tích nâng cao riêng, gồm market overview, top performing jobs, applicant/matching metrics và engagement trend
 
 ### 4.3. Chung
 
@@ -159,6 +164,7 @@ Nếu dùng React Router, hãy ưu tiên các route sau:
 - `/candidate/profile`
 - `/candidate/recommendations`
 - `/candidate/applications`
+- `/candidate/advanced-analytics`
 - `/candidate/settings`
 - `/candidate/automation`
 - `/candidate/notifications`
@@ -169,6 +175,7 @@ Nếu dùng React Router, hãy ưu tiên các route sau:
 - `/recruiter/jobs/:jobId/applicants`
 - `/recruiter/jobs/:jobId/potential`
 - `/recruiter/analytics`
+- `/recruiter/advanced-analytics`
 - `/recruiter/automation`
 - `/recruiter/audit`
 
@@ -185,6 +192,8 @@ Xây ít nhất các component này:
 - `SideNav`
 - `HeroSection`
 - `JobFeed`
+- `JobCard`
+- `JobListSkeleton`
 - `JobSearchBar`
 - `JobFilterPanel`
 - `JobDetailPanel`
@@ -219,6 +228,7 @@ Xây ít nhất các component này:
 - `FeedbackModal`
 - `InviteCandidateDrawer`
 - `TrendLineChart`
+- `AdvancedAnalyticsPage`
 - `FilterBar`
 - `SearchInput`
 - `SkeletonCard`
@@ -320,8 +330,22 @@ Frontend phải chuẩn bị client để gọi các endpoint kiểu sau:
 - `POST /api/automation/actions/feedback`
 - `POST /api/recommendations/{jobId}/interactions`
 - `GET /api/recommendations/interactions`
-- `GET /api/analytics/jobs/trends`
-- `GET /api/analytics/summary`
+- `GET /api/analytics/stats`
+- `GET /api/analytics/trend`
+- `GET /api/analytics/roles`
+- `GET /api/analytics/market/overview`
+- `GET /api/analytics/market/skills`
+- `GET /api/analytics/market/salary`
+- `GET /api/analytics/market/trends`
+- `GET /api/candidate/analytics/overview`
+- `GET /api/candidate/analytics/skill-demand`
+- `GET /api/candidate/analytics/profile-gaps`
+- `GET /api/candidate/analytics/match-trends`
+- `GET /api/recruiter/analytics/overview`
+- `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+- `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+- `GET /api/recruiter/analytics/trends`
+- `POST /api/analytics/events`
 - `GET /api/audit-logs`
 
 Yêu cầu:

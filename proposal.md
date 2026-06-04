@@ -42,7 +42,7 @@ Xây dựng một nền tảng tuyển dụng IT có khả năng:
 * Cho candidate quản lý nhiều CV, chọn CV mặc định, duy trì hồ sơ cố định và bổ sung portfolio/dự án.
 * Cho recruiter tạo JD, xem CV đã apply, xem CV matching cao và xem candidate tiềm năng.
 * Hiển thị dashboard thị trường việc làm IT dựa trên tổng số job đăng tuyển trên hệ thống, không nhầm với số CV-JD matching.
-* Tự động trích xuất và phân tích nội dung từ CV PDF text-based hoặc CV nhập qua form.
+* Tự động trích xuất và phân tích nội dung từ CV PDF text-based, PDF scan/image-only qua OCR fallback hoặc CV nhập qua form.
 * Kiểm tra tính hợp lệ của CV/JD, cảnh báo dữ liệu thiếu hoặc bất thường, và đề xuất sửa trước khi scoring.
 * Chuyển đổi CV, JD và hồ sơ mong muốn thành vector bằng TF-IDF.
 * Tính Matching Score và Recommendation Score bằng cosine similarity.
@@ -114,7 +114,7 @@ Ví dụ:
 * Employer experience cho candidate: featured employers, employer detail, danh sách job đang mở của từng công ty.
 * Candidate profile experience: Hồ sơ & CV với 3 tab `CV đã tạo`, `Hồ sơ cố định`, `Portfolio / Dự án`.
 * Recruiter dashboard: JD management, ranking, applicants, potential pool, analytics.
-* Upload CV text-based PDF hoặc nhập CV qua form.
+* Upload CV PDF text-based, PDF scan/image-only qua OCR fallback hoặc nhập CV qua form.
 * Validate CV/JD bằng hard validation và soft warning.
 * Trích xuất từ khóa/đặc trưng và vector hóa bằng TF-IDF với static corpus.
 * Tính similarity score bằng cosine similarity trên tầng service của Java.
@@ -129,7 +129,6 @@ Ví dụ:
 
 **Hệ thống không làm trong core scope:**
 
-* OCR cho PDF scan.
 * Microservices phức tạp.
 * Full ATS flow như phỏng vấn, offer, payroll.
 * Tự apply sang website bên thứ ba.
@@ -139,7 +138,7 @@ Ví dụ:
 
 Để tránh dữ liệu bẩn đi vào pipeline vector hóa, hệ thống phải kiểm tra đầu vào trước khi scoring.
 
-* **CV PDF:** kiểm tra đúng PDF, dung lượng hợp lệ, extract được text, không phải file rỗng hoặc ảnh scan.
+* **CV PDF:** kiểm tra đúng PDF, dung lượng hợp lệ, extract được text bằng PDFBox hoặc OCR fallback; file rỗng hoặc OCR vẫn quá ít text thì chặn xử lý.
 * **CV Form:** kiểm tra email, số điện thoại, năm kinh nghiệm, kỹ năng, học vấn, vị trí mong muốn và trường bắt buộc.
 * **JD:** kiểm tra title, mô tả công việc, kỹ năng bắt buộc, seniority, location, language, salary mode và độ đầy đủ nội dung.
 * **Validation mềm:** dữ liệu thiếu nhưng vẫn xử lý được thì hiển thị warning và đề xuất bổ sung.
@@ -450,7 +449,7 @@ MVP nên hoàn thành theo thứ tự:
 9. AutoFit policy cơ bản: auto-apply threshold, notify/email action.
 10. Một luồng actionable email hoàn chỉnh bằng magic-link.
 11. Audit log cho action chính.
-12. Dashboard candidate/recruiter, job market analytics và bilingual UI cơ bản.
+12. Dashboard candidate/recruiter, job market analytics, Advanced Analytics UI theo role và bilingual UI cơ bản.
 
 ## TÍNH NĂNG PHASE SAU
 
@@ -458,9 +457,9 @@ Sau khi MVP chạy ổn, có thể bổ sung:
 
 1. Redis cache cho ranking/job feed.
 2. Apache POI export Excel.
-3. Hybrid OCR cho PDF scan.
+3. Hybrid OCR cho PDF scan đã được bổ sung ở backend bằng Tesseract fallback.
 4. Message broker như RabbitMQ/Kafka cho email queue lớn.
-5. Advanced analytics.
+5. Mở rộng Advanced Analytics với funnel/skill-gap drill-down chi tiết hơn và event tracking sâu hơn trên UI.
 6. Admin console đầy đủ.
 7. Tích hợp ATS hoặc job board bên ngoài.
 
@@ -479,13 +478,14 @@ Luồng demo đề xuất:
 9. Candidate xem job feed cá nhân từ `/api/matches/me/cards` với score %, label và lý do match.
 10. Đăng nhập bằng `re` / `1` hoặc account recruiter đã seed; recruiter mở tổng quan để xem chart/metrics/ranking summary từ backend.
 11. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
-12. Candidate bật auto-apply threshold, ví dụ 95%.
-13. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
-14. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
-15. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
-16. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
-17. Mở audit log để chứng minh mọi automation đều truy vết được.
-18. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
+12. Mở `/candidate/advanced-analytics` hoặc `/recruiter/advanced-analytics` để xem market overview, skill demand, salary distribution và panel analytics theo role.
+13. Candidate bật auto-apply threshold, ví dụ 95%.
+14. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
+15. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
+16. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
+17. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
+18. Mở audit log để chứng minh mọi automation đều truy vết được.
+19. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
 
 ## CÂU CHỐT KHI BẢO VỆ
 

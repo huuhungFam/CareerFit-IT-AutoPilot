@@ -37,8 +37,8 @@ Database triển khai theo hướng:
 Web app có hai vai trò:
 
 - Với guest, web là job portal public: dashboard public, job market chart, job list, job detail và employer detail. Guest không thấy score/potential cá nhân và mọi action cần tài khoản phải đi qua login-required guard/modal.
-- Với candidate, web vẫn là một job portal bình thường: job feed, search suggestion, search results, filter, job detail, employer detail, CV upload, Hồ sơ & CV, recommendations, applications.
-- Với recruiter/admin, web là control panel: dashboard tổng quan, HR-style job management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics.
+- Với candidate, web vẫn là một job portal bình thường: job feed, search suggestion, search results, filter, job detail, employer detail, CV upload, Hồ sơ & CV, recommendations, applications, Advanced Analytics theo role.
+- Với recruiter/admin, web là control panel: dashboard tổng quan, HR-style job management, ranking, potential pool, approval queue, AutoFit settings, audit log, analytics cơ bản và Advanced Analytics theo role.
 
 ### 1.2. Email Action Channel
 
@@ -74,6 +74,7 @@ Frontend không quyết định automation. Email không chứa logic nghiệp v
 - Dùng email như một kênh giao tiếp chính, giảm phụ thuộc vào việc mở web liên tục.
 - Dùng feedback từ web/email để cập nhật vector bằng Rocchio và cải thiện ranking/recommendation.
 - Dùng job market analytics để hiển thị tổng số job đăng tuyển, xu hướng theo thời gian và phân bố theo nhóm IT/mức lương. Phần này tách biệt với analytics về matching.
+- Advanced Analytics UI dùng route riêng `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`; `/recruiter/analytics` vẫn là trang thống kê cơ bản/legacy.
 - Tách rõ candidate CV, hồ sơ cố định và portfolio để tránh nhầm CV upload với dữ liệu profile dài hạn.
 - Tách recruiter dashboard tổng quan khỏi trang job management HR Dashboard.
 
@@ -795,6 +796,7 @@ Luồng:
 3. Frontend vẽ line chart bằng `total_posted_jobs`.
 4. Frontend vẽ bar chart theo `distribution_by_role` hoặc `distribution_by_salary`.
 5. Tooltip chỉ hiện khi hover và dùng nhãn `jobs đăng tuyển` hoặc `việc làm`.
+6. Advanced Analytics route kết hợp market widgets public với panel role-scoped từ `/api/candidate/analytics/*` hoặc `/api/recruiter/analytics/*`.
 
 ### 7.11. Recruiter overview và HR dashboard
 
@@ -880,14 +882,31 @@ Luồng:
 
 ### 8.10. Analytics
 
-- `GET /api/analytics/summary`
-- `GET /api/analytics/jobs/trends`
-- `GET /api/analytics/job-market/summary`
-- `GET /api/analytics/job-market/trends`
-- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+API analytics cơ bản vẫn giữ:
 
-`/api/analytics/job-market/*` trả dữ liệu thị trường việc làm theo số job đăng tuyển.
-Các endpoint matching/ranking analytics phải dùng DTO và tên field riêng để tránh nhầm với job market.
+- `GET /api/analytics/stats`
+- `GET /api/analytics/trend`
+- `GET /api/analytics/roles`
+
+Advanced Analytics bổ sung namespace riêng:
+
+- `GET /api/analytics/market/overview`
+- `GET /api/analytics/market/skills`
+- `GET /api/analytics/market/salary`
+- `GET /api/analytics/market/trends`
+- `POST /api/analytics/events`
+- `GET /api/candidate/analytics/overview`
+- `GET /api/candidate/analytics/skill-demand`
+- `GET /api/candidate/analytics/profile-gaps`
+- `GET /api/candidate/analytics/match-trends`
+- `GET /api/recruiter/analytics/overview`
+- `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+- `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+- `GET /api/recruiter/analytics/trends`
+
+`/api/analytics/market/*` trả dữ liệu thị trường việc làm theo số job đăng tuyển, skill demand, salary distribution và trend public.
+Các endpoint candidate/recruiter analytics phải role-scoped để không lộ score, CV, application hoặc funnel riêng tư.
+`POST /api/analytics/events` lưu event như job view/search/match card click để các metric view/search không phải đoán từ entity nghiệp vụ.
 
 ### 8.11. Audit
 

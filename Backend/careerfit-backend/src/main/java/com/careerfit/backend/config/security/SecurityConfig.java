@@ -1,13 +1,11 @@
 package com.careerfit.backend.config.security;
 
 import com.careerfit.backend.config.AppProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,6 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -26,7 +25,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -36,16 +34,16 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtFilter;
     private final UserIdResolutionFilter userIdFilter;
     private final AppProperties appProperties;
-    private final ObjectMapper objectMapper;
+    private final SecurityErrorResponseWriter errorWriter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
                           UserIdResolutionFilter userIdFilter,
                           AppProperties appProperties,
-                          ObjectMapper objectMapper) {
+                          SecurityErrorResponseWriter errorWriter) {
         this.jwtFilter = jwtFilter;
         this.userIdFilter = userIdFilter;
         this.appProperties = appProperties;
-        this.objectMapper = objectMapper;
+        this.errorWriter = errorWriter;
     }
 
     @Bean
@@ -54,7 +52,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint()))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authEntryPoint())
+                .accessDeniedHandler(accessDeniedHandler()))
             .authorizeHttpRequests(auth -> auth
                 // ── Fully public ───────────────────────────────────────────
                 .requestMatchers(
@@ -91,6 +91,7 @@ public class SecurityConfig {
                     "/api/recommendations/jobs/*/similar"
                 ).permitAll()
                 // ── Candidate-only ─────────────────────────────────────────
+                .requestMatchers("/api/candidate/analytics/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/cv/**", "/api/matches/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/candidates/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/applications/me", "/api/applications").hasRole("CANDIDATE")
@@ -133,12 +134,15 @@ public class SecurityConfig {
 
     private AuthenticationEntryPoint authEntryPoint() {
         return (HttpServletRequest req, HttpServletResponse res, AuthenticationException ex) -> {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            objectMapper.writeValue(res.getWriter(), Map.of(
-                "success", false,
-                "error", Map.of("code", "UNAUTHORIZED", "message", "Authentication required")
-            ));
+            errorWriter.write(res, HttpServletResponse.SC_UNAUTHORIZED,
+                    "UNAUTHORIZED", "Authentication required");
+        };
+    }
+
+    private AccessDeniedHandler accessDeniedHandler() {
+        return (HttpServletRequest req, HttpServletResponse res, org.springframework.security.access.AccessDeniedException ex) -> {
+            errorWriter.write(res, HttpServletResponse.SC_FORBIDDEN,
+                    "FORBIDDEN", "Access denied");
         };
     }
 }

@@ -1,6 +1,7 @@
 package com.careerfit.backend.feedback.repository;
 
 import com.careerfit.backend.feedback.entity.Feedback;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +26,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, UUID> {
     List<Feedback> findByActorIdOrderByCreatedAtDesc(UUID actorId);
 
     /** Positive feedbacks for a job (used by Rocchio positive set). */
+    @EntityGraph(attributePaths = {"matching", "matching.cv"})
     @Query("""
         SELECT f FROM Feedback f
         JOIN f.matching m
@@ -34,6 +36,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, UUID> {
     List<Feedback> findPositiveByJobId(@Param("jobId") UUID jobId);
 
     /** Negative feedbacks for a job (used by Rocchio negative set). */
+    @EntityGraph(attributePaths = {"matching", "matching.cv"})
     @Query("""
         SELECT f FROM Feedback f
         JOIN f.matching m

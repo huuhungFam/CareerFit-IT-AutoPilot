@@ -2,7 +2,9 @@ package com.careerfit.backend.job.service;
 
 import com.careerfit.backend.auth.repository.UserAccountRepository;
 import com.careerfit.backend.auth.entity.UserAccount;
+import com.careerfit.backend.common.dto.ValidationDtos;
 import com.careerfit.backend.common.exception.AppException;
+import com.careerfit.backend.common.service.QualityValidationService;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
 import com.careerfit.backend.employer.entity.EmployerProfile;
@@ -40,6 +42,7 @@ public class JobService {
     private final TfIdfService tfidf;
     private final MatchingService matchingService;
     private final ObjectMapper objectMapper;
+    private final QualityValidationService qualityValidationService;
 
     public JobService(JobRepository jobRepo,
                       UserAccountRepository userRepo,
@@ -47,7 +50,8 @@ public class JobService {
                       TextNormalizationService normalizer,
                       TfIdfService tfidf,
                       MatchingService matchingService,
-                      ObjectMapper objectMapper) {
+                      ObjectMapper objectMapper,
+                      QualityValidationService qualityValidationService) {
         this.jobRepo = jobRepo;
         this.userRepo = userRepo;
         this.employerRepo = employerRepo;
@@ -55,6 +59,7 @@ public class JobService {
         this.tfidf = tfidf;
         this.matchingService = matchingService;
         this.objectMapper = objectMapper;
+        this.qualityValidationService = qualityValidationService;
     }
 
     // ── Create Job ────────────────────────────────────────────────────────
@@ -66,6 +71,7 @@ public class JobService {
         if (recruiter.getRole() != UserAccount.Role.RECRUITER) {
             throw AppException.forbidden("Only recruiters can create job postings");
         }
+        qualityValidationService.validateCreateJob(req);
 
         Job.SalaryMode salaryMode;
         try {
@@ -102,6 +108,7 @@ public class JobService {
     @Transactional
     public JobDtos.JobDetailResponse updateJob(UUID jobId, UUID userId, JobDtos.UpdateJobRequest req) {
         Job job = findAndAuthorize(jobId, userId);
+        boolean shouldRevectorize = false;
 
         if (req.title()        != null) job.setTitle(req.title());
         if (req.location()     != null) job.setLocation(req.location());
@@ -112,7 +119,11 @@ public class JobService {
         if (req.language()     != null) job.setLanguage(req.language());
 
         if (req.salaryMode() != null) {
-            job.setSalaryMode(Job.SalaryMode.valueOf(req.salaryMode().toUpperCase()));
+            try {
+                job.setSalaryMode(Job.SalaryMode.valueOf(req.salaryMode().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw AppException.badRequest("Invalid salary mode: " + req.salaryMode());
+            }
         }
         if (req.salaryMin()        != null) job.setSalaryMin(req.salaryMin());
         if (req.salaryMax()        != null) job.setSalaryMax(req.salaryMax());
@@ -133,12 +144,22 @@ public class JobService {
         // If JD text changed → re-vectorize → mark existing matches for recompute
         if (req.originalText() != null && !req.originalText().isBlank()) {
             job.setOriginalText(req.originalText());
-            vectorizeJob(job);
-            matchingService.scoreJobAgainstAllCvs(job);
+            shouldRevectorize = true;
         }
 
         if (req.status() != null) {
-            job.setStatus(Job.JobStatus.valueOf(req.status().toUpperCase()));
+            try {
+                job.setStatus(Job.JobStatus.valueOf(req.status().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw AppException.badRequest("Invalid status: " + req.status());
+            }
+        }
+
+        qualityValidationService.validateJob(job);
+
+        if (shouldRevectorize) {
+            vectorizeJob(job);
+            matchingService.scoreJobAgainstAllCvs(job);
         }
 
         jobRepo.save(job);
@@ -316,11 +337,13 @@ public class JobService {
                 job.getDomain(),
                 job.getLanguage(),
                 job.getStatus().name(),
-                job.getCreatedAt()
+                job.getCreatedAt(),
+                qualityValidationService.analyzeJob(job)
         );
     }
 
     public JobDtos.JobDetailResponse toDetail(Job job, EmployerProfile employer) {
+        List<ValidationDtos.QualitySignal> qualitySignals = qualityValidationService.analyzeJob(job);
         return new JobDtos.JobDetailResponse(
                 job.getId().toString(),
                 job.getTitle(),
@@ -339,7 +362,8 @@ public class JobService {
                 job.getLanguage(),
                 job.getStatus().name(),
                 job.getCreatedAt(),
-                job.getUpdatedAt()
+                job.getUpdatedAt(),
+                qualitySignals
         );
     }
 

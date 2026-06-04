@@ -80,6 +80,10 @@ public class Candidate {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     protected Candidate() {}
 
     public Candidate(UserAccount user) {
@@ -122,4 +126,5 @@ public class Candidate {
     public void setAvatarUrl(String u)           { this.avatarUrl = u; }
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
+    public long getVersion()                     { return version; }
 }

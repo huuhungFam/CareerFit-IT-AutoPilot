@@ -39,19 +39,16 @@ public class AuthController {
 
     @PostMapping("/passwordless/request")
     @Operation(summary = "Request a passwordless magic-link token (sent via email)")
-    public ResponseEntity<ApiResponse<String>> requestPasswordless(
+    public ResponseEntity<ApiResponse<AuthDtos.PasswordlessRequestResponse>> requestPasswordless(
             @Valid @RequestBody AuthDtos.PasswordlessRequest req) {
-        String token = authService.requestPasswordlessToken(req.email());
-        // In production: send via email. For MVP, return token for testing.
-        return ResponseEntity.ok(ApiResponse.ok(token));
+        return ResponseEntity.ok(ApiResponse.ok(authService.requestPasswordlessToken(req.email())));
     }
 
     @GetMapping("/passwordless/verify")
     @Operation(summary = "Verify passwordless token (GET shows confirm info)")
     public ResponseEntity<ApiResponse<String>> verifyPasswordlessGet(
             @RequestParam String token) {
-        // GET: only show user info, do not consume token
-        return ResponseEntity.ok(ApiResponse.ok("Token appears valid. POST to /verify to complete login."));
+        return ResponseEntity.ok(ApiResponse.ok(authService.inspectPasswordlessToken(token)));
     }
 
     @PostMapping("/passwordless/verify")

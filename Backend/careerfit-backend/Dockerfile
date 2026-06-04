@@ -10,8 +10,12 @@ RUN sh ./mvnw clean package -DskipTests
 # Stage 2: Run
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-# Add bash for wait-for-it if needed
-RUN apk add --no-cache bash tzdata
+RUN apk add --no-cache \
+    bash \
+    tzdata \
+    tesseract-ocr \
+    tesseract-ocr-data-eng \
+    tesseract-ocr-data-vie
 ENV TZ=Asia/Ho_Chi_Minh
 
 COPY --from=builder /app/target/careerfit-backend-*.jar app.jar

@@ -75,6 +75,10 @@ public class Application {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     // ── Enums ──────────────────────────────────────────────────────────────
 
     public enum ApplicationStatus {
@@ -116,4 +120,5 @@ public class Application {
     public void setRecruiterNotes(String n)           { this.recruiterNotes = n; }
     public Instant getAppliedAt()                     { return appliedAt; }
     public Instant getUpdatedAt()                     { return updatedAt; }
+    public long getVersion()                          { return version; }
 }

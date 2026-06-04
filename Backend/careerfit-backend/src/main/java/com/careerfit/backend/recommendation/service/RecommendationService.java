@@ -3,6 +3,7 @@ package com.careerfit.backend.recommendation.service;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
+import com.careerfit.backend.config.AppProperties;
 import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.job.entity.Job;
@@ -41,17 +42,20 @@ public class RecommendationService {
     private final CVRepository cvRepo;
     private final JobRepository jobRepo;
     private final ObjectMapper objectMapper;
+    private final AppProperties appProperties;
 
     public RecommendationService(MatchingRepository matchingRepo,
                                   CandidateRepository candidateRepo,
                                   CVRepository cvRepo,
                                   JobRepository jobRepo,
-                                  ObjectMapper objectMapper) {
+                                  ObjectMapper objectMapper,
+                                  AppProperties appProperties) {
         this.matchingRepo = matchingRepo;
         this.candidateRepo = candidateRepo;
         this.cvRepo = cvRepo;
         this.jobRepo = jobRepo;
         this.objectMapper = objectMapper;
+        this.appProperties = appProperties;
     }
 
     // ── Main recommendation feed ──────────────────────────────────────────
@@ -81,6 +85,10 @@ public class RecommendationService {
         // Step 1: Get top matches from matching table
         List<Matching> topMatchings = matchingRepo.findTopMatchesByCvId(
                 cv.getId(), PageRequest.of(0, effectiveLimit * 2));  // fetch more to allow filtering
+        if (topMatchings.isEmpty() || topMatchings.get(0).getNormalizedScore().doubleValue() < appProperties.getScoreLabelLowMax()) {
+            log.info("No usable matches for candidate={}, falling back to profile-based recs", candidate.getId());
+            return getProfileBasedRecommendations(candidate, effectiveLimit);
+        }
 
         // Step 2: Score with content-based boost
         return topMatchings.stream()

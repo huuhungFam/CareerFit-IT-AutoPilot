@@ -25,7 +25,7 @@ Nếu có mâu thuẫn giữa tài liệu, ưu tiên:
   - `Matching Engine`: chấm CV theo JD khi upload.
   - `Recommendation Engine`: gợi ý JD cho candidate theo hồ sơ mong muốn.
 - Hỗ trợ:
-  - upload CV PDF text-based
+  - upload CV PDF text-based hoặc PDF scan/image-only qua OCR fallback
   - nhập CV qua form
   - nhập / quản lý Job Description
   - scoring theo `%`
@@ -304,14 +304,35 @@ Public job endpoints may allow unauthenticated read-only access for guest UI. Gu
 
 ### 5.13. Analytics / Trend
 
-- `GET /api/analytics/summary`
-- `GET /api/analytics/jobs/trends`
-- `GET /api/jobs/{jobId}/trends`
-- `GET /api/analytics/job-market/summary`
-- `GET /api/analytics/job-market/trends`
-- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+Basic/public:
 
-Các endpoint `/api/analytics/job-market/*` phải trả thống kê số lượng job đăng tuyển trên hệ thống, không trả số CV-JD matching.
+- `GET /api/analytics/stats`
+- `GET /api/analytics/trend`
+- `GET /api/analytics/roles`
+
+Advanced market:
+
+- `GET /api/analytics/market/overview`
+- `GET /api/analytics/market/skills`
+- `GET /api/analytics/market/salary`
+- `GET /api/analytics/market/trends`
+
+Advanced role-scoped:
+
+- `GET /api/candidate/analytics/overview`
+- `GET /api/candidate/analytics/skill-demand`
+- `GET /api/candidate/analytics/profile-gaps`
+- `GET /api/candidate/analytics/match-trends`
+- `GET /api/recruiter/analytics/overview`
+- `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+- `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+- `GET /api/recruiter/analytics/trends`
+
+Event tracking:
+
+- `POST /api/analytics/events`
+
+Các endpoint `/api/analytics/market/*` phải trả thống kê public về thị trường việc làm. Matching/application analytics riêng tư phải nằm dưới candidate/recruiter scoped endpoints.
 
 ### 5.14. Audit / Admin / Recompute
 
@@ -331,7 +352,7 @@ Yêu cầu:
 
 1. Nhận file PDF hoặc form CV.
 2. Lưu metadata và trạng thái `PENDING`.
-3. Chạy parse PDF text-based bằng PDFBox trong background.
+3. Chạy parse PDF text-based bằng PDFBox trong background; nếu text quá ít thì render trang PDF và chạy Tesseract OCR fallback.
 4. Làm sạch text theo ngôn ngữ.
 5. Trích xuất term / feature.
 6. Vector hóa bằng TF-IDF.
@@ -590,7 +611,7 @@ Quản lý trạng thái rõ ràng:
 
 - Validate upload file:
   - chỉ PDF
-  - text-based only
+  - text-based PDF first, OCR fallback for scanned/image-only PDFs
   - size limit
 - Validate request body:
   - email
@@ -709,7 +730,7 @@ Sau khi core chạy ổn, mới cân nhắc:
 
 - Redis cache
 - Apache POI export
-- OCR fallback
+- OCR fallback đã nằm trong backend; khi chạy host cần Tesseract, khi chạy Docker image đã có `vie+eng`.
 - message broker cho queue lớn
 - full admin console
 
@@ -749,6 +770,6 @@ Backend chỉ coi là xong khi:
 - Đừng viết backend chỉ để CRUD.
 - Đừng làm hardcode score.
 - Đừng tạo pipeline mơ hồ không giải thích được.
-- Đừng vượt scope sang OCR / full ATS / microservices.
+- Đừng vượt scope sang full ATS / microservices / LLM agent tự lập kế hoạch phức tạp.
 - Giữ mọi thứ giải thích được, test được, và demo được.
 - Nếu phải chọn giữa “làm nhiều tính năng” và “làm core chạy chắc”, hãy ưu tiên core chạy chắc trước.

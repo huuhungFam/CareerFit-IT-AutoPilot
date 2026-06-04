@@ -23,9 +23,12 @@ import java.io.IOException;
 public class UserIdResolutionFilter extends OncePerRequestFilter {
 
     private final UserAccountRepository userRepo;
+    private final SecurityErrorResponseWriter errorWriter;
 
-    public UserIdResolutionFilter(UserAccountRepository userRepo) {
+    public UserIdResolutionFilter(UserAccountRepository userRepo,
+                                  SecurityErrorResponseWriter errorWriter) {
         this.userRepo = userRepo;
+        this.errorWriter = errorWriter;
     }
 
     @Override
@@ -34,8 +37,20 @@ public class UserIdResolutionFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof String email) {
-            userRepo.findByEmail(email).ifPresent(user ->
-                    request.setAttribute("userId", user.getId()));
+            var user = userRepo.findByEmail(email).orElse(null);
+            if (user == null) {
+                SecurityContextHolder.clearContext();
+                errorWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "TOKEN_SUBJECT_NOT_FOUND", "Token subject no longer exists");
+                return;
+            }
+            if (!user.isActive()) {
+                SecurityContextHolder.clearContext();
+                errorWriter.write(response, HttpServletResponse.SC_FORBIDDEN,
+                        "ACCOUNT_DISABLED", "Account is disabled");
+                return;
+            }
+            request.setAttribute("userId", user.getId());
         }
         filterChain.doFilter(request, response);
     }

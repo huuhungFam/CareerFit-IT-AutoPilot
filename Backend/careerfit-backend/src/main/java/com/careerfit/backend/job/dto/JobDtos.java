@@ -1,6 +1,6 @@
 package com.careerfit.backend.job.dto;
 
-import com.careerfit.backend.job.entity.Job;
+import com.careerfit.backend.common.dto.ValidationDtos;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -107,7 +107,8 @@ public class JobDtos {
         String domain,
         String language,
         String status,
-        Instant createdAt
+        Instant createdAt,
+        List<ValidationDtos.QualitySignal> qualitySignals
     ) {}
 
     public record JobDetailResponse(
@@ -128,7 +129,8 @@ public class JobDtos {
         String language,
         String status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        List<ValidationDtos.QualitySignal> qualitySignals
     ) {}
 
     public record JobListResponse(

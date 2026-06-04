@@ -66,7 +66,8 @@ public class MatchingDtos {
         long total,
         int page,
         int size,
-        int totalPages
+        int totalPages,
+        MatchFeedMeta meta
     ) {}
 
     // ── Feedback ──────────────────────────────────────────────────────────
@@ -97,7 +98,18 @@ public class MatchingDtos {
         long total,
         int page,
         int size,
-        int totalPages
+        int totalPages,
+        MatchFeedMeta meta
+    ) {}
+
+    public record MatchFeedMeta(
+        String cvId,
+        BigDecimal bestScore,
+        boolean hasStrongMatches,
+        String emptyReason,
+        int hiddenLowScoreCount,
+        BigDecimal minimumVisibleScore,
+        BigDecimal strongMatchThreshold
     ) {}
 
     public record FeedbackRequest(

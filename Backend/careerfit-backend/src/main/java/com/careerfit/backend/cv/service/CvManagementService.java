@@ -8,6 +8,7 @@ import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.common.util.StorageService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,10 +81,10 @@ public class CvManagementService {
 
     @Transactional
     public CvDtos.CvSummaryResponse setDefault(UUID cvId, UUID userId) {
-        var candidate = candidateRepo.findByUserId(userId)
+        var candidate = candidateRepo.findByUserIdForUpdate(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
 
-        CV cv = cvRepo.findById(cvId)
+        CV cv = cvRepo.findByIdForUpdate(cvId)
                 .orElseThrow(() -> AppException.notFound("CV", cvId));
 
         if (!cv.getCandidate().getId().equals(candidate.getId())) {
@@ -96,9 +97,13 @@ public class CvManagementService {
         }
 
         // Atomically clear existing default and set new one
-        cvRepo.clearDefaultByCandidateId(candidate.getId());
-        cv.setDefault(true);
-        cvRepo.save(cv);
+        try {
+            cvRepo.clearDefaultByCandidateId(candidate.getId());
+            cv.setDefault(true);
+            cvRepo.saveAndFlush(cv);
+        } catch (DataIntegrityViolationException e) {
+            throw AppException.conflict("Default CV was changed by another request. Please retry.");
+        }
 
         return toSummary(cv);
     }

@@ -9,6 +9,9 @@ spring:
       ddl-auto: validate
 
 app:
+  magic-link:
+    expose-token-in-response: false
+
   mail:
     enabled: true
 

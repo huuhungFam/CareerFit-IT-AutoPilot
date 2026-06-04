@@ -32,9 +32,10 @@ public class MatchingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String label,
-            @RequestParam(defaultValue = "false") boolean potentialOnly) {
+            @RequestParam(defaultValue = "false") boolean potentialOnly,
+            @RequestParam(defaultValue = "0") double minScore) {
         return ResponseEntity.ok(ApiResponse.ok(
-                queryService.getMatchedJobs(userId, page, size, label, potentialOnly)));
+                queryService.getMatchedJobs(userId, page, size, label, potentialOnly, minScore)));
     }
 
     @GetMapping("/me/cards")
@@ -44,8 +45,9 @@ public class MatchingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String label,
-            @RequestParam(defaultValue = "false") boolean potentialOnly) {
+            @RequestParam(defaultValue = "false") boolean potentialOnly,
+            @RequestParam(defaultValue = "0") double minScore) {
         return ResponseEntity.ok(ApiResponse.ok(
-                queryService.getCandidateJobCards(userId, page, size, label, potentialOnly)));
+                queryService.getCandidateJobCards(userId, page, size, label, potentialOnly, minScore)));
     }
 }

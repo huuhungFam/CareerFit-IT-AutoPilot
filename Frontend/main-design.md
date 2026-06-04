@@ -76,6 +76,16 @@ Depth in this system is achieved through **Tonal Layering** rather than structur
 ### Tooltips & Overlays
 - **Logic:** Use Glassmorphism (85% opacity `surface_container_highest` + backdrop blur).
 - **Animation:** Elements should "fade and slide" up 8px over 200ms.
+
+### Current UX Baseline
+The current frontend implementation extends the design system with these required interaction details:
+
+- Job cards include a compact company avatar, icon-backed metadata, an insight row, match/potential badges, and a separated action bar.
+- Search suggestions behave like a polished dropdown: short fade/slide animation, clear group labels, and obvious hover/focus states.
+- Filter/login modals use a blurred backdrop and a short modal entrance animation.
+- Job list loading uses skeleton cards instead of a spinner when there is no data rendered yet.
+- Navigation uses a top bar with active-route indicator; settings is an icon shortcut and account actions live inside Settings.
+- All motion must respect `prefers-reduced-motion`.
  
 ---
  

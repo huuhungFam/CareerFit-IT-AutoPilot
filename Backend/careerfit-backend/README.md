@@ -2,11 +2,14 @@
 
 Spring Boot 3.x + Java 21 backend cho hệ thống CareerFit IT AutoPilot.
 
+Backend update report tổng hợp nằm tại `../../BACKEND_DOCUMENTATION.md`.
+
 ## Yêu cầu
 
 - Java 21
 - Maven 3.9+ (có thể dùng `C:\tools\maven\apache-maven-3.9.9\bin\mvn`)
 - Docker Desktop (để chạy PostgreSQL)
+- Tesseract OCR nếu muốn xử lý PDF scan khi chạy backend trực tiếp bằng Maven. Backend Docker image đã cài sẵn Tesseract + data `vie/eng`.
 
 ## Khởi động nhanh
 
@@ -81,10 +84,32 @@ com.careerfit.backend
 |--------|------|-------|
 | POST | /api/auth/register | Đăng ký (CANDIDATE / RECRUITER) |
 | POST | /api/auth/login | Đăng nhập email/password |
-| POST | /api/auth/passwordless/request | Yêu cầu magic-link |
-| GET  | /api/auth/passwordless/verify?token=... | Xem thông tin token |
+| POST | /api/auth/passwordless/request | Tạo token và gửi magic-link qua mail service |
+| GET  | /api/auth/passwordless/verify?token=... | Kiểm tra token còn hợp lệ |
 | POST | /api/auth/passwordless/verify | Verify token → JWT |
 | GET  | /api/auth/me | Thông tin user hiện tại |
+
+## Advanced Analytics API
+
+Các endpoint analytics cơ bản cũ vẫn được giữ nguyên. Bộ Advanced Analytics mới bổ sung route riêng cho từng vai trò:
+
+| Method | Path | Quyền | Mô tả |
+|--------|------|-------|-------|
+| GET | /api/analytics/market/overview | Public | Market overview: jobs, employers, views, searches, applications, skills, salary |
+| GET | /api/analytics/market/skills | Public | Top required skills |
+| GET | /api/analytics/market/salary | Public | Salary distribution by currency/seniority |
+| GET | /api/analytics/market/trends | Public | Market time series |
+| POST | /api/analytics/events | Authenticated | Track UI/user analytics event |
+| GET | /api/candidate/analytics/overview | Candidate | Candidate analytics overview |
+| GET | /api/candidate/analytics/skill-demand | Candidate | Demand for candidate skills |
+| GET | /api/candidate/analytics/profile-gaps | Candidate | Missing high-demand skills |
+| GET | /api/candidate/analytics/match-trends | Candidate | Candidate match/application trends |
+| GET | /api/recruiter/analytics/overview | Recruiter | Recruiter advanced dashboard overview |
+| GET | /api/recruiter/analytics/jobs/{jobId}/funnel | Recruiter | Job funnel for recruiter-owned job |
+| GET | /api/recruiter/analytics/jobs/{jobId}/skill-gap | Recruiter | Required skill coverage among matched candidates |
+| GET | /api/recruiter/analytics/trends | Recruiter | Recruiter match/application/view trends |
+
+Frontend contract chi tiết nằm tại `Frontend/ADVANCED_ANALYTICS_API.md`.
 
 ## Database
 
@@ -112,4 +137,37 @@ com.careerfit.backend
 | `MAIL_USERNAME` | no-reply@careerfit.dev | Sender email |
 | `MAIL_PASSWORD` | (empty) | Mail password |
 | `APP_BASE_URL` | http://localhost:8080 | Base URL for magic links |
+| `MAGIC_LINK_EXPOSE_TOKEN` | true | Dev helper: trả raw token trong response passwordless request; prod set false |
 | `CORS_ORIGINS` | http://localhost:5173 | Allowed CORS origins |
+| `OCR_ENABLED` | true | Bật OCR fallback cho PDF scan/image-only |
+| `TESSERACT_COMMAND` | tesseract | Lệnh hoặc đường dẫn tuyệt đối tới Tesseract khi chạy trên host |
+| `OCR_LANGUAGES` | vie+eng | Language data dùng cho OCR |
+| `OCR_DPI` | 220 | DPI render PDF thành ảnh trước khi OCR |
+| `OCR_MAX_PAGES` | 8 | Số trang tối đa OCR cho mỗi CV |
+| `OCR_TIMEOUT_SECONDS` | 45 | Timeout OCR cho mỗi trang |
+
+### Passwordless email contract
+
+`POST /api/auth/passwordless/request` luôn trả envelope chuẩn. Ở profile `dev`, mail service mặc định là `NoOpMailService` nên email chỉ được log ra console và response có `data.token` để frontend/dev dùng test nhanh. Ở profile `prod`, `app.mail.enabled=true`, `MAGIC_LINK_EXPOSE_TOKEN=false`, backend gửi email thật qua SMTP và không expose raw token.
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Magic link sent if the account exists and mail is configured.",
+    "token": "dev-only-token-or-null",
+    "expiresInMinutes": 15
+  }
+}
+```
+
+Để test gửi email thật cần cấu hình tối thiểu:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="prod"
+$env:MAIL_HOST="smtp.gmail.com"
+$env:MAIL_PORT="587"
+$env:MAIL_USERNAME="sender@gmail.com"
+$env:MAIL_PASSWORD="<gmail-app-password>"
+$env:APP_BASE_URL="http://localhost:8080"
+```

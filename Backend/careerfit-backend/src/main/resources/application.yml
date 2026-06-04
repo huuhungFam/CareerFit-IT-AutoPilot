@@ -80,10 +80,19 @@ app:
   magic-link:
     expiration-minutes: 15
     base-url: ${APP_BASE_URL:http://localhost:8080}
+    expose-token-in-response: ${MAGIC_LINK_EXPOSE_TOKEN:true}
 
   storage:
     local-path: ${STORAGE_PATH:./storage/cv}
     max-file-size-mb: 10
+
+  ocr:
+    enabled: ${OCR_ENABLED:true}
+    tesseract-command: ${TESSERACT_COMMAND:tesseract}
+    languages: ${OCR_LANGUAGES:vie+eng}
+    dpi: ${OCR_DPI:220}
+    max-pages: ${OCR_MAX_PAGES:8}
+    timeout-seconds: ${OCR_TIMEOUT_SECONDS:45}
 
   matching:
     high-match-threshold-candidate: 90.0

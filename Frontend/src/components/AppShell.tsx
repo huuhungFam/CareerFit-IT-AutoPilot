@@ -25,6 +25,7 @@ const candidateLinks = [
   { to: '/candidate/upload', key: 'upload', icon: UploadCloud },
   { to: '/candidate/profile', key: 'profile', icon: UserRound },
   { to: '/candidate/recommendations', key: 'recommendations', icon: Gauge },
+  { to: '/candidate/advanced-analytics', key: 'advancedAnalytics', icon: BarChart3 },
   { to: '/candidate/applications', key: 'applications', icon: FileText },
   { to: '/candidate/automation', key: 'automation', icon: SlidersHorizontal },
 ];
@@ -43,6 +44,7 @@ const recruiterLinks = [
   { to: '/recruiter', key: 'dashboard', icon: Home },
   { to: '/recruiter/jobs', key: 'jobs', icon: BriefcaseBusiness },
   { to: '/recruiter/analytics', key: 'analytics', icon: BarChart3 },
+  { to: '/recruiter/advanced-analytics', key: 'advancedAnalytics', icon: Gauge },
   { to: '/recruiter/automation', key: 'automation', icon: SlidersHorizontal },
 ];
 

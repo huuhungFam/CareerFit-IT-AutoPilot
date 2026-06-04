@@ -24,11 +24,32 @@ public class AppProperties {
     @Value("${app.magic-link.base-url}")
     private String baseUrl;
 
+    @Value("${app.magic-link.expose-token-in-response:true}")
+    private boolean magicLinkExposeTokenInResponse;
+
     @Value("${app.storage.local-path}")
     private String localStoragePath;
 
     @Value("${app.storage.max-file-size-mb}")
     private int maxFileSizeMb;
+
+    @Value("${app.ocr.enabled:true}")
+    private boolean ocrEnabled;
+
+    @Value("${app.ocr.tesseract-command:tesseract}")
+    private String tesseractCommand;
+
+    @Value("${app.ocr.languages:vie+eng}")
+    private String ocrLanguages;
+
+    @Value("${app.ocr.dpi:220}")
+    private int ocrDpi;
+
+    @Value("${app.ocr.max-pages:8}")
+    private int ocrMaxPages;
+
+    @Value("${app.ocr.timeout-seconds:45}")
+    private int ocrTimeoutSeconds;
 
     @Value("${app.matching.high-match-threshold-candidate}")
     private double highMatchThresholdCandidate;
@@ -56,8 +77,15 @@ public class AppProperties {
     public long getJwtRefreshExpirationMs()         { return jwtRefreshExpirationMs; }
     public int getMagicLinkExpirationMinutes()      { return magicLinkExpirationMinutes; }
     public String getBaseUrl()                      { return baseUrl; }
+    public boolean isMagicLinkExposeTokenInResponse() { return magicLinkExposeTokenInResponse; }
     public String getLocalStoragePath()             { return localStoragePath; }
     public int getMaxFileSizeMb()                   { return maxFileSizeMb; }
+    public boolean isOcrEnabled()                   { return ocrEnabled; }
+    public String getTesseractCommand()             { return tesseractCommand; }
+    public String getOcrLanguages()                 { return ocrLanguages; }
+    public int getOcrDpi()                          { return ocrDpi; }
+    public int getOcrMaxPages()                     { return ocrMaxPages; }
+    public int getOcrTimeoutSeconds()               { return ocrTimeoutSeconds; }
     public double getHighMatchThresholdCandidate()  { return highMatchThresholdCandidate; }
     public double getHighMatchThresholdRecruiter()  { return highMatchThresholdRecruiter; }
     public double getScoreLabelLowMax()             { return scoreLabelLowMax; }

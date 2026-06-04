@@ -37,7 +37,7 @@ public class OpenApiConfig {
                             AI-driven job matching platform for Vietnamese IT professionals.
                             
                             ### Authentication
-                            All protected endpoints require a **JWT Bearer token** obtained from `/api/auth/login` or `/api/auth/magic-link/verify`.
+                            All protected endpoints require a **JWT Bearer token** obtained from `/api/auth/login` or `/api/auth/passwordless/verify`.
                             
                             ### Roles
                             - **CANDIDATE**: Apply for jobs, manage CVs, view matches, configure autopilot

@@ -108,6 +108,83 @@ type RecruiterJobDto = {
   createdAt?: string | null;
 };
 
+export type AdvancedTrendPoint = {
+  date: string;
+  jobs: number;
+  matches: number;
+  applications: number;
+  views: number;
+  avgMatchScore: number;
+};
+
+export type AdvancedSkillDemandItem = {
+  skill: string;
+  jobCount: number;
+  candidateHasSkill?: boolean;
+};
+
+export type AdvancedSalaryBucket = {
+  currency: string;
+  seniority: string;
+  jobCount: number;
+  minSalary: number;
+  averageSalary: number;
+  maxSalary: number;
+};
+
+export type AdvancedMarketOverview = {
+  activeJobs: number;
+  totalJobs: number;
+  newJobsInRange: number;
+  employers: number;
+  jobViews: number;
+  jobSearches: number;
+  applications: number;
+  matchings: number;
+  topSkills: AdvancedSkillDemandItem[];
+  salaryDistribution: AdvancedSalaryBucket[];
+};
+
+export type CandidateAnalyticsOverview = {
+  profileCompleteness: number;
+  cvCount: number;
+  scoringDoneCvCount: number;
+  totalMatches: number;
+  highMatches: number;
+  potentialMatches: number;
+  averageMatchScore: number;
+  bestMatchScore: number;
+  totalApplications: number;
+  applicationFunnel: Record<string, number>;
+  skillDemand: AdvancedSkillDemandItem[];
+  profileGaps: Array<{ skill: string; marketDemand: number; reason: string }>;
+};
+
+export type RecruiterAnalyticsOverview = {
+  totalJobs: number;
+  activeJobs: number;
+  totalApplicants: number;
+  pendingReview: number;
+  approved: number;
+  rejected: number;
+  invited: number;
+  autoApplied: number;
+  totalMatchings: number;
+  highMatchings: number;
+  potentialMatchings: number;
+  averageMatchScore: number;
+  jobViews: number;
+  topJobs: Array<{
+    jobId: string;
+    title: string;
+    status: string;
+    views: number;
+    matches: number;
+    applications: number;
+    avgMatchScore: number;
+  }>;
+};
+
 type AuthResponseDto = {
   accessToken: string;
   tokenType: string;
@@ -290,6 +367,10 @@ export const careerfitApi = {
     window.localStorage.removeItem(ACCOUNT_KEY);
   },
 
+  saveMockSession(account: MockAccount) {
+    saveSession(account);
+  },
+
   async login(identifier: string, password: string) {
     const payload = await request<AuthResponseDto>('/auth/login', {
       method: 'POST',
@@ -341,5 +422,45 @@ export const careerfitApi = {
   async getRecruiterJobs() {
     const payload = await request<RecruiterJobDto[]>('/recruiter/jobs');
     return payload.map(mapRecruiterJob);
+  },
+
+  async getAdvancedMarketOverview(rangeDays = 30) {
+    return request<AdvancedMarketOverview>(`/analytics/market/overview?rangeDays=${rangeDays}`);
+  },
+
+  async getAdvancedMarketSkills(top = 12) {
+    return request<AdvancedSkillDemandItem[]>(`/analytics/market/skills?top=${top}`);
+  },
+
+  async getAdvancedMarketSalary() {
+    return request<AdvancedSalaryBucket[]>('/analytics/market/salary');
+  },
+
+  async getAdvancedMarketTrends(days = 30) {
+    return request<AdvancedTrendPoint[]>(`/analytics/market/trends?days=${days}`);
+  },
+
+  async getCandidateAdvancedOverview() {
+    return request<CandidateAnalyticsOverview>('/candidate/analytics/overview');
+  },
+
+  async getCandidateAdvancedSkillDemand() {
+    return request<AdvancedSkillDemandItem[]>('/candidate/analytics/skill-demand');
+  },
+
+  async getCandidateAdvancedProfileGaps(top = 12) {
+    return request<CandidateAnalyticsOverview['profileGaps']>(`/candidate/analytics/profile-gaps?top=${top}`);
+  },
+
+  async getCandidateAdvancedTrends(days = 30) {
+    return request<AdvancedTrendPoint[]>(`/candidate/analytics/match-trends?days=${days}`);
+  },
+
+  async getRecruiterAdvancedOverview(rangeDays = 30) {
+    return request<RecruiterAnalyticsOverview>(`/recruiter/analytics/overview?rangeDays=${rangeDays}`);
+  },
+
+  async getRecruiterAdvancedTrends(days = 30) {
+    return request<AdvancedTrendPoint[]>(`/recruiter/analytics/trends?days=${days}`);
   },
 };

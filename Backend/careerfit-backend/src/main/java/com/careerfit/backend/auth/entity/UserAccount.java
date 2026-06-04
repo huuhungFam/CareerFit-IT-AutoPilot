@@ -52,6 +52,10 @@ public class UserAccount {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     public enum Role { CANDIDATE, RECRUITER, ADMIN }
 
     // ── Constructors ──────────────────────────────────────────────────────
@@ -84,4 +88,5 @@ public class UserAccount {
     public void setPreferredLanguage(String l)   { this.preferredLanguage = l; }
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
+    public long getVersion()                     { return version; }
 }

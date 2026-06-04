@@ -110,6 +110,10 @@ public class AutomationPolicy {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     protected AutomationPolicy() {}
 
     public AutomationPolicy(UserAccount user) {
@@ -160,6 +164,7 @@ public class AutomationPolicy {
     public void setPasswordlessEnabled(boolean b)         { this.passwordlessEnabled = b; }
     public Instant getCreatedAt()                         { return createdAt; }
     public Instant getUpdatedAt()                         { return updatedAt; }
+    public long getVersion()                              { return version; }
 
     // ── Convenience aliases for AutomationPolicyService ───────────────────
     // Maps new service fields to existing entity fields

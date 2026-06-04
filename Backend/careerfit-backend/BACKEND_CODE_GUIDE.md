@@ -46,7 +46,8 @@ Tech stack chính:
 | Spring Security | JWT, phân quyền |
 | PostgreSQL | Database |
 | Flyway | Migration database |
-| PDFBox | Đọc text từ PDF |
+| PDFBox | Đọc text từ PDF và render PDF scan thành ảnh |
+| Tesseract OCR | OCR fallback cho PDF scan/image-only |
 | JJWT | Tạo và verify JWT |
 | Spring Mail | Gửi email |
 | Testcontainers | Integration test với PostgreSQL thật |
@@ -215,6 +216,7 @@ src/main/java/com/careerfit/backend/config/AppProperties.java
 - `server.port: 8080`: port backend.
 - `app.jwt`: secret và thời hạn JWT.
 - `app.storage`: nơi lưu file CV.
+- `app.ocr`: bật/tắt OCR fallback, Tesseract command, language data, DPI, số trang và timeout.
 - `app.matching`: ngưỡng label matching.
 - `app.cors`: frontend origins được phép gọi API.
 
@@ -261,6 +263,7 @@ Các table chính:
 | `email_action_token` | `EmailAction` | Token click từ email |
 | `audit_log` | `AuditLog` | Lịch sử hành động |
 | `job_market_snapshot` | `JobMarketSnapshot` | Snapshot thống kê |
+| `analytics_event` | `AnalyticsEvent` | Event tracking cho Advanced Analytics |
 
 Quan hệ chính:
 
@@ -383,8 +386,10 @@ Phân quyền chính:
 | `/api/auth/register`, `/api/auth/login` | Public |
 | `GET /api/jobs/**` | Public |
 | `GET /api/employers/**` | Public |
+| `GET /api/analytics/**` | Public với market/analytics read-only |
 | `/api/cv/**` | Candidate |
 | `/api/candidates/**` | Candidate |
+| `/api/candidate/analytics/**` | Candidate |
 | `/api/matches/**` | Candidate |
 | `/api/recruiter/**` | Recruiter |
 | `POST/PATCH/DELETE /api/jobs/**` | Recruiter |
@@ -590,13 +595,14 @@ Upload PDF flow:
 6. Nếu chưa có default CV, set CV này làm default.
 7. Save AuditLog CV_UPLOAD.
 8. Gọi processPdfAsync.
-9. Worker đọc PDF, lấy raw text.
-10. Detect language.
-11. Normalize text thành tokens.
-12. Build TF-IDF vector.
-13. Lưu top skills, extracted terms, summary.
-14. Set status SCORING_DONE.
-15. Gọi MatchingService.scoreAllJobsForCv.
+9. Worker đọc PDF, lấy raw text bằng PDFBox.
+10. Nếu PDF là scan/image-only hoặc text quá ít, render PDF thành ảnh và chạy Tesseract OCR.
+11. Detect language.
+12. Normalize text thành tokens.
+13. Build TF-IDF vector.
+14. Lưu top skills, extracted terms, summary.
+15. Set status SCORING_DONE.
+16. Gọi MatchingService.scoreAllJobsForCv.
 ```
 
 Manual CV flow:
@@ -986,6 +992,24 @@ Scheduler:
 - `GET /api/analytics/roles`
 - build daily snapshot lúc 07:00 ICT.
 
+`AdvancedAnalyticsController` và `AdvancedAnalyticsService`:
+
+- `GET /api/analytics/market/overview`
+- `GET /api/analytics/market/skills`
+- `GET /api/analytics/market/salary`
+- `GET /api/analytics/market/trends`
+- `POST /api/analytics/events`
+- `GET /api/candidate/analytics/overview`
+- `GET /api/candidate/analytics/skill-demand`
+- `GET /api/candidate/analytics/profile-gaps`
+- `GET /api/candidate/analytics/match-trends`
+- `GET /api/recruiter/analytics/overview`
+- `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+- `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+- `GET /api/recruiter/analytics/trends`
+
+`analytics_event` lưu tương tác UI như `JOB_VIEWED`, `JOB_SEARCHED`, `MATCH_CARD_VIEWED`, `RECRUITER_VIEWED_CANDIDATE`. Những metric view/search có thể bằng 0 cho đến khi frontend bắt đầu bắn event.
+
 `RecruiterDashboardController`:
 
 - `/api/recruiter/dashboard`
@@ -1293,4 +1317,3 @@ Field nào auto timestamp?
 10. Viết test nhỏ cho `TextNormalizationService.normalize`.
 
 Nếu làm được các bài này, bạn đã nắm được phần lõi backend Spring Boot của project.
-

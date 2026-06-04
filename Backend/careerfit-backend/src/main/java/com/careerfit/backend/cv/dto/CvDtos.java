@@ -1,6 +1,6 @@
 package com.careerfit.backend.cv.dto;
 
-import com.careerfit.backend.cv.entity.CV;
+import com.careerfit.backend.common.dto.ValidationDtos;
 import jakarta.validation.constraints.*;
 
 import java.time.Instant;
@@ -94,6 +94,7 @@ public class CvDtos {
         String id,
         String displayName,
         String status,
-        String message
+        String message,
+        List<ValidationDtos.QualitySignal> qualitySignals
     ) {}
 }

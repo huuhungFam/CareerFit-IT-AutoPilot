@@ -5,6 +5,7 @@ import com.careerfit.backend.audit.repository.AuditLogRepository;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
+import com.careerfit.backend.common.service.QualityValidationService;
 import com.careerfit.backend.common.util.StorageService;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
@@ -50,6 +51,7 @@ public class CvIngestionService {
     private final StorageService storage;
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
+    private final QualityValidationService qualityValidationService;
 
     public CvIngestionService(CVRepository cvRepo,
                               CandidateRepository candidateRepo,
@@ -59,7 +61,8 @@ public class CvIngestionService {
                               MatchingService matchingService,
                               StorageService storage,
                               AuditLogRepository auditRepo,
-                              ObjectMapper objectMapper) {
+                              ObjectMapper objectMapper,
+                              QualityValidationService qualityValidationService) {
         this.cvRepo = cvRepo;
         this.candidateRepo = candidateRepo;
         this.pdfService = pdfService;
@@ -69,6 +72,7 @@ public class CvIngestionService {
         this.storage = storage;
         this.auditRepo = auditRepo;
         this.objectMapper = objectMapper;
+        this.qualityValidationService = qualityValidationService;
     }
 
     // ── PDF Upload ─────────────────────────────────────────────────────────
@@ -125,7 +129,8 @@ public class CvIngestionService {
                 cv.getId().toString(),
                 cv.getDisplayName(),
                 cv.getStatus().name(),
-                "CV uploaded. Processing started in background."
+                "CV uploaded. Processing started in background.",
+                List.of()
         );
     }
 
@@ -138,6 +143,7 @@ public class CvIngestionService {
     public CvDtos.CvUploadResponse acceptManualCv(CvDtos.ManualCvRequest req, UUID userId) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
+        var qualitySignals = qualityValidationService.validateManualCv(req);
 
         var cv = new CV(candidate, req.displayName(), CV.CvSource.MANUAL);
         cv.setStatus(CV.CvStatus.UPLOADED);
@@ -163,7 +169,8 @@ public class CvIngestionService {
                 cv.getId().toString(),
                 cv.getDisplayName(),
                 cv.getStatus().name(),
-                "CV created. Processing started in background."
+                "CV created. Processing started in background.",
+                qualitySignals
         );
     }
 

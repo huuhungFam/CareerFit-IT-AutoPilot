@@ -87,6 +87,7 @@ Nếu repo đã chọn stack khác, giữ cùng nguyên tắc:
 - `/candidate/profile`
 - `/candidate/recommendations`
 - `/candidate/applications`
+- `/candidate/advanced-analytics`
 - `/candidate/settings`
 - `/candidate/automation`
 
@@ -99,7 +100,9 @@ Nếu repo đã chọn stack khác, giữ cùng nguyên tắc:
 - `/recruiter/jobs/:jobId/applicants`
 - `/recruiter/jobs/:jobId/potential`
 - `/recruiter/analytics`
+- `/recruiter/advanced-analytics`
 - `/recruiter/automation`
+- `/recruiter/settings`
 
 ### 4.4. Shared routes
 
@@ -107,6 +110,16 @@ Nếu repo đã chọn stack khác, giữ cùng nguyên tắc:
 - `/settings/language`
 - `/settings/privacy`
 - `/settings/security`
+
+### 4.5. Advanced Analytics routes
+
+Backend đã có contract cho Advanced Analytics tại `Frontend/ADVANCED_ANALYTICS_API.md`.
+
+- Candidate route `/candidate/advanced-analytics` dùng các endpoint `/api/candidate/analytics/*`.
+- Recruiter route `/recruiter/advanced-analytics` dùng các endpoint `/api/recruiter/analytics/*`.
+- Route `/recruiter/analytics` vẫn là trang Thống kê cũ và không được thay thế khi bổ sung Advanced Analytics.
+- Market widgets public có thể dùng `/api/analytics/market/*`.
+- Trang này phải dùng JWT thật theo role khi gọi endpoint role-scoped. Trong môi trường demo, UI có fallback mock có kiểm soát để không trắng màn khi backend chưa chạy, nhưng không được che giấu lỗi contract khi backend đang trả response sai schema.
 
 ---
 
@@ -124,6 +137,13 @@ Layout nên có:
   - notification bell
   - automation status indicator
 
+Hiện tại app dùng top navigation cho cả guest, candidate và recruiter:
+
+- Guest có nav public và các tab protected sẽ mở login-required guard.
+- Candidate có Dashboard, Jobs, Upload CV, Hồ sơ & CV, Gợi ý, Phân tích nâng cao, Ứng tuyển và AutoFit.
+- Recruiter có Dashboard, Việc làm, Thống kê, Phân tích nâng cao và AutoFit.
+- Logout và xóa tài khoản nằm trong Settings, không nằm trực tiếp trên header.
+
 ### 5.2. Visual style
 
 Tuân thủ `main-design.md`:
@@ -137,6 +157,17 @@ Tuân thủ `main-design.md`:
 - font:
   - Plus Jakarta Sans cho headline
   - Inter cho body
+
+UX polish hiện tại cần giữ:
+
+- job card có company avatar, metadata icon, insight row, match badge/potential badge và action bar rõ ràng
+- hover job card lift nhẹ và không làm layout nhảy
+- hover JD preview có nội dung cuộn được
+- search suggestions có dropdown animation và item hover state
+- modal/filter/login prompt dùng backdrop blur và animation ngắn
+- job list có skeleton loading khi API đang fetch và chưa có dữ liệu render
+- focus visible rõ cho keyboard navigation
+- hỗ trợ `prefers-reduced-motion` để giảm animation khi user yêu cầu
 
 ### 5.3. Brand
 
@@ -489,18 +520,46 @@ Show the outcome after clicking email CTA.
 - what was updated
 - next steps
 
-## 6.14. Analytics Page
+## 6.14. Recruiter Basic Analytics Page
 
 ### Purpose
 
+- Route `/recruiter/analytics`.
 - show trend charts
 - show counts and distributions
+- Giữ trang này như thống kê cơ bản/legacy, không trộn với Advanced Analytics.
 
 ### Charts
 
 - line chart for job trend
 - bar chart for job volume
 - pie/donut for label distribution
+
+## 6.15. Advanced Analytics Page
+
+### Purpose
+
+Route riêng cho analytics nâng cao theo role:
+
+- Candidate: `/candidate/advanced-analytics`
+- Recruiter: `/recruiter/advanced-analytics`
+
+Trang này tổng hợp market intelligence public với dữ liệu role-scoped:
+
+- market overview: active jobs, new jobs, job views/searches, applications, employers
+- skill demand
+- salary distribution
+- engagement trend
+- candidate panel: profile completeness, CV đã chấm điểm, average/best score, skill gaps, match/application trend
+- recruiter panel: active jobs, applicants, pending review, high matches, top performing jobs, engagement trend
+
+### UX requirements
+
+- Không thay thế route `/recruiter/analytics` cũ.
+- Hiển thị bằng bề mặt riêng `advanced-analytics-*`, không dùng lại layout HR Dashboard.
+- Cards và charts phải responsive, stack hợp lý trên mobile.
+- Nếu API lỗi trong demo, có fallback mock rõ ràng; khi kết nối backend thật, cần kiểm contract và không làm sai lệch metric.
+- Market analytics phải dùng số job đăng tuyển, không dùng matching count làm proxy cho thị trường.
 
 ---
 
@@ -545,6 +604,8 @@ The following components should exist at minimum:
 - `PotentialList`
 - `NotificationList`
 - `TrendLineChart`
+- `AdvancedAnalyticsPage`
+- `ProgressRow`
 - `ValidationPanel`
 - `EmptyState`
 - `ErrorState`

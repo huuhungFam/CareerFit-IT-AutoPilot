@@ -71,6 +71,10 @@ public class Matching {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     // ── Enum ──────────────────────────────────────────────────────────────
 
     public enum MatchLabel { LOW, MEDIUM, HIGH, POTENTIAL }
@@ -109,4 +113,5 @@ public class Matching {
     public void setNeedsRecompute(boolean b)     { this.needsRecompute = b; }
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
+    public long getVersion()                     { return version; }
 }

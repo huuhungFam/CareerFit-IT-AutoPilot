@@ -51,7 +51,7 @@ Tên sản phẩm:
 | Candidate | Ứng viên tìm kiếm việc làm. |
 | Recruiter | Nhà tuyển dụng đăng Job Description và xem danh sách ứng viên phù hợp. |
 | Admin | Người quản trị hệ thống, có quyền xem toàn cục và cấu hình hệ thống. |
-| CV | Hồ sơ ứng viên, có thể tải lên bằng PDF text-based hoặc nhập qua form. |
+| CV | Hồ sơ ứng viên, có thể tải lên bằng PDF text-based, PDF scan qua OCR fallback hoặc nhập qua form. |
 | JD | Job Description, mô tả công việc do recruiter tạo. |
 | Matching Score | Điểm thể hiện mức độ phù hợp giữa CV và JD. |
 | Recommendation Score | Điểm thể hiện mức độ phù hợp giữa hồ sơ mong muốn của candidate và JD. |
@@ -138,7 +138,7 @@ Hệ thống cũng không chỉ là một công cụ chấm điểm CV-JD.
 
 Hệ thống làm:
 
-- upload và parse PDF text-based,
+- upload và parse PDF text-based hoặc PDF scan qua OCR fallback,
 - nhập CV qua form,
 - quản lý nhiều CV trên cùng một candidate,
 - quản lý hồ sơ cố định và portfolio dự án của candidate,
@@ -158,7 +158,7 @@ Hệ thống làm:
 
 Hệ thống không làm trong phạm vi core:
 
-- OCR PDF scan,
+- OCR PDF scan bằng Tesseract fallback,
 - ATS full-flow,
 - phỏng vấn trực tuyến,
 - thanh toán,
@@ -264,7 +264,7 @@ Trách nhiệm:
 | Mã | Use Case | Mô tả |
 |---|---|---|
 | UC-C01 | Đăng ký/đăng nhập | Candidate đăng ký hoặc đăng nhập bằng password/passwordless. |
-| UC-C02 | Upload CV PDF | Candidate tải lên CV PDF text-based. |
+| UC-C02 | Upload CV PDF | Candidate tải lên CV PDF text-based hoặc PDF scan/image-only. |
 | UC-C03 | Nhập CV bằng form | Candidate nhập hồ sơ khi không có file PDF. |
 | UC-C04 | Cập nhật Hồ sơ & CV | Candidate quản lý nhiều CV, hồ sơ cố định, preference và portfolio dự án. |
 | UC-C05 | Xem job feed | Candidate xem danh sách job như web tìm việc thông thường. |
@@ -387,7 +387,7 @@ Hệ thống phải phân quyền tối thiểu theo role:
 
 Candidate phải có thể upload CV dạng PDF.
 
-Hệ thống chỉ chấp nhận PDF text-based trong core flow.
+Hệ thống ưu tiên đọc PDF text-based bằng PDFBox và fallback sang OCR cho PDF scan/image-only.
 
 Một candidate phải có thể lưu nhiều CV.
 Mỗi CV phải có id riêng, source, trạng thái xử lý, ngày cập nhật và có thể được chọn làm CV mặc định.
@@ -1133,6 +1133,16 @@ Candidate dashboard phải có:
 
 Frontend phải vừa giống job portal thông thường vừa hỗ trợ automation.
 
+UX hiện tại cần giữ các nguyên tắc sau:
+
+- job card phải đọc nhanh được thông tin chính: company avatar, title, company, posted time, location, seniority, salary, skills, match badge/potential badge nếu user đã đăng nhập,
+- job card có insight row để nêu tín hiệu phù hợp hoặc kỹ năng nổi bật,
+- search suggestions hiển thị dưới input khi focus và có hover/focus state rõ,
+- filter/login modal dùng backdrop và animation ngắn, không làm mất state người dùng,
+- danh sách job có skeleton loading khi API đang fetch và chưa có dữ liệu render,
+- focus visible phải rõ cho keyboard navigation,
+- UI tôn trọng `prefers-reduced-motion`.
+
 Candidate-facing UI:
 
 - ưu tiên job browsing,
@@ -1177,6 +1187,7 @@ Các trang candidate:
 - fixed candidate profile,
 - portfolio/projects,
 - recommendations,
+- advanced analytics,
 - applications,
 - AutoFit settings,
 - notifications.
@@ -1192,7 +1203,8 @@ Các trang recruiter:
 - applicants,
 - potential pool,
 - automation settings,
-- analytics,
+- analytics cơ bản,
+- advanced analytics,
 - audit summary.
 
 ### 6.5. Admin Pages
@@ -1659,11 +1671,22 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 
 ### 10.9. Analytics Và Audit
 
-- `GET /api/analytics/summary`
-- `GET /api/analytics/jobs/trends`
-- `GET /api/analytics/job-market/summary`
-- `GET /api/analytics/job-market/trends`
-- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+- `GET /api/analytics/stats`
+- `GET /api/analytics/trend`
+- `GET /api/analytics/roles`
+- `GET /api/analytics/market/overview`
+- `GET /api/analytics/market/skills`
+- `GET /api/analytics/market/salary`
+- `GET /api/analytics/market/trends`
+- `POST /api/analytics/events`
+- `GET /api/candidate/analytics/overview`
+- `GET /api/candidate/analytics/skill-demand`
+- `GET /api/candidate/analytics/profile-gaps`
+- `GET /api/candidate/analytics/match-trends`
+- `GET /api/recruiter/analytics/overview`
+- `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+- `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+- `GET /api/recruiter/analytics/trends`
 - `GET /api/audit-logs`
 
 ---
@@ -1765,10 +1788,12 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 ### 11.9. Job market dashboard
 
 1. Backend tổng hợp snapshot thị trường việc làm theo lịch.
-2. Frontend candidate/recruiter dashboard gọi analytics job-market APIs.
+2. Frontend candidate/recruiter dashboard gọi analytics market APIs và role-scoped Advanced Analytics APIs.
 3. Biểu đồ line hiển thị tổng job đăng tuyển theo thời gian.
 4. Biểu đồ bar hiển thị phân bố theo nhóm IT hoặc mức lương.
 5. Tooltip chỉ xuất hiện khi hover và dùng đơn vị job/việc làm.
+6. Advanced Analytics UI nằm ở `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`.
+7. `/recruiter/analytics` vẫn là trang thống kê cơ bản, không bị thay thế bởi Advanced Analytics.
 
 ---
 
@@ -1865,7 +1890,7 @@ Hệ thống được xem là đạt yêu cầu MVP khi:
 ### 14.1. Giả Định
 
 - Dữ liệu demo tập trung vào ngành công nghệ thông tin.
-- CV PDF chủ yếu là text-based.
+- CV PDF có thể là text-based hoặc scan/image-only; scan cần Tesseract OCR khi chạy backend trên host.
 - PostgreSQL local qua Docker đủ cho quy mô development/demo trực tiếp.
 - Supabase PostgreSQL hoặc PostgreSQL cloud chỉ dùng như lựa chọn deploy/demo online nếu cần.
 - Email provider có thể dùng SMTP hoặc dịch vụ tương đương.
@@ -1875,7 +1900,7 @@ Hệ thống được xem là đạt yêu cầu MVP khi:
 
 | Rủi ro | Ảnh hưởng | Cách giảm thiểu |
 |---|---|---|
-| CV scan không parse được | Không scoring được | Chặn trong validation, OCR để phase sau. |
+| CV scan không parse được | Không scoring được | Dùng OCR fallback; nếu OCR vẫn quá ít text thì trả lỗi xử lý rõ ràng. |
 | TF-IDF không hiểu ngữ nghĩa sâu | Score chưa hoàn hảo | Dùng Potential heuristic và feedback Rocchio. |
 | Email bị spam hoặc gửi lỗi | HITL kém hiệu quả | Retry, digest, dashboard fallback. |
 | Token bị link scanner mở | Action sai | GET chỉ confirm, POST mới thực thi. |
@@ -1889,7 +1914,7 @@ MVP nên bao gồm:
 
 - auth cơ bản,
 - candidate profile,
-- CV upload text-based PDF,
+- CV upload text-based PDF hoặc PDF scan qua OCR fallback,
 - JD CRUD,
 - TF-IDF vectorization,
 - cosine matching,
@@ -1898,14 +1923,15 @@ MVP nên bao gồm:
 - AutoFit policy cơ bản,
 - one actionable email flow,
 - audit log,
+- Advanced Analytics UI theo role,
+- UX polish cơ bản gồm skeleton loading, focus visible, hover state và reduced-motion support,
 - bilingual UI cơ bản.
 
 Các phần có thể để phase sau:
 
-- OCR,
 - Redis cache,
 - Apache POI export,
-- advanced analytics,
+- advanced analytics drill-down sâu hơn như funnel/skill-gap chi tiết và event tracking đầy đủ trên UI,
 - full admin console,
 - message broker,
 - external ATS integration.

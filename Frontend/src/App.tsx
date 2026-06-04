@@ -53,7 +53,16 @@ import { MatchingBadge, PotentialBadge, ReasonChips } from './components/Badges'
 import { JobCard } from './components/JobCard';
 import { StatCard } from './components/StatCard';
 import { useLanguage } from './i18n/LanguageProvider';
-import { careerfitApi, type SearchSuggestionGroup } from './lib/api';
+import {
+  careerfitApi,
+  type AdvancedMarketOverview,
+  type AdvancedSalaryBucket,
+  type AdvancedSkillDemandItem,
+  type AdvancedTrendPoint,
+  type CandidateAnalyticsOverview,
+  type RecruiterAnalyticsOverview,
+  type SearchSuggestionGroup,
+} from './lib/api';
 import {
   applications,
   automationPolicy,
@@ -144,6 +153,127 @@ const topEmployers = [
   },
 ];
 
+const jobFilterOptions = {
+  city: [
+    ['all', 'All Cities'],
+    ['hcm', 'Ho Chi Minh'],
+    ['hanoi', 'Ha Noi'],
+    ['remote', 'Remote Vietnam'],
+  ],
+  level: [
+    ['all', 'All levels'],
+    ['senior', 'Senior'],
+    ['mid-senior', 'Mid-Senior'],
+    ['lead', 'Lead'],
+  ],
+  workModel: [
+    ['all', 'All models'],
+    ['hybrid', 'Hybrid'],
+    ['remote', 'Remote'],
+    ['onsite', 'Onsite'],
+  ],
+  salary: [
+    ['all', 'All salaries'],
+    ['2500', '$2,500+'],
+    ['3000', '$3,000+'],
+    ['4000', '$4,000+'],
+    ['negotiable', 'Negotiable'],
+  ],
+  domain: [
+    ['all', 'All domains'],
+    ['frontend', 'Frontend'],
+    ['backend', 'Backend'],
+    ['fullstack', 'Fullstack'],
+    ['data-ai', 'Data/AI'],
+    ['devops', 'DevOps'],
+    ['qa', 'QA/Testing'],
+  ],
+} as const;
+
+type JobFilterKey = keyof typeof jobFilterOptions;
+type JobFilters = Record<JobFilterKey, string>;
+type UploadTab = 'parser' | 'manual';
+type ProfileTab = 'cv' | 'profile' | 'portfolio';
+type RecruiterSubview = 'ranking' | 'applicants' | 'potential';
+
+const defaultJobFilters: JobFilters = {
+  city: 'all',
+  level: 'all',
+  workModel: 'all',
+  salary: 'all',
+  domain: 'all',
+};
+
+const profileTabParamToState: Record<string, ProfileTab> = {
+  cvs: 'cv',
+  fixed: 'profile',
+  portfolio: 'portfolio',
+};
+
+const profileTabStateToParam: Record<ProfileTab, string> = {
+  cv: 'cvs',
+  profile: 'fixed',
+  portfolio: 'portfolio',
+};
+
+function isOptionValue(key: JobFilterKey, value: string | null) {
+  return Boolean(value && jobFilterOptions[key].some(([optionValue]) => optionValue === value));
+}
+
+function getJobFilters(searchParams: URLSearchParams): JobFilters {
+  return {
+    city: isOptionValue('city', searchParams.get('city')) ? searchParams.get('city')! : defaultJobFilters.city,
+    level: isOptionValue('level', searchParams.get('level')) ? searchParams.get('level')! : defaultJobFilters.level,
+    workModel: isOptionValue('workModel', searchParams.get('workModel')) ? searchParams.get('workModel')! : defaultJobFilters.workModel,
+    salary: isOptionValue('salary', searchParams.get('salary')) ? searchParams.get('salary')! : defaultJobFilters.salary,
+    domain: isOptionValue('domain', searchParams.get('domain')) ? searchParams.get('domain')! : defaultJobFilters.domain,
+  };
+}
+
+function getOptionLabel(key: JobFilterKey, value: string) {
+  return jobFilterOptions[key].find(([optionValue]) => optionValue === value)?.[1] ?? value;
+}
+
+function writeJobSearchParams(keyword: string, filters: JobFilters) {
+  const params = new URLSearchParams();
+  if (keyword.trim()) params.set('keyword', keyword.trim());
+  (Object.keys(filters) as JobFilterKey[]).forEach((key) => {
+    if (filters[key] !== defaultJobFilters[key]) {
+      params.set(key, filters[key]);
+    }
+  });
+  return params;
+}
+
+function setOrDeleteParam(params: URLSearchParams, key: string, value: string, defaultValue = '') {
+  if (!value || value === defaultValue) {
+    params.delete(key);
+  } else {
+    params.set(key, value);
+  }
+}
+
+function getRangeDays(searchParams: URLSearchParams) {
+  const parsed = Number(searchParams.get('rangeDays'));
+  return [7, 30, 90].includes(parsed) ? parsed : 30;
+}
+
+function getRecruiterSubview(pathname: string): RecruiterSubview {
+  if (pathname.endsWith('/applicants')) return 'applicants';
+  if (pathname.endsWith('/potential')) return 'potential';
+  return 'ranking';
+}
+
+function getRecruiterJobsQuery(searchParams: URLSearchParams) {
+  const status = searchParams.get('status');
+  const sort = searchParams.get('sort');
+  return {
+    q: searchParams.get('q') ?? '',
+    status: status === 'active' || status === 'draft' ? status : 'all',
+    sort: sort === 'score_desc' || sort === 'newest' || sort === 'applicants_desc' ? sort : 'score_desc',
+  };
+}
+
 export function App() {
   const [account, setAccount] = useState<MockAccount | null>(() => careerfitApi.restoreAccount());
   const location = useLocation();
@@ -159,6 +289,7 @@ export function App() {
         return null;
       }
 
+      careerfitApi.saveMockSession(nextAccount);
       setAccount(nextAccount);
       return nextAccount;
     }
@@ -198,6 +329,7 @@ export function App() {
         <Route path="/candidate/upload" element={protectedRoute('candidate', <UploadPage />)} />
         <Route path="/candidate/profile" element={protectedRoute('candidate', <ProfilePage />)} />
         <Route path="/candidate/recommendations" element={protectedRoute('candidate', <RecommendationsPage />)} />
+        <Route path="/candidate/advanced-analytics" element={protectedRoute('candidate', <AdvancedAnalyticsPage role="candidate" />)} />
         <Route path="/candidate/applications" element={protectedRoute('candidate', <ApplicationsPage />)} />
         <Route path="/candidate/automation" element={protectedRoute('candidate', <AutomationPage />)} />
         <Route
@@ -211,6 +343,7 @@ export function App() {
         <Route path="/recruiter/jobs/:jobId/applicants" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
         <Route path="/recruiter/jobs/:jobId/potential" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
         <Route path="/recruiter/analytics" element={protectedRoute('recruiter', <AnalyticsPage />)} />
+        <Route path="/recruiter/advanced-analytics" element={protectedRoute('recruiter', <AdvancedAnalyticsPage role="recruiter" />)} />
         <Route path="/recruiter/automation" element={protectedRoute('recruiter', <AutomationPage />)} />
         <Route
           path="/recruiter/settings"
@@ -332,7 +465,7 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
-  const { data = jobs } = useJobs({ isPublic });
+  const { data = jobs, isLoading: isJobsLoading } = useJobs({ isPublic });
   const suggestions = useSearchSuggestions(query);
   const newJobs = data.slice(0, 3);
 
@@ -340,6 +473,12 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
     const keyword = query.trim();
     const basePath = isPublic ? '/jobs' : '/candidate/jobs';
     navigate(keyword ? `${basePath}?keyword=${encodeURIComponent(keyword)}` : basePath);
+  }
+
+  function runFilteredSearch(nextFilters: JobFilters, nextKeyword: string) {
+    const basePath = isPublic ? '/jobs' : '/candidate/jobs';
+    const params = writeJobSearchParams(nextKeyword, nextFilters);
+    navigate({ pathname: basePath, search: params.toString() ? `?${params.toString()}` : '' });
   }
 
   return (
@@ -381,13 +520,25 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
         <TopEmployers />
         <JobListWithPreview
           jobs={newJobs}
+          isLoading={isJobsLoading}
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
           onApply={isPublic ? () => setIsLoginPromptOpen(true) : undefined}
           showMatchMeta={!isPublic}
         />
       </section>
 
-      {isFilterOpen ? <FilterModal onClose={() => setIsFilterOpen(false)} /> : null}
+      {isFilterOpen ? (
+        <FilterModal
+          filters={defaultJobFilters}
+          keyword={query}
+          onApply={runFilteredSearch}
+          onReset={() => {
+            setQuery('');
+            setIsFilterOpen(false);
+          }}
+          onClose={() => setIsFilterOpen(false)}
+        />
+      ) : null}
       {isLoginPromptOpen ? <LoginPromptModal onClose={() => setIsLoginPromptOpen(false)} /> : null}
     </div>
   );
@@ -398,26 +549,55 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialKeyword = searchParams.get('keyword') ?? '';
+  const filters = getJobFilters(searchParams);
   const [query, setQuery] = useState(initialKeyword);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
-  const { data: sourceJobs = jobs } = useJobs({ isPublic, keyword: initialKeyword });
-  const filteredJobs = useFilteredJobs(
+  const { data: sourceJobs = jobs, isLoading: isJobsLoading, isFetching: isJobsFetching } = useJobs({ isPublic, keyword: initialKeyword });
+  const keywordFilteredJobs = useFilteredJobs(
     sourceJobs.filter((job) => !hiddenJobIds.includes(job.id)),
     query,
   );
+  const filteredJobs = useMemo(() => applyJobFilters(keywordFilteredJobs, filters), [
+    keywordFilteredJobs,
+    filters.city,
+    filters.level,
+    filters.workModel,
+    filters.salary,
+    filters.domain,
+  ]);
   const suggestions = useSearchSuggestions(query);
+  const activeFilterCount = (Object.keys(filters) as JobFilterKey[]).filter((key) => filters[key] !== defaultJobFilters[key]).length;
 
   useEffect(() => {
     setQuery(initialKeyword);
   }, [initialKeyword]);
 
+  useEffect(() => {
+    setHiddenJobIds([]);
+  }, [searchParams.toString()]);
+
   function runSearch() {
     const keyword = query.trim();
     setIsSearchFocused(false);
-    setSearchParams(keyword ? { keyword } : {});
+    setSearchParams(writeJobSearchParams(keyword, filters));
+  }
+
+  function applyFilters(nextFilters: JobFilters, nextKeyword = query) {
+    setQuery(nextKeyword);
+    setSearchParams(writeJobSearchParams(nextKeyword, nextFilters));
+    setIsFilterOpen(false);
+  }
+
+  function resetFilters() {
+    setSearchParams(writeJobSearchParams(query, defaultJobFilters));
+    setIsFilterOpen(false);
+  }
+
+  function updateSingleFilter(key: JobFilterKey, value: string) {
+    setSearchParams(writeJobSearchParams(query, { ...filters, [key]: value }));
   }
 
   return (
@@ -425,11 +605,10 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
       <section className="result-search-hero">
         <label className="location-select">
           <MapPin size={17} />
-          <select defaultValue={t('allCities')}>
-            <option>{t('allCities')}</option>
-            <option>Ho Chi Minh</option>
-            <option>Ha Noi</option>
-            <option>Remote Vietnam</option>
+          <select value={filters.city} onChange={(event) => updateSingleFilter('city', event.target.value)}>
+            {jobFilterOptions.city.map(([value, label]) => (
+              <option value={value} key={value}>{value === 'all' ? t('allCities') : label}</option>
+            ))}
           </select>
         </label>
         <div className="result-search-input">
@@ -444,7 +623,16 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
             }}
             placeholder={t('searchPlaceholder')}
           />
-          {query ? <button onClick={() => setQuery('')}>×</button> : null}
+          {query ? (
+            <button
+              onClick={() => {
+                setQuery('');
+                setSearchParams(writeJobSearchParams('', filters));
+              }}
+            >
+              ×
+            </button>
+          ) : null}
           {isSearchFocused ? <SearchSuggestions suggestions={suggestions} onPick={setQuery} /> : null}
         </div>
         <button className="primary-action" onClick={runSearch}>
@@ -460,17 +648,26 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
           </h2>
         </div>
         <div className="top-filter-bar">
-          <button>{t('level')} ▾</button>
-          <button>{t('workingModel')} ▾</button>
-          <button>{t('salary')} ▾</button>
-          <button>{t('jobDomain')} ▾</button>
+          <button className={filters.level !== 'all' ? 'active-filter' : ''} onClick={() => setIsFilterOpen(true)}>
+            {t('level')}: {getOptionLabel('level', filters.level)}
+          </button>
+          <button className={filters.workModel !== 'all' ? 'active-filter' : ''} onClick={() => setIsFilterOpen(true)}>
+            {t('workingModel')}: {getOptionLabel('workModel', filters.workModel)}
+          </button>
+          <button className={filters.salary !== 'all' ? 'active-filter' : ''} onClick={() => setIsFilterOpen(true)}>
+            {t('salary')}: {getOptionLabel('salary', filters.salary)}
+          </button>
+          <button className={filters.domain !== 'all' ? 'active-filter' : ''} onClick={() => setIsFilterOpen(true)}>
+            {t('jobDomain')}: {getOptionLabel('domain', filters.domain)}
+          </button>
           <button className="filter-button" onClick={() => setIsFilterOpen(true)}>
             <SlidersHorizontal size={16} />
-            {t('filter')}
+            {t('filter')}{activeFilterCount ? ` (${activeFilterCount})` : ''}
           </button>
         </div>
         <JobListWithPreview
           jobs={filteredJobs}
+          isLoading={isJobsLoading || isJobsFetching}
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
           onSkip={(id) => setHiddenJobIds((current) => [...current, id])}
           onApply={isPublic ? () => setIsLoginPromptOpen(true) : undefined}
@@ -478,7 +675,15 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
         />
       </section>
 
-      {isFilterOpen ? <FilterModal onClose={() => setIsFilterOpen(false)} /> : null}
+      {isFilterOpen ? (
+        <FilterModal
+          filters={filters}
+          keyword={query}
+          onApply={applyFilters}
+          onReset={resetFilters}
+          onClose={() => setIsFilterOpen(false)}
+        />
+      ) : null}
       {isLoginPromptOpen ? <LoginPromptModal onClose={() => setIsLoginPromptOpen(false)} /> : null}
     </div>
   );
@@ -635,9 +840,16 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
 
 function UploadPage() {
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState<'idle' | 'uploading' | 'processing' | 'scored'>('idle');
-  const [activeUploadTab, setActiveUploadTab] = useState<'parser' | 'manual'>('parser');
+  const activeUploadTab: UploadTab = searchParams.get('tab') === 'manual' ? 'manual' : 'parser';
   const skillChips = ['React', 'TypeScript', 'Design System', 'Testing', 'Accessibility'];
+
+  function setActiveUploadTab(tab: UploadTab) {
+    const params = new URLSearchParams(searchParams);
+    setOrDeleteParam(params, 'tab', tab, 'parser');
+    setSearchParams(params);
+  }
 
   async function simulateUpload() {
     setState('uploading');
@@ -841,7 +1053,13 @@ function UploadPage() {
 
 function ProfilePage() {
   const { t } = useLanguage();
-  const [profileTab, setProfileTab] = useState<'cv' | 'profile' | 'portfolio'>('cv');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const profileTab = profileTabParamToState[searchParams.get('tab') ?? ''] ?? 'cv';
+  function setProfileTab(tab: ProfileTab) {
+    const params = new URLSearchParams(searchParams);
+    setOrDeleteParam(params, 'tab', profileTabStateToParam[tab], 'cvs');
+    setSearchParams(params);
+  }
   const managedCvs = [
     {
       id: 'cv-frontend',
@@ -1543,10 +1761,30 @@ function RecruiterOverviewPanel() {
 
 function RecruiterJobsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const { jobId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const recruiterSubview = getRecruiterSubview(location.pathname);
+  const recruiterQuery = getRecruiterJobsQuery(searchParams);
   const { data: recruiterJobs = jobs } = useRecruiterJobs();
   const selectedJob = recruiterJobs.find((job) => job.id === jobId) ?? recruiterJobs[0] ?? jobs[0];
+  const selectedJobIndex = recruiterJobs.findIndex((job) => job.id === selectedJob.id);
+  const visibleRecruiterJobs = useMemo(() => {
+    const normalized = recruiterQuery.q.trim().toLowerCase();
+    return recruiterJobs
+      .filter((job, index) => {
+        if (recruiterQuery.status === 'active' && index === 1) return false;
+        if (recruiterQuery.status === 'draft' && index !== 1) return false;
+        if (!normalized) return true;
+        return [job.title, job.company, job.location, job.seniority, ...job.requiredSkills].join(' ').toLowerCase().includes(normalized);
+      })
+      .sort((a, b) => {
+        if (recruiterQuery.sort === 'newest') return recruiterJobs.indexOf(a) - recruiterJobs.indexOf(b);
+        if (recruiterQuery.sort === 'applicants_desc') return recruiterJobs.indexOf(b) - recruiterJobs.indexOf(a);
+        return b.normalizedScore - a.normalizedScore;
+      });
+  }, [recruiterJobs, recruiterQuery.q, recruiterQuery.status, recruiterQuery.sort]);
   const candidates = [
     {
       initials: 'MA',
@@ -1573,6 +1811,29 @@ function RecruiterJobsPage() {
       tone: 'primary',
     },
   ];
+  const visibleCandidates = useMemo(() => {
+    const normalized = recruiterQuery.q.trim().toLowerCase();
+    return candidates
+      .filter((item) => !normalized || [item.name, item.title].join(' ').toLowerCase().includes(normalized))
+      .filter((item) => recruiterQuery.status === 'all' || (recruiterQuery.status === 'active' ? item.score >= 85 : item.score < 85))
+      .sort((a, b) => {
+        if (recruiterQuery.sort === 'newest') return candidates.indexOf(a) - candidates.indexOf(b);
+        return b.score - a.score;
+      });
+  }, [candidates, recruiterQuery.q, recruiterQuery.status, recruiterQuery.sort]);
+
+  function updateRecruiterQuery(key: 'q' | 'status' | 'sort', value: string) {
+    const params = new URLSearchParams(searchParams);
+    const defaults = { q: '', status: 'all', sort: 'score_desc' };
+    setOrDeleteParam(params, key, value, defaults[key]);
+    setSearchParams(params);
+  }
+
+  function navigateRecruiterSubview(job: Job, subview: RecruiterSubview = recruiterSubview) {
+    const suffix = subview === 'ranking' ? 'ranking' : subview;
+    const search = searchParams.toString();
+    navigate({ pathname: `/recruiter/jobs/${job.id}/${suffix}`, search: search ? `?${search}` : '' });
+  }
 
   return (
     <section className="recruiter-hr-dashboard">
@@ -1584,12 +1845,22 @@ function RecruiterJobsPage() {
         <div className="recruiter-hr-actions">
           <label className="recruiter-search-field">
             <Search size={17} />
-            <input placeholder={t('searchJobs')} />
+            <input
+              value={recruiterQuery.q}
+              onChange={(event) => updateRecruiterQuery('q', event.target.value)}
+              placeholder={t('searchJobs')}
+            />
           </label>
-          <button>
-            <SlidersHorizontal size={16} />
-            {t('filters')}
-          </button>
+          <select value={recruiterQuery.status} onChange={(event) => updateRecruiterQuery('status', event.target.value)}>
+            <option value="all">{t('status')}</option>
+            <option value="active">{t('active')}</option>
+            <option value="draft">{t('draft')}</option>
+          </select>
+          <select value={recruiterQuery.sort} onChange={(event) => updateRecruiterQuery('sort', event.target.value)}>
+            <option value="score_desc">{t('score')}</option>
+            <option value="applicants_desc">{t('applicants')}</option>
+            <option value="newest">{t('newJobs')}</option>
+          </select>
           <button className="primary-action">
             <Plus size={17} />
             {t('postJob')}
@@ -1606,11 +1877,13 @@ function RecruiterJobsPage() {
             </button>
           </div>
           <div className="requisition-list">
-            {recruiterJobs.map((job, index) => (
+            {visibleRecruiterJobs.map((job) => {
+              const index = recruiterJobs.findIndex((item) => item.id === job.id);
+              return (
               <button
                 className={job.id === selectedJob.id ? 'requisition-row active' : 'requisition-row'}
                 key={job.id}
-                onClick={() => navigate(`/recruiter/jobs/${job.id}/ranking`)}
+                onClick={() => navigateRecruiterSubview(job)}
               >
                 <span className="requisition-row-top">
                   <strong>{job.title}</strong>
@@ -1627,7 +1900,8 @@ function RecruiterJobsPage() {
                   </span>
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
@@ -1660,12 +1934,16 @@ function RecruiterJobsPage() {
           </article>
 
           <div className="candidate-tabs">
-            <button className="active">{t('appliedCvs')} ({18 + recruiterJobs.findIndex((job) => job.id === selectedJob.id) * 7})</button>
-            <button>{t('aiPotentialMatches')} ({selectedJob.isPotential ? 15 : 8})</button>
+            <button className={recruiterSubview === 'applicants' || recruiterSubview === 'ranking' ? 'active' : ''} onClick={() => navigateRecruiterSubview(selectedJob, 'applicants')}>
+              {t('appliedCvs')} ({18 + selectedJobIndex * 7})
+            </button>
+            <button className={recruiterSubview === 'potential' ? 'active' : ''} onClick={() => navigateRecruiterSubview(selectedJob, 'potential')}>
+              {t('aiPotentialMatches')} ({selectedJob.isPotential ? 15 : 8})
+            </button>
           </div>
 
           <div className="recruiter-candidate-list">
-            {candidates.map((item) => (
+            {visibleCandidates.map((item) => (
               <article className="candidate-review-card" key={item.name}>
                 <div className="candidate-review-main">
                   <div className="candidate-avatar">{item.initials}</div>
@@ -1742,6 +2020,303 @@ function AnalyticsPage() {
   );
 }
 
+const fallbackAdvancedTrends: AdvancedTrendPoint[] = [
+  { date: '2026-05-27', jobs: 34, matches: 82, applications: 18, views: 420, avgMatchScore: 76 },
+  { date: '2026-05-28', jobs: 42, matches: 96, applications: 21, views: 510, avgMatchScore: 79 },
+  { date: '2026-05-29', jobs: 39, matches: 104, applications: 24, views: 552, avgMatchScore: 81 },
+  { date: '2026-05-30', jobs: 51, matches: 118, applications: 30, views: 630, avgMatchScore: 83 },
+  { date: '2026-05-31', jobs: 46, matches: 122, applications: 27, views: 590, avgMatchScore: 82 },
+  { date: '2026-06-01', jobs: 58, matches: 138, applications: 35, views: 712, avgMatchScore: 85 },
+  { date: '2026-06-02', jobs: 63, matches: 146, applications: 39, views: 760, avgMatchScore: 86 },
+];
+
+const fallbackAdvancedMarket: AdvancedMarketOverview = {
+  activeJobs: 55088,
+  totalJobs: 81240,
+  newJobsInRange: 3332,
+  employers: 18485,
+  jobViews: 41720,
+  jobSearches: 12880,
+  applications: 4812,
+  matchings: 24260,
+  topSkills: [
+    { skill: 'React', jobCount: 14861 },
+    { skill: 'Java', jobCount: 13620 },
+    { skill: 'TypeScript', jobCount: 11920 },
+    { skill: 'Node.js', jobCount: 9860 },
+    { skill: 'SQL', jobCount: 8420 },
+    { skill: 'DevOps', jobCount: 6820 },
+  ],
+  salaryDistribution: [
+    { currency: 'USD', seniority: 'Junior', jobCount: 920, minSalary: 600, averageSalary: 950, maxSalary: 1400 },
+    { currency: 'USD', seniority: 'Mid', jobCount: 9680, minSalary: 1200, averageSalary: 2200, maxSalary: 3400 },
+    { currency: 'USD', seniority: 'Senior', jobCount: 31286, minSalary: 2500, averageSalary: 3800, maxSalary: 5200 },
+    { currency: 'USD', seniority: 'Lead', jobCount: 6860, minSalary: 4200, averageSalary: 5600, maxSalary: 7600 },
+  ],
+};
+
+const fallbackCandidateAnalytics: CandidateAnalyticsOverview = {
+  profileCompleteness: 88,
+  cvCount: 3,
+  scoringDoneCvCount: 2,
+  totalMatches: 42,
+  highMatches: 12,
+  potentialMatches: 9,
+  averageMatchScore: 84,
+  bestMatchScore: 94,
+  totalApplications: 3,
+  applicationFunnel: { PENDING: 1, APPROVED: 1, INVITED: 1, REJECTED: 0 },
+  skillDemand: [
+    { skill: 'React', jobCount: 14861, candidateHasSkill: true },
+    { skill: 'TypeScript', jobCount: 11920, candidateHasSkill: true },
+    { skill: 'Testing', jobCount: 7240, candidateHasSkill: true },
+  ],
+  profileGaps: [
+    { skill: 'Node.js', marketDemand: 9860, reason: 'High market demand skill not found in candidate profile/CV' },
+    { skill: 'AWS', marketDemand: 7820, reason: 'Frequently paired with senior frontend platform roles' },
+    { skill: 'GraphQL', marketDemand: 5480, reason: 'Appears in product engineering JDs with React' },
+  ],
+};
+
+const fallbackRecruiterAnalytics: RecruiterAnalyticsOverview = {
+  totalJobs: 18,
+  activeJobs: 12,
+  totalApplicants: 132,
+  pendingReview: 7,
+  approved: 28,
+  rejected: 16,
+  invited: 42,
+  autoApplied: 9,
+  totalMatchings: 284,
+  highMatchings: 76,
+  potentialMatchings: 38,
+  averageMatchScore: 82,
+  jobViews: 4240,
+  topJobs: [
+    { jobId: 'job-01', title: 'Senior Frontend Engineer', status: 'ACTIVE', views: 920, matches: 74, applications: 18, avgMatchScore: 88 },
+    { jobId: 'job-02', title: 'Product-minded React Developer', status: 'ACTIVE', views: 760, matches: 62, applications: 14, avgMatchScore: 84 },
+    { jobId: 'job-03', title: 'Fullstack TypeScript Engineer', status: 'ACTIVE', views: 680, matches: 51, applications: 11, avgMatchScore: 79 },
+  ],
+};
+
+function AdvancedAnalyticsPage({ role }: { role: Role }) {
+  const { t, language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rangeDays = getRangeDays(searchParams);
+  const market = useAdvancedMarketAnalytics(rangeDays);
+  const candidate = useCandidateAdvancedAnalytics(role === 'candidate', rangeDays);
+  const recruiter = useRecruiterAdvancedAnalytics(role === 'recruiter', rangeDays);
+  const numberFormat = useMemo(() => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US'), [language]);
+  const salaryData = market.salaryDistribution.slice(0, 6).map((item) => ({
+    label: item.seniority || item.currency,
+    jobs: item.jobCount,
+    averageSalary: Number(item.averageSalary),
+  }));
+
+  function updateRangeDays(nextRangeDays: number) {
+    const params = new URLSearchParams(searchParams);
+    setOrDeleteParam(params, 'rangeDays', String(nextRangeDays), '30');
+    setSearchParams(params);
+  }
+
+  return (
+    <div className="page-stack advanced-analytics-route">
+      <section className="advanced-analytics-hero">
+        <div>
+          <p className="eyebrow">{t('advancedAnalytics')}</p>
+          <h2>{t('advancedAnalyticsTitle')}</h2>
+          <p>{t('advancedAnalyticsCopy')}</p>
+        </div>
+        <div className="advanced-hero-meter">
+          <span>{t('marketIntelligence')}</span>
+          <strong>{numberFormat.format(market.activeJobs)}</strong>
+          <small>{t('openJobs')}</small>
+          <label className="advanced-range-control">
+            Range
+            <select value={rangeDays} onChange={(event) => updateRangeDays(Number(event.target.value))}>
+              <option value={7}>7 days</option>
+              <option value={30}>30 days</option>
+              <option value={90}>90 days</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="advanced-metric-grid">
+        <StatCard label={t('activeJobs')} value={numberFormat.format(market.activeJobs)} detail={`${numberFormat.format(market.newJobsInRange)} ${t('newJobs')}`} />
+        <StatCard label={t('jobViews')} value={numberFormat.format(market.jobViews)} detail={`${numberFormat.format(market.jobSearches)} ${t('jobSearches')}`} />
+        <StatCard label={t('applications')} value={numberFormat.format(market.applications)} detail={`${numberFormat.format(market.matchings)} ${t('matchings')}`} />
+        <StatCard label={t('companiesHiring')} value={numberFormat.format(market.employers)} detail={t('verifiedEmployers')} />
+      </section>
+
+      <section className="advanced-chart-grid">
+        <article className="advanced-panel wide">
+          <div className="section-heading">
+            <p className="eyebrow">{t('engagementTrend')}</p>
+            <h2>{t('marketIntelligence')}</h2>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={market.trends}>
+              <defs>
+                <linearGradient id="advanced-views" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#006a62" stopOpacity={0.28} />
+                  <stop offset="95%" stopColor="#006a62" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="advanced-apps" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00446e" stopOpacity={0.24} />
+                  <stop offset="95%" stopColor="#00446e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.12)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Area type="monotone" dataKey="views" stroke="#006a62" strokeWidth={3} fill="url(#advanced-views)" />
+              <Area type="monotone" dataKey="applications" stroke="#00446e" strokeWidth={3} fill="url(#advanced-apps)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </article>
+
+        <article className="advanced-panel">
+          <div className="section-heading">
+            <p className="eyebrow">{t('topDemandSkills')}</p>
+            <h2>{t('skills')}</h2>
+          </div>
+          <div className="skill-demand-list">
+            {market.topSkills.slice(0, 6).map((item) => (
+              <ProgressRow key={item.skill} label={item.skill} value={item.jobCount} max={market.topSkills[0]?.jobCount ?? 1} />
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="advanced-chart-grid">
+        <article className="advanced-panel">
+          <div className="section-heading">
+            <p className="eyebrow">{t('salaryDistribution')}</p>
+            <h2>{t('salary')}</h2>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={salaryData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.1)" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="jobs" fill="#006a62" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </article>
+
+        <article className="advanced-panel wide">
+          <div className="section-heading">
+            <p className="eyebrow">{t('roleAnalytics')}</p>
+            <h2>{role === 'candidate' ? t('candidate') : t('recruiter')}</h2>
+          </div>
+          {role === 'candidate' ? (
+            <CandidateAdvancedPanel data={candidate.overview} trends={candidate.trends} />
+          ) : (
+            <RecruiterAdvancedPanel data={recruiter.overview} trends={recruiter.trends} />
+          )}
+        </article>
+      </section>
+    </div>
+  );
+}
+
+function CandidateAdvancedPanel({ data, trends }: { data: CandidateAnalyticsOverview; trends: AdvancedTrendPoint[] }) {
+  const { t } = useLanguage();
+  return (
+    <div className="role-analytics-layout">
+      <div className="role-kpi-grid">
+        <StatCard label={t('profileCompleteness')} value={`${data.profileCompleteness}%`} detail={`${data.cvCount} CV`} />
+        <StatCard label={t('scoringDoneCv')} value={data.scoringDoneCvCount} detail={`${data.totalMatches} ${t('matchings')}`} />
+        <StatCard label={t('averageScore')} value={`${Math.round(data.averageMatchScore)}%`} detail={`${t('bestScore')}: ${Math.round(data.bestMatchScore)}%`} />
+      </div>
+      <div className="role-detail-grid">
+        <div>
+          <h3>{t('profileGaps')}</h3>
+          <div className="skill-demand-list compact">
+            {data.profileGaps.slice(0, 5).map((item) => (
+              <ProgressRow key={item.skill} label={item.skill} value={item.marketDemand} max={data.profileGaps[0]?.marketDemand ?? 1} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3>{t('engagementTrend')}</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trends}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.1)" />
+              <XAxis dataKey="date" hide />
+              <YAxis />
+              <Tooltip />
+              <Area type="monotone" dataKey="matches" stroke="#006a62" strokeWidth={3} fill="rgba(0,106,98,.14)" />
+              <Area type="monotone" dataKey="applications" stroke="#00446e" strokeWidth={3} fill="rgba(0,68,110,.12)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecruiterAdvancedPanel({ data, trends }: { data: RecruiterAnalyticsOverview; trends: AdvancedTrendPoint[] }) {
+  const { t } = useLanguage();
+  return (
+    <div className="role-analytics-layout">
+      <div className="role-kpi-grid">
+        <StatCard label={t('activeJobs')} value={data.activeJobs} detail={`${data.totalJobs} ${t('jobs')}`} />
+        <StatCard label={t('applicants')} value={data.totalApplicants} detail={`${data.pendingReview} ${t('pendingApprovals')}`} />
+        <StatCard label={t('averageScore')} value={`${Math.round(data.averageMatchScore)}%`} detail={`${data.highMatchings} ${t('highMatches')}`} />
+      </div>
+      <div className="role-detail-grid">
+        <div>
+          <h3>{t('topPerformingJobs')}</h3>
+          <div className="advanced-job-list">
+            {data.topJobs.slice(0, 4).map((job) => (
+              <article key={job.jobId}>
+                <div>
+                  <strong>{job.title}</strong>
+                  <span>{job.status} · {job.applications} {t('applications')}</span>
+                </div>
+                <b>{Math.round(job.avgMatchScore)}%</b>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3>{t('engagementTrend')}</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trends}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.1)" />
+              <XAxis dataKey="date" hide />
+              <YAxis />
+              <Tooltip />
+              <Area type="monotone" dataKey="views" stroke="#006a62" strokeWidth={3} fill="rgba(0,106,98,.14)" />
+              <Area type="monotone" dataKey="matches" stroke="#00446e" strokeWidth={3} fill="rgba(0,68,110,.12)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value, max }: { label: string; value: number; max: number }) {
+  const { language } = useLanguage();
+  const width = max <= 0 ? 0 : Math.max(8, Math.min(100, (value / max) * 100));
+  return (
+    <div className="progress-row">
+      <div>
+        <span>{label}</span>
+        <strong>{value.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}</strong>
+      </div>
+      <i>
+        <b style={{ width: `${width}%` }} />
+      </i>
+    </div>
+  );
+}
+
 function RefineSearchPanel() {
   return (
     <aside className="filter-panel">
@@ -1797,12 +2372,14 @@ function TopEmployers() {
 
 function JobListWithPreview({
   jobs: list,
+  isLoading = false,
   onOpen,
   onSkip,
   onApply,
   showMatchMeta = true,
 }: {
   jobs: Job[];
+  isLoading?: boolean;
   onOpen: (job: Job) => void;
   onSkip?: (id: string) => void;
   onApply?: (job: Job) => void;
@@ -1824,6 +2401,14 @@ function JobListWithPreview({
       window.clearTimeout(hoverTimer.current);
     }
     setHoveredJob(null);
+  }
+
+  if (isLoading && list.length === 0) {
+    return (
+      <section className="job-list market-list">
+        <JobListSkeleton />
+      </section>
+    );
   }
 
   if (list.length === 0) {
@@ -1849,6 +2434,32 @@ function JobListWithPreview({
         </div>
       ))}
     </section>
+  );
+}
+
+function JobListSkeleton() {
+  return (
+    <div className="job-list-skeleton" aria-hidden="true">
+      {[0, 1].map((item) => (
+        <article className="job-card skeleton-card" key={item}>
+          <div className="skeleton-card-head">
+            <span className="skeleton avatar" />
+            <div>
+              <span className="skeleton line short" />
+              <span className="skeleton line title" />
+              <span className="skeleton line medium" />
+            </div>
+          </div>
+          <span className="skeleton line full" />
+          <span className="skeleton line wide" />
+          <div className="skeleton-actions">
+            <span className="skeleton pill" />
+            <span className="skeleton pill" />
+            <span className="skeleton pill" />
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -1899,8 +2510,27 @@ function JobHoverPreview({ job, onOpen, onApply }: { job: Job; onOpen: (job: Job
   );
 }
 
-function FilterModal({ onClose }: { onClose: () => void }) {
+function FilterModal({
+  filters,
+  keyword,
+  onApply,
+  onReset,
+  onClose,
+}: {
+  filters: JobFilters;
+  keyword: string;
+  onApply: (filters: JobFilters, keyword: string) => void;
+  onReset: () => void;
+  onClose: () => void;
+}) {
   const { t } = useLanguage();
+  const [draftKeyword, setDraftKeyword] = useState(keyword);
+  const [draftFilters, setDraftFilters] = useState<JobFilters>(filters);
+
+  function updateDraftFilter(key: JobFilterKey, value: string) {
+    setDraftFilters((current) => ({ ...current, [key]: value }));
+  }
+
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t('filter')}>
       <section className="filter-modal">
@@ -1914,22 +2544,22 @@ function FilterModal({ onClose }: { onClose: () => void }) {
         <div className="settings-grid">
           <label>
             {t('keyword')}
-            <input placeholder="React, TypeScript, UI Platform" />
+            <input value={draftKeyword} onChange={(event) => setDraftKeyword(event.target.value)} placeholder="React, TypeScript, UI Platform" />
           </label>
           <label>
             {t('location')}
-            <select defaultValue="Ho Chi Minh City">
-              <option>Ho Chi Minh City</option>
-              <option>Remote Vietnam</option>
-              <option>Da Nang</option>
+            <select value={draftFilters.city} onChange={(event) => updateDraftFilter('city', event.target.value)}>
+              {jobFilterOptions.city.map(([value, label]) => (
+                <option value={value} key={value}>{value === 'all' ? t('allCities') : label}</option>
+              ))}
             </select>
           </label>
           <label>
             {t('seniority')}
-            <select defaultValue="Senior">
-              <option>Senior</option>
-              <option>Mid-Senior</option>
-              <option>Lead</option>
+            <select value={draftFilters.level} onChange={(event) => updateDraftFilter('level', event.target.value)}>
+              {jobFilterOptions.level.map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
             </select>
           </label>
           <label>
@@ -1938,24 +2568,32 @@ function FilterModal({ onClose }: { onClose: () => void }) {
           </label>
           <label>
             {t('salaryRange')}
-            <select defaultValue="$2,500+">
-              <option>$2,500+</option>
-              <option>$3,000+</option>
-              <option>$4,000+</option>
+            <select value={draftFilters.salary} onChange={(event) => updateDraftFilter('salary', event.target.value)}>
+              {jobFilterOptions.salary.map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
             </select>
           </label>
           <label>
             {t('workingModel')}
-            <select defaultValue="Hybrid">
-              <option>Hybrid</option>
-              <option>Remote</option>
-              <option>Onsite</option>
+            <select value={draftFilters.workModel} onChange={(event) => updateDraftFilter('workModel', event.target.value)}>
+              {jobFilterOptions.workModel.map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t('jobDomain')}
+            <select value={draftFilters.domain} onChange={(event) => updateDraftFilter('domain', event.target.value)}>
+              {jobFilterOptions.domain.map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
             </select>
           </label>
         </div>
         <div className="filter-modal-actions">
-          <button>{t('reset')}</button>
-          <button className="primary-action" onClick={onClose}>{t('applyFilters')}</button>
+          <button onClick={onReset}>{t('reset')}</button>
+          <button className="primary-action" onClick={() => onApply(draftFilters, draftKeyword)}>{t('applyFilters')}</button>
         </div>
       </section>
     </div>
@@ -2459,6 +3097,40 @@ function useFilteredJobs(sourceJobs: Job[], query: string) {
   }, [sourceJobs, query]);
 }
 
+function applyJobFilters(sourceJobs: Job[], filters: JobFilters) {
+  return sourceJobs.filter((job) => {
+    const haystack = [
+      job.title,
+      job.company,
+      job.location,
+      job.seniority,
+      job.salary,
+      ...job.requiredSkills,
+      ...job.optionalSkills,
+    ].join(' ').toLowerCase();
+
+    if (filters.city === 'hcm' && !job.location.toLowerCase().includes('ho chi minh')) return false;
+    if (filters.city === 'hanoi' && !job.location.toLowerCase().includes('ha noi')) return false;
+    if (filters.city === 'remote' && !job.location.toLowerCase().includes('remote')) return false;
+    if (filters.level !== 'all' && !job.seniority.toLowerCase().includes(filters.level)) return false;
+    if (filters.workModel === 'hybrid' && !job.location.toLowerCase().includes('hybrid')) return false;
+    if (filters.workModel === 'remote' && !job.location.toLowerCase().includes('remote')) return false;
+    if (filters.workModel === 'onsite' && (job.location.toLowerCase().includes('remote') || job.location.toLowerCase().includes('hybrid'))) return false;
+    if (filters.salary === 'negotiable' && !job.salary.toLowerCase().includes('thỏa thuận') && !job.salary.toLowerCase().includes('negotiable')) return false;
+    if (['2500', '3000', '4000'].includes(filters.salary) && getSalaryMax(job.salary) < Number(filters.salary)) return false;
+    if (filters.domain !== 'all') {
+      const domainNeedle = filters.domain === 'data-ai' ? 'data' : filters.domain === 'qa' ? 'test' : filters.domain;
+      if (!haystack.includes(domainNeedle)) return false;
+    }
+    return true;
+  });
+}
+
+function getSalaryMax(salary: string) {
+  const numbers = salary.match(/\d[\d,.]*/g)?.map((item) => Number(item.replace(/,/g, ''))) ?? [];
+  return numbers.length ? Math.max(...numbers) : 0;
+}
+
 function getMockSearchSuggestions(query: string): SearchSuggestionGroup {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return [];
@@ -2566,6 +3238,120 @@ function useRecruiterJobs() {
     },
     refetchInterval: 60_000,
   });
+}
+
+function useAdvancedMarketAnalytics(rangeDays: number) {
+  const overview = useQuery({
+    queryKey: ['advanced-market-overview', rangeDays],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getAdvancedMarketOverview(rangeDays);
+      } catch {
+        await delay(120);
+        return fallbackAdvancedMarket;
+      }
+    },
+    refetchInterval: 60_000,
+  });
+  const skills = useQuery({
+    queryKey: ['advanced-market-skills'],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getAdvancedMarketSkills(12);
+      } catch {
+        return fallbackAdvancedMarket.topSkills;
+      }
+    },
+  });
+  const salary = useQuery({
+    queryKey: ['advanced-market-salary'],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getAdvancedMarketSalary();
+      } catch {
+        return fallbackAdvancedMarket.salaryDistribution;
+      }
+    },
+  });
+  const trends = useQuery({
+    queryKey: ['advanced-market-trends', rangeDays],
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getAdvancedMarketTrends(rangeDays);
+      } catch {
+        return fallbackAdvancedTrends;
+      }
+    },
+  });
+
+  return {
+    ...(overview.data ?? fallbackAdvancedMarket),
+    topSkills: skills.data ?? overview.data?.topSkills ?? fallbackAdvancedMarket.topSkills,
+    salaryDistribution: salary.data ?? overview.data?.salaryDistribution ?? fallbackAdvancedMarket.salaryDistribution,
+    trends: trends.data ?? fallbackAdvancedTrends,
+  };
+}
+
+function useCandidateAdvancedAnalytics(enabled: boolean, rangeDays: number) {
+  const overview = useQuery({
+    queryKey: ['candidate-advanced-overview'],
+    enabled,
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getCandidateAdvancedOverview();
+      } catch {
+        return fallbackCandidateAnalytics;
+      }
+    },
+    refetchInterval: 60_000,
+  });
+  const trends = useQuery({
+    queryKey: ['candidate-advanced-trends', rangeDays],
+    enabled,
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getCandidateAdvancedTrends(rangeDays);
+      } catch {
+        return fallbackAdvancedTrends;
+      }
+    },
+  });
+
+  return {
+    overview: overview.data ?? fallbackCandidateAnalytics,
+    trends: trends.data ?? fallbackAdvancedTrends,
+  };
+}
+
+function useRecruiterAdvancedAnalytics(enabled: boolean, rangeDays: number) {
+  const overview = useQuery({
+    queryKey: ['recruiter-advanced-overview', rangeDays],
+    enabled,
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getRecruiterAdvancedOverview(rangeDays);
+      } catch {
+        return fallbackRecruiterAnalytics;
+      }
+    },
+    refetchInterval: 60_000,
+  });
+  const trends = useQuery({
+    queryKey: ['recruiter-advanced-trends', rangeDays],
+    enabled,
+    queryFn: async () => {
+      try {
+        return await careerfitApi.getRecruiterAdvancedTrends(rangeDays);
+      } catch {
+        return fallbackAdvancedTrends;
+      }
+    },
+  });
+
+  return {
+    overview: overview.data ?? fallbackRecruiterAnalytics,
+    trends: trends.data ?? fallbackAdvancedTrends,
+  };
 }
 
 function getLocallyFilteredJobs(sourceJobs: Job[], query: string) {

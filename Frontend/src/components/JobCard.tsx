@@ -1,4 +1,4 @@
-import { ArrowRight, Bookmark, Send, ThumbsDown } from 'lucide-react';
+import { ArrowRight, Bookmark, BriefcaseBusiness, MapPin, Send, Sparkles, ThumbsDown } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { Job } from '../types';
 import { useLanguage } from '../i18n/LanguageProvider';
@@ -14,6 +14,13 @@ interface JobCardProps {
 
 export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: JobCardProps) {
   const { t } = useLanguage();
+  const companyMark = job.company
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 
   function stopAction(event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
@@ -33,10 +40,17 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: 
       }}
     >
       <div className="job-card-header">
-        <div>
-          <p className="eyebrow">{job.company} · {job.postedAt}</p>
-          <h3 className="job-title-link">{job.title}</h3>
-          <p>{job.location} · {job.seniority} · {job.salary}</p>
+        <div className="job-card-titleline">
+          <span className="job-company-avatar">{companyMark || 'CF'}</span>
+          <div>
+            <p className="eyebrow">{job.company} · {job.postedAt}</p>
+            <h3 className="job-title-link">{job.title}</h3>
+            <p className="job-meta-line">
+              <span><MapPin size={14} />{job.location}</span>
+              <span><BriefcaseBusiness size={14} />{job.seniority}</span>
+              <span>{job.salary}</span>
+            </p>
+          </div>
         </div>
         {showMatchMeta ? (
           <div className="badge-stack">
@@ -50,7 +64,15 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: 
 
       <p className="job-description">{job.description}</p>
 
-      <div className="actions">
+      <div className="job-insight-row">
+        <span>
+          <Sparkles size={14} />
+          {job.reasons[0] ?? job.requiredSkills[0]}
+        </span>
+        <span>{job.requiredSkills.length + job.optionalSkills.length} {t('skills')}</span>
+      </div>
+
+      <div className="actions job-card-actions">
         <button
           className="primary-action"
           onClick={(event) => {

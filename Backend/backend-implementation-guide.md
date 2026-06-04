@@ -43,6 +43,7 @@ Backend phải ưu tiên triển khai theo hướng local-first:
 - **File CV:** local filesystem trong development.
 - **Storage abstraction:** tạo `StorageService` interface để có thể đổi local storage sang Supabase Storage/S3-compatible storage sau này.
 - **Auth:** Spring Security JWT/passwordless tự làm trong backend, không phụ thuộc Supabase Auth.
+- **OCR:** PDF scan/image-only được xử lý bằng OCR fallback qua Tesseract khi PDFBox không trích được đủ text.
 
 Không hard-code logic nghiệp vụ vào Supabase-specific API. Backend chỉ nên xem Supabase là một PostgreSQL connection target nếu dùng ở phase deploy.
 
@@ -52,7 +53,6 @@ Không hard-code logic nghiệp vụ vào Supabase-specific API. Backend chỉ n
 
 Backend này không làm:
 
-- OCR cho PDF scan trong core path
 - microservices
 - ATS full-flow
 - tự submit ứng tuyển ra ngoài website bên thứ ba
@@ -180,6 +180,8 @@ Chịu trách nhiệm:
 - job market summary based on posted jobs
 - job market trend based on total posted jobs over time
 - job demand distribution by IT role or salary band
+- advanced analytics theo role candidate/recruiter
+- analytics event tracking như job view, search, match card click, recruiter candidate view
 
 Lưu ý: job market analytics không được dùng `matching count` làm dữ liệu chính cho line chart thị trường việc làm.
 
@@ -295,16 +297,17 @@ Chịu trách nhiệm:
 3. Validation service checks file type and structural sanity.
 4. If valid, backend sets `VALIDATING` then `PROCESSING`.
 5. PDFBox extracts text from text-based PDFs.
-6. Text is normalized by language.
-7. Tokens and extracted terms are stored.
-8. TF-IDF vector is built.
-9. Matching engine scores CV against jobs.
-10. Normalize score to 0-100.
-11. Assign label.
-12. Detect potential.
-13. Persist `Matching`.
-14. Update status to `SCORING_DONE`.
-15. If auto-fit policy allows, create notification or application action.
+6. If PDFBox returns too little text, PDFBox renders pages to images and Tesseract OCR extracts text.
+7. Text is normalized by language.
+8. Tokens and extracted terms are stored.
+9. TF-IDF vector is built.
+10. Matching engine scores CV against jobs.
+11. Normalize score to 0-100.
+12. Assign label.
+13. Detect potential.
+14. Persist `Matching`.
+15. Update status to `SCORING_DONE`.
+16. If auto-fit policy allows, create notification or application action.
 
 ### Multi-CV rules
 
@@ -588,7 +591,7 @@ Hard checks:
 
 - file exists
 - MIME type is PDF
-- text-based PDF, not image-only
+- extracted text after PDFBox/OCR must be long enough to score
 - size within limit
 - extracted text not empty
 
@@ -596,6 +599,7 @@ Soft checks:
 
 - very low text density
 - suspiciously short content
+- OCR fallback triggered or OCR confidence is operationally suspicious
 - malformed dates
 - missing contact info
 
@@ -822,15 +826,29 @@ Guest/public access:
 
 ### 8.10. Analytics
 
-- `GET /api/analytics/summary`
-- `GET /api/analytics/jobs/trends`
-- `GET /api/jobs/{jobId}/trends`
-- `GET /api/analytics/job-market/summary`
-- `GET /api/analytics/job-market/trends`
-- `GET /api/analytics/job-market/demand?groupBy=role|salary`
+- Existing/basic:
+  - `GET /api/analytics/stats`
+  - `GET /api/analytics/trend`
+  - `GET /api/analytics/roles`
+- Market advanced:
+  - `GET /api/analytics/market/overview`
+  - `GET /api/analytics/market/skills`
+  - `GET /api/analytics/market/salary`
+  - `GET /api/analytics/market/trends`
+- Event tracking:
+  - `POST /api/analytics/events`
+- Candidate advanced:
+  - `GET /api/candidate/analytics/overview`
+  - `GET /api/candidate/analytics/skill-demand`
+  - `GET /api/candidate/analytics/profile-gaps`
+  - `GET /api/candidate/analytics/match-trends`
+- Recruiter advanced:
+  - `GET /api/recruiter/analytics/overview`
+  - `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
+  - `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
+  - `GET /api/recruiter/analytics/trends`
 
-`/api/analytics/job-market/*` must return posted-job statistics.
-Matching/application analytics can stay under `/api/analytics/summary`, `/api/analytics/jobs/trends` or recruiter-specific endpoints, but DTO field names must make the metric explicit.
+`/api/analytics/market/*` must return posted-job and market statistics. Candidate/recruiter matching/application analytics stay under role-scoped endpoints so public APIs do not leak private CV/application data.
 
 ### 8.11. Common response envelope
 
@@ -884,6 +902,7 @@ Supabase PostgreSQL chỉ là optional target khi cần demo online hoặc deplo
 - `notification_job`
 - `job_trend_snapshot`
 - `job_market_snapshot`
+- `analytics_event`
 
 ### `cv` multi-CV columns
 
@@ -980,6 +999,9 @@ Validation must be conditional on `salary_mode`, not based on all salary fields 
 - `employer_profile(slug)`
 - `employer_profile(is_featured)`
 - `job_market_snapshot(snapshot_date DESC)`
+- `analytics_event(event_type, occurred_at DESC)`
+- `analytics_event(actor_user_id, occurred_at DESC)`
+- `analytics_event(subject_type, subject_id, occurred_at DESC)`
 - `matching(job_id, normalized_score DESC)`
 - `application(candidate_id, job_id)`
 - `recommendation_interaction(candidate_id, job_id)`

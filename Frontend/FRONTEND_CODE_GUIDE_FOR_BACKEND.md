@@ -38,6 +38,8 @@ Nó phục vụ các luồng:
 - Public user xem danh sách job và job detail.
 - Candidate đăng nhập, xem job feed, upload CV, hồ sơ, ứng tuyển, automation.
 - Recruiter đăng nhập, xem dashboard, jobs, ranking/applicants, analytics, settings.
+- Candidate và recruiter đã có trang Advanced Analytics riêng theo role.
+- UI hiện có lớp UX polish: job card có company avatar/metadata icon/insight row, search suggestions và modal có animation, job list có skeleton loading, focus visible và reduced-motion support.
 - Gọi backend Spring API nếu backend đang chạy.
 - Fallback sang mock data nếu backend lỗi hoặc chưa chạy.
 
@@ -90,6 +92,21 @@ npm run dev -- --port 5174
 
 Lưu ý CORS: backend mặc định cho phép `http://localhost:5173` và `http://127.0.0.1:5173`. Nếu đổi port frontend, cần cập nhật `CORS_ORIGINS` ở backend.
 
+Advanced Analytics contract cho UI nằm tại:
+
+```text
+Frontend/ADVANCED_ANALYTICS_API.md
+```
+
+Route UI hiện tại:
+
+```text
+/candidate/advanced-analytics
+/recruiter/advanced-analytics
+```
+
+`/recruiter/analytics` vẫn là trang Thống kê cũ/basic analytics. Advanced Analytics dùng route riêng để backend developer không nhầm hai contract.
+
 ## 3. Cách Đọc Frontend Nếu Bạn Là Backend Dev
 
 Đừng bắt đầu từ CSS. Hãy bắt đầu từ route và API.
@@ -115,6 +132,23 @@ Ví dụ public job search:
   -> Job[]
   -> JobListWithPreview / JobCard
 ```
+
+Ví dụ Advanced Analytics recruiter:
+
+```text
+/recruiter/advanced-analytics
+  -> AdvancedAnalyticsPage(role="recruiter")
+  -> useAdvancedMarketAnalytics()
+  -> GET /api/analytics/market/overview?rangeDays=30
+  -> GET /api/analytics/market/skills?top=12
+  -> GET /api/analytics/market/salary
+  -> GET /api/analytics/market/trends?days=30
+  -> useRecruiterAdvancedAnalytics(true)
+  -> GET /api/recruiter/analytics/overview?rangeDays=30
+  -> GET /api/recruiter/analytics/trends?days=30
+```
+
+Ví dụ Candidate Advanced Analytics tương tự nhưng role panel gọi `/api/candidate/analytics/overview` và `/api/candidate/analytics/match-trends`.
 
 Đây là cách đọc frontend hiệu quả nhất cho người làm backend.
 
@@ -313,6 +347,7 @@ Candidate routes:
 | `/candidate/upload` | `UploadPage` |
 | `/candidate/profile` | `ProfilePage` |
 | `/candidate/recommendations` | `RecommendationsPage` |
+| `/candidate/advanced-analytics` | `AdvancedAnalyticsPage` |
 | `/candidate/applications` | `ApplicationsPage` |
 | `/candidate/automation` | `AutomationPage` |
 | `/candidate/settings` | `CandidateSettingsPage` |
@@ -328,6 +363,7 @@ Recruiter routes:
 | `/recruiter/jobs/:jobId/applicants` | `RecruiterJobsPage` |
 | `/recruiter/jobs/:jobId/potential` | `RecruiterJobsPage` |
 | `/recruiter/analytics` | `AnalyticsPage` |
+| `/recruiter/advanced-analytics` | `AdvancedAnalyticsPage` |
 | `/recruiter/automation` | `AutomationPage` |
 | `/recruiter/settings` | `RecruiterSettingsPage` |
 
@@ -362,8 +398,8 @@ React Router pattern:
 Navigation thay đổi theo role:
 
 - guest: dashboard, jobs, upload, profile, recommendations, applications, automation;
-- candidate: giống guest nhưng các route protected dùng account candidate;
-- recruiter: dashboard, jobs, analytics, automation.
+- candidate: dashboard, jobs, upload, profile, recommendations, advanced analytics, applications, automation;
+- recruiter: dashboard, jobs, basic analytics, advanced analytics, automation.
 
 ## 10. API Client: File Quan Trọng Nhất Với Backend Dev
 
@@ -463,6 +499,8 @@ Trong `careerfitApi` hiện có:
 | Frontend method | Backend endpoint |
 | --- | --- |
 | `login(identifier, password)` | `POST /api/auth/login` |
+| `requestPasswordless(email)` | `POST /api/auth/passwordless/request` |
+| `verifyPasswordless(token)` | `POST /api/auth/passwordless/verify` |
 | `searchJobs(keyword)` | `GET /api/jobs/search` |
 | `getJob(jobId)` | `GET /api/jobs/{jobId}` |
 | `getCandidateJobs()` | `GET /api/matches/me/cards?page=0&size=20` |
@@ -1318,6 +1356,29 @@ type AuthResponseDto = {
 };
 ```
 
+Passwordless request:
+
+```http
+POST /api/auth/passwordless/request
+Content-Type: application/json
+
+{
+  "email": "candidate@example.com"
+}
+```
+
+Expected data:
+
+```ts
+type PasswordlessRequestResponseDto = {
+  message: string;
+  token: string | null; // dev only; prod returns null
+  expiresInMinutes: number;
+};
+```
+
+Frontend should show a neutral success message after request. In dev it may use `data.token` for local testing; in prod the user receives the link by email and `token` is null.
+
 ### 25.2 Public Job List
 
 Request:
@@ -1712,4 +1773,3 @@ Route
 ```
 
 Nắm được trục này là đủ để bạn debug API, review contract, và nhờ Agent sửa frontend một cách an toàn mà không cần tự trở thành frontend developer chuyên sâu.
-

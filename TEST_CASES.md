@@ -156,7 +156,8 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | CV-004 | P0 | API | Recruiter upload CV | Recruiter | Gọi `/api/cv/upload` | HTTP 403 |
 | CV-005 | P1 | API | Upload file không phải PDF | Candidate | Upload `.txt` hoặc `.png` | HTTP 400, không tạo CV |
 | CV-006 | P1 | API | Upload PDF rỗng/quá ngắn | Candidate | PDF ít text | HTTP 400 hoặc CV status failed với failureReason |
-| CV-007 | P1 | API | Upload PDF image-only | Candidate | PDF scan không có text | HTTP 400 hoặc failed, message cần OCR/không parse được |
+| CV-007 | P1 | API | Upload PDF image-only có OCR | Candidate | PDF scan có nội dung rõ, Tesseract sẵn sàng | CV xử lý thành công hoặc status `SCORING_DONE`, có raw text/summary |
+| CV-007B | P1 | API | Upload PDF image-only OCR fail | Candidate | Tesseract thiếu hoặc OCR text quá ít | CV status `FAILED` hoặc response lỗi rõ, không crash backend |
 | CV-008 | P1 | API | Upload file quá lớn | Candidate | File vượt limit cấu hình | HTTP 413 hoặc 400, không lưu file |
 | CV-009 | P1 | Security | Upload filename path traversal | Candidate | Filename `../../x.pdf` | File lưu bằng safe path, không ghi ngoài storage |
 | CV-010 | P0 | API | Manual CV hợp lệ | Candidate | `POST /api/cv/manual` với displayName/fullName/email/desiredTitle/years/skills | HTTP 200/201, tạo CV source `MANUAL` |
@@ -334,6 +335,16 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | ANA-003 | P1 | API | Analytics roles public | Guest | `GET /api/analytics/roles` | HTTP 200, trả distribution theo role |
 | ANA-004 | P1 | API | Analytics khi DB ít dữ liệu | Guest | Xóa seed trong DB test riêng | HTTP 200, trả số 0/list rỗng, không 500 |
 | ANA-005 | P1 | UI | Job market dashboard render | Guest/Candidate/Recruiter | Mở home/dashboard | Chart không crash, label/value hiển thị |
+| ANA-006 | P1 | API | Market advanced overview public | Guest | `GET /api/analytics/market/overview?rangeDays=30` | HTTP 200, có activeJobs/topSkills/salaryDistribution |
+| ANA-007 | P1 | API | Candidate advanced analytics | Candidate | Login `ca/1`, gọi `GET /api/candidate/analytics/overview` | HTTP 200, chỉ trả dữ liệu candidate hiện tại |
+| ANA-008 | P1 | Security | Guest không gọi candidate analytics | Guest | `GET /api/candidate/analytics/overview` | HTTP 401 |
+| ANA-009 | P1 | API | Recruiter advanced analytics | Recruiter | Login `re/1`, gọi `GET /api/recruiter/analytics/overview` | HTTP 200, chỉ thống kê job thuộc recruiter |
+| ANA-010 | P1 | API | Recruiter job funnel ownership | Recruiter | Gọi `/api/recruiter/analytics/jobs/{jobId}/funnel` với job người khác | HTTP 403 |
+| ANA-011 | P1 | API | Analytics event tracking | Authenticated | `POST /api/analytics/events` event `JOB_VIEWED` | HTTP 200, lưu `analytics_event` |
+| ANA-012 | P1 | API | Analytics event type invalid | Authenticated | `POST /api/analytics/events` event `UNKNOWN` | HTTP 400, error code/message rõ |
+| ANA-013 | P1 | UI | Candidate Advanced Analytics route | Candidate | Login `ca/1`, mở `/candidate/advanced-analytics` | Hero, metric cards, market trend, skill demand, salary distribution và candidate panel render |
+| ANA-014 | P1 | UI | Recruiter Advanced Analytics route | Recruiter | Login `re/1`, mở `/recruiter/advanced-analytics` | Hero, metric cards, market widgets và top performing jobs render |
+| ANA-015 | P1 | UI | Recruiter basic analytics không bị thay thế | Recruiter | Mở `/recruiter/analytics`, sau đó `/recruiter/advanced-analytics` | Hai route render hai UI khác nhau, route cũ không có `.advanced-analytics-hero` |
 | AUD-001 | P0 | DB | Register ghi audit log | Guest/System | Register user mới | Bảng `audit_log` có action `REGISTER` |
 | AUD-002 | P0 | DB | Submit application ghi audit log | Candidate/System | Apply job | Audit action `APPLICATION_SUBMITTED` |
 | AUD-003 | P1 | DB | Withdraw application ghi audit log | Candidate/System | Withdraw | Audit action `APPLICATION_WITHDRAWN` |
@@ -365,6 +376,7 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | UI-012 | P1 | UI | Filter modal mở/đóng | Guest/Candidate | Bấm Filter, đóng modal | Modal không làm mất state |
 | UI-013 | P1 | UI | Skip job trong list | Candidate | Bấm Skip | Job biến khỏi danh sách hiện tại |
 | UI-014 | P1 | UI | Job preview/detail panel | Candidate | Hover/click job nếu có preview | Detail panel cập nhật đúng job |
+| UI-014A | P1 | UX | Job card polish | Guest/Candidate | Mở `/jobs`, xem job list | Card có company avatar, metadata icon, insight row, action bar; không overflow text |
 | UI-015 | P1 | UI | Upload page có 2 tab | Candidate | Mở `/candidate/upload` | Có Document Parser và Manual Creation |
 | UI-016 | P1 | UI | Manual CV form validation UI | Candidate | Submit form rỗng | Hiển thị lỗi/không gửi request không hợp lệ |
 | UI-017 | P1 | UI | Profile tabs không nhầm Portfolio với Upload CV | Candidate | Mở `/candidate/profile` | Portfolio nằm trong Profile, không nằm ở Upload CV |
@@ -377,12 +389,14 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | UI-024 | P1 | UI | Language switch | Guest/Candidate | Đổi ngôn ngữ nếu control có | Text đổi vi/en, state không mất |
 | UI-025 | P0 | Integration | Frontend không âm thầm dùng mock khi backend OK | Guest | Backend OK, mở Network `/api/jobs/search` | Request trả 200; UI hiển thị data từ backend |
 | UI-026 | P1 | Integration | Mock fallback khi backend tắt | Guest | Tắt backend, mở frontend | UI không crash, dữ liệu mock hiển thị, lỗi network không phá app |
+| UI-026A | P2 | UX | Job list skeleton loading | Guest/Candidate | Throttle network hoặc delay API job list | Khi chưa có data render, skeleton card xuất hiện và layout không nhảy mạnh |
 | UI-027 | P1 | Responsive | Mobile home | Guest | Viewport 390x844 | Không overlap text/buttons, nav usable |
 | UI-028 | P1 | Responsive | Mobile recruiter dashboard | Recruiter | Viewport mobile | Panels stack hợp lý, không tràn ngang |
 | UI-029 | P1 | Responsive | Desktop wide | Guest/Candidate/Recruiter | Viewport 1440x900 | Layout cân đối, chart/list không vỡ |
 | UI-030 | P1 | Accessibility | Keyboard navigation | Guest | Tab qua login/search/buttons | Focus visible, thứ tự hợp lý |
 | UI-031 | P1 | Accessibility | Button accessible names | Any | Inspect buttons icon-only | Có aria-label hoặc text |
 | UI-032 | P1 | Accessibility | Color contrast | Any | Kiểm tra text chính/buttons | Contrast đạt mức đọc được |
+| UI-033 | P2 | Accessibility | Reduced motion | Any | Bật `prefers-reduced-motion`, reload UI | Animation/transition được giảm, UI vẫn usable |
 
 ## 12. API Contract Frontend - Backend
 
@@ -540,7 +554,8 @@ mvn test
 
 | Khu vực | Test bổ sung |
 |---|---|
-| OCR CV | PDF scan, ảnh xoay, tiếng Việt có dấu, OCR timeout |
+| OCR CV | PDF scan, ảnh xoay, tiếng Việt có dấu, OCR timeout, thiếu Tesseract host, Docker image có `vie+eng` |
+| Advanced Analytics UI | drill-down cho `/candidate/advanced-analytics`, `/recruiter/advanced-analytics`, event tracking integration đầy đủ |
 | Email provider thật | SMTP failure, retry, bounce, unsubscribe thật |
 | Scheduler thật | hourly scan, daily digest, weekly summary, timezone/quiet hours |
 | Admin UI | CRUD user, audit viewer, token monitor, email queue monitor |

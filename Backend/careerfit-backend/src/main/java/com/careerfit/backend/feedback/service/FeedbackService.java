@@ -8,6 +8,7 @@ import com.careerfit.backend.feedback.entity.Feedback;
 import com.careerfit.backend.feedback.repository.FeedbackRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -62,8 +63,20 @@ public class FeedbackService {
         Feedback feedback = feedbackRepo.findByMatchingIdAndActorId(matchingId, userId)
                 .orElse(new Feedback(matching, user, actorRole, feedbackType, channel));
 
-        // If overwriting NOT_INTERESTED with a real signal → update
-        feedbackRepo.save(feedback);
+        feedback.setActorRole(actorRole);
+        feedback.setFeedbackType(feedbackType);
+        feedback.setSourceChannel(channel);
+
+        try {
+            feedbackRepo.saveAndFlush(feedback);
+        } catch (DataIntegrityViolationException e) {
+            Feedback existing = feedbackRepo.findByMatchingIdAndActorId(matchingId, userId)
+                    .orElseThrow(() -> AppException.conflict("Feedback was submitted concurrently. Please retry."));
+            existing.setActorRole(actorRole);
+            existing.setFeedbackType(feedbackType);
+            existing.setSourceChannel(channel);
+            feedbackRepo.saveAndFlush(existing);
+        }
 
         // Audit
         auditRepo.save(new AuditLog(AuditLog.ActorType.USER, userId, "FEEDBACK_SUBMITTED")

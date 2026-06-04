@@ -3,6 +3,7 @@ package com.careerfit.backend.config.security;
 import com.careerfit.backend.config.AppProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -49,12 +50,28 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token) {
+        return validateToken(token).valid();
+    }
+
+    public JwtValidationResult validateToken(String token) {
+        if (token == null || token.isBlank()) {
+            return JwtValidationResult.invalid("TOKEN_MISSING", "Bearer token is missing");
+        }
         try {
             parseClaims(token);
-            return true;
+            return JwtValidationResult.ok();
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT expired: {}", e.getMessage());
+            return JwtValidationResult.invalid("TOKEN_EXPIRED", "Token has expired");
+        } catch (MalformedJwtException | UnsupportedJwtException e) {
+            log.debug("JWT malformed/unsupported: {}", e.getMessage());
+            return JwtValidationResult.invalid("TOKEN_INVALID", "Token is invalid");
+        } catch (SecurityException e) {
+            log.debug("JWT signature invalid: {}", e.getMessage());
+            return JwtValidationResult.invalid("TOKEN_INVALID", "Token signature is invalid");
         } catch (JwtException | IllegalArgumentException e) {
             log.debug("JWT validation failed: {}", e.getMessage());
-            return false;
+            return JwtValidationResult.invalid("TOKEN_INVALID", "Token is invalid");
         }
     }
 
@@ -64,5 +81,15 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public record JwtValidationResult(boolean valid, String code, String message) {
+        static JwtValidationResult ok() {
+            return new JwtValidationResult(true, null, null);
+        }
+
+        static JwtValidationResult invalid(String code, String message) {
+            return new JwtValidationResult(false, code, message);
+        }
     }
 }

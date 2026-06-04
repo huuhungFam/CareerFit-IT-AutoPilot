@@ -32,6 +32,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:-careerfit-dev-secret-key-must-be-at-least-32-chars-long}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
       STORAGE_PATH: /app/storage/cv
+      OCR_ENABLED: ${OCR_ENABLED:-true}
+      TESSERACT_COMMAND: ${TESSERACT_COMMAND:-tesseract}
+      OCR_LANGUAGES: ${OCR_LANGUAGES:-vie+eng}
+      OCR_DPI: ${OCR_DPI:-220}
+      OCR_MAX_PAGES: ${OCR_MAX_PAGES:-8}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-45}
     depends_on:
       postgres:
         condition: service_healthy

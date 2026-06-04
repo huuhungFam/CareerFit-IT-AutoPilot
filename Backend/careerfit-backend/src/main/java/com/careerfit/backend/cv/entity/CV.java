@@ -84,6 +84,10 @@ public class CV {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     // ── Enums ──────────────────────────────────────────────────────────────
 
     public enum CvSource { UPLOAD, MANUAL }
@@ -131,4 +135,5 @@ public class CV {
     public void setFailureReason(String r)           { this.failureReason = r; }
     public Instant getCreatedAt()                    { return createdAt; }
     public Instant getUpdatedAt()                    { return updatedAt; }
+    public long getVersion()                         { return version; }
 }

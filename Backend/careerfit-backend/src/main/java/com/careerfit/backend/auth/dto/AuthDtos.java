@@ -22,6 +22,12 @@ public class AuthDtos {
         @NotBlank @Email String email
     ) {}
 
+    public record PasswordlessRequestResponse(
+        String message,
+        String token,
+        int expiresInMinutes
+    ) {}
+
     public record TokenVerifyRequest(
         @NotBlank String token
     ) {}

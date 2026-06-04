@@ -72,7 +72,7 @@ public class RocchioService {
     @Async
     @Transactional
     public void updateJobVector(UUID jobId) {
-        Job job = jobRepo.findById(jobId).orElse(null);
+        Job job = jobRepo.findByIdForUpdate(jobId).orElse(null);
         if (job == null) {
             log.error("Rocchio update: Job not found: {}", jobId);
             return;

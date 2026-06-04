@@ -1,5 +1,7 @@
 # CareerFit-IT-AutoPilot
 
+Backend update report: xem `BACKEND_DOCUMENTATION.md`.
+
 ## Database local
 
 Project uu tien dung PostgreSQL local qua Docker cho development va demo truc tiep tren may ca nhan.
@@ -44,6 +46,8 @@ docker compose --profile backend up -d --build
 ```
 
 Khi chay bang profile `backend`, backend container se ket noi PostgreSQL qua Docker network bang `jdbc:postgresql://postgres:5432/careerfit`. Port PostgreSQL tren may host van la `5433`, con port `5432` chi dung noi bo giua cac container.
+
+Backend Docker image da cai san Tesseract OCR va language data `vie+eng` de doc PDF scan/image-only. Neu chay backend truc tiep bang Maven tren host Windows, can cai Tesseract rieng hoac set `TESSERACT_COMMAND` toi duong dan binary.
 
 Xem log backend:
 
@@ -107,10 +111,12 @@ http://127.0.0.1:5173/candidate/jobs/{jobId}
 http://127.0.0.1:5173/candidate/employers/northstar-healthtech
 http://127.0.0.1:5173/candidate/upload
 http://127.0.0.1:5173/candidate/profile
+http://127.0.0.1:5173/candidate/advanced-analytics
 http://127.0.0.1:5173/candidate/settings
 http://127.0.0.1:5173/recruiter
 http://127.0.0.1:5173/recruiter/jobs
 http://127.0.0.1:5173/recruiter/analytics
+http://127.0.0.1:5173/recruiter/advanced-analytics
 http://127.0.0.1:5173/recruiter/settings
 http://127.0.0.1:5173/automation/confirm
 ```
@@ -135,6 +141,9 @@ Hien tai UI candidate co cac luong chinh:
 - Public job feed/detail uu tien `GET /api/jobs/search` va `GET /api/jobs/{jobId}`.
 - Recruiter tong quan (`/recruiter`) tach rieng voi trang Viec lam HR Dashboard (`/recruiter/jobs`) va uu tien `GET /api/recruiter/dashboard`, `GET /api/recruiter/jobs`.
 - Recruiter Settings quan ly company profile, team permissions, JD defaults va recruiting notifications.
+- Trang Thong ke cu cua recruiter van giu tai `/recruiter/analytics`.
+- Advanced Analytics UI da co route rieng `/candidate/advanced-analytics` va `/recruiter/advanced-analytics`, su dung market analytics public ket hop analytics theo role. Backend contract cho UI nam tai `Frontend/ADVANCED_ANALYTICS_API.md`.
+- UX hien tai da duoc polish: job card co avatar cong ty, metadata co icon, insight row, hover/detail action ro hon; search suggestions va modal co animation; job list co skeleton loading khi API dang fetch; cac interactive surfaces co focus visible, hover lift va reduced-motion support.
 
 Frontend API client nam tai `Frontend/src/lib/api.ts`. Mac dinh client goi `http://localhost:8080/api`; co the doi bang bien moi truong Vite `VITE_API_BASE_URL`.
 

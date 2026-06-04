@@ -8,6 +8,7 @@ import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -135,7 +136,20 @@ public class MatchingService {
             log.warn("Failed to serialize match reasons: {}", e.getMessage());
         }
 
-        matchingRepo.save(matching);
+        try {
+            matchingRepo.saveAndFlush(matching);
+        } catch (DataIntegrityViolationException e) {
+            Matching concurrent = matchingRepo.findByCvIdAndJobId(cv.getId(), job.getId())
+                    .orElseThrow(() -> e);
+            concurrent.setRawScore(result.rawScore());
+            concurrent.setNormalizedScore(result.normalizedScore());
+            concurrent.setLabel(result.label());
+            concurrent.setPotential(result.isPotential());
+            concurrent.setNeedsRecompute(false);
+            concurrent.setMatchReasonsJson(matching.getMatchReasonsJson());
+            concurrent.setPotentialReasonJson(matching.getPotentialReasonJson());
+            matchingRepo.saveAndFlush(concurrent);
+        }
     }
 
     private boolean isLanguageCompatible(String cvLang, String jobLang) {

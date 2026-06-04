@@ -116,6 +116,10 @@ public class Job {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     // ── Enums ──────────────────────────────────────────────────────────────
 
     public enum SalaryMode { NEGOTIABLE, RANGE, UP_TO, FROM, HIDDEN }
@@ -183,4 +187,5 @@ public class Job {
     public void setDomain(String d)                      { this.domain = d; }
     public Instant getCreatedAt()                        { return createdAt; }
     public Instant getUpdatedAt()                        { return updatedAt; }
+    public long getVersion()                             { return version; }
 }

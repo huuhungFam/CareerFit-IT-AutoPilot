@@ -79,8 +79,7 @@ public class ScoringService {
 
     private Matching.MatchLabel assignLabel(double score) {
         if (score >= props.getScoreLabelHighMax()) return Matching.MatchLabel.HIGH;
-        if (score >= props.getScoreLabelMediumMax()) return Matching.MatchLabel.HIGH;
-        if (score >= props.getScoreLabelLowMax()) return Matching.MatchLabel.MEDIUM;
+        if (score >= props.getScoreLabelMediumMax()) return Matching.MatchLabel.MEDIUM;
         return Matching.MatchLabel.LOW;
     }
 

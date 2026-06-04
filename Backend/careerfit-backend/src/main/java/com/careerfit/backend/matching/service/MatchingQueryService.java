@@ -3,6 +3,7 @@ package com.careerfit.backend.matching.service;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
+import com.careerfit.backend.config.AppProperties;
 import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.employer.entity.EmployerProfile;
@@ -22,7 +23,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 /**
@@ -40,19 +46,22 @@ public class MatchingQueryService {
     private final CVRepository cvRepo;
     private final EmployerProfileRepository employerRepo;
     private final ObjectMapper objectMapper;
+    private final AppProperties appProperties;
 
     public MatchingQueryService(MatchingRepository matchingRepo,
                                 JobRepository jobRepo,
                                 CandidateRepository candidateRepo,
                                 CVRepository cvRepo,
                                 EmployerProfileRepository employerRepo,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                AppProperties appProperties) {
         this.matchingRepo = matchingRepo;
         this.jobRepo = jobRepo;
         this.candidateRepo = candidateRepo;
         this.cvRepo = cvRepo;
         this.employerRepo = employerRepo;
         this.objectMapper = objectMapper;
+        this.appProperties = appProperties;
     }
 
     // ── Recruiter: Top CVs per Job ────────────────────────────────────────
@@ -93,7 +102,8 @@ public class MatchingQueryService {
 
     @Transactional(readOnly = true)
     public MatchingDtos.MatchedJobPageResponse getMatchedJobs(UUID userId, int page, int size,
-                                                               String label, boolean potentialOnly) {
+                                                               String label, boolean potentialOnly,
+                                                               double minScore) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
 
@@ -114,22 +124,27 @@ public class MatchingQueryService {
                     .toList()
                 : matches;
 
-        if (potentialOnly) {
-            filtered = filtered.stream().filter(Matching::isPotential).toList();
-        }
+        if (potentialOnly) filtered = filtered.stream().filter(Matching::isPotential).toList();
 
-        List<MatchingDtos.MatchedJobResponse> responses = filtered.stream()
-                .map(this::toMatchedJob)
+        double effectiveMinScore = normalizeScore(minScore);
+        List<Matching> visible = filterByMinimumScore(filtered, effectiveMinScore);
+
+        Map<UUID, EmployerProfile> employersByRecruiter = loadEmployersByRecruiter(visible);
+
+        List<MatchingDtos.MatchedJobResponse> responses = visible.stream()
+                .map(m -> toMatchedJob(m, employersByRecruiter))
                 .toList();
 
         return new MatchingDtos.MatchedJobPageResponse(
-                responses, responses.size(), page, pageSize, 1
+                responses, responses.size(), page, pageSize, 1,
+                buildMeta(defaultCv, filtered, visible, effectiveMinScore)
         );
     }
 
     @Transactional(readOnly = true)
     public MatchingDtos.CandidateJobCardPageResponse getCandidateJobCards(UUID userId, int page, int size,
-                                                                          String label, boolean potentialOnly) {
+                                                                          String label, boolean potentialOnly,
+                                                                          double minScore) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
         CV defaultCv = cvRepo.findByCandidateIdAndIsDefaultTrue(candidate.getId())
@@ -146,15 +161,20 @@ public class MatchingQueryService {
                     .toList()
                 : matches;
 
-        if (potentialOnly) {
-            filtered = filtered.stream().filter(Matching::isPotential).toList();
-        }
+        if (potentialOnly) filtered = filtered.stream().filter(Matching::isPotential).toList();
 
-        List<MatchingDtos.CandidateJobCardResponse> jobs = filtered.stream()
-                .map(this::toCandidateJobCard)
+        double effectiveMinScore = normalizeScore(minScore);
+        List<Matching> visible = filterByMinimumScore(filtered, effectiveMinScore);
+
+        Map<UUID, EmployerProfile> employersByRecruiter = loadEmployersByRecruiter(visible);
+
+        List<MatchingDtos.CandidateJobCardResponse> jobs = visible.stream()
+                .map(m -> toCandidateJobCard(m, employersByRecruiter))
                 .toList();
 
-        return new MatchingDtos.CandidateJobCardPageResponse(jobs, jobs.size(), page, pageSize, 1);
+        return new MatchingDtos.CandidateJobCardPageResponse(
+                jobs, jobs.size(), page, pageSize, 1,
+                buildMeta(defaultCv, filtered, visible, effectiveMinScore));
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────
@@ -184,10 +204,9 @@ public class MatchingQueryService {
         );
     }
 
-    private MatchingDtos.MatchedJobResponse toMatchedJob(Matching m) {
+    private MatchingDtos.MatchedJobResponse toMatchedJob(Matching m, Map<UUID, EmployerProfile> employersByRecruiter) {
         Job job = m.getJob();
-        EmployerProfile employer = employerRepo
-                .findByRecruiterId(job.getRecruiter().getId()).orElse(null);
+        EmployerProfile employer = employersByRecruiter.get(job.getRecruiter().getId());
 
         // Resolve display salary text
         String salaryDisplay = buildSalaryText(job);
@@ -213,10 +232,9 @@ public class MatchingQueryService {
         );
     }
 
-    private MatchingDtos.CandidateJobCardResponse toCandidateJobCard(Matching m) {
+    private MatchingDtos.CandidateJobCardResponse toCandidateJobCard(Matching m, Map<UUID, EmployerProfile> employersByRecruiter) {
         Job job = m.getJob();
-        EmployerProfile employer = employerRepo
-                .findByRecruiterId(job.getRecruiter().getId()).orElse(null);
+        EmployerProfile employer = employersByRecruiter.get(job.getRecruiter().getId());
         return new MatchingDtos.CandidateJobCardResponse(
                 m.getId().toString(),
                 job.getId().toString(),
@@ -238,6 +256,66 @@ public class MatchingQueryService {
                         ? m.getPotentialReasonJson().replace("\"", "") : null,
                 m.getCreatedAt()
         );
+    }
+
+    private Map<UUID, EmployerProfile> loadEmployersByRecruiter(List<Matching> matches) {
+        List<UUID> recruiterIds = matches.stream()
+                .map(Matching::getJob)
+                .filter(Objects::nonNull)
+                .map(Job::getRecruiter)
+                .filter(Objects::nonNull)
+                .map(recruiter -> recruiter.getId())
+                .distinct()
+                .toList();
+
+        if (recruiterIds.isEmpty()) return Map.of();
+
+        return employerRepo.findByRecruiterIdIn(recruiterIds).stream()
+                .collect(Collectors.toMap(
+                        employer -> employer.getRecruiter().getId(),
+                        Function.identity(),
+                        (first, ignored) -> first
+                ));
+    }
+
+    private List<Matching> filterByMinimumScore(List<Matching> matches, double minScore) {
+        if (minScore <= 0) return matches;
+        return matches.stream()
+                .filter(m -> m.getNormalizedScore().doubleValue() >= minScore)
+                .toList();
+    }
+
+    private MatchingDtos.MatchFeedMeta buildMeta(CV cv, List<Matching> considered,
+                                                 List<Matching> visible, double minScore) {
+        BigDecimal bestScore = considered.stream()
+                .map(Matching::getNormalizedScore)
+                .findFirst()
+                .orElse(null);
+        BigDecimal strongThreshold = BigDecimal.valueOf(appProperties.getScoreLabelMediumMax());
+        boolean hasStrongMatches = bestScore != null && bestScore.compareTo(strongThreshold) >= 0;
+        int hiddenLowScoreCount = Math.max(0, considered.size() - visible.size());
+        String reason = null;
+        if (considered.isEmpty()) {
+            reason = "NO_MATCHING_JOBS";
+        } else if (visible.isEmpty()) {
+            reason = "ONLY_LOW_SCORE_MATCHES";
+        } else if (!hasStrongMatches) {
+            reason = "LOW_CONFIDENCE_MATCHES";
+        }
+        return new MatchingDtos.MatchFeedMeta(
+                cv.getId().toString(),
+                bestScore,
+                hasStrongMatches,
+                reason,
+                hiddenLowScoreCount,
+                BigDecimal.valueOf(minScore),
+                strongThreshold
+        );
+    }
+
+    private double normalizeScore(double value) {
+        if (Double.isNaN(value) || value < 0) return 0;
+        return Math.min(100, value);
     }
 
     private String buildSalaryText(Job job) {

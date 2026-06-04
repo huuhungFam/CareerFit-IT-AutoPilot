@@ -96,8 +96,11 @@ public class Feedback {
     public Matching getMatching()                { return matching; }
     public UserAccount getActor()                { return actor; }
     public ActorRole getActorRole()              { return actorRole; }
+    public void setActorRole(ActorRole r)        { this.actorRole = r; }
     public FeedbackType getFeedbackType()        { return feedbackType; }
+    public void setFeedbackType(FeedbackType t)  { this.feedbackType = t; }
     public SourceChannel getSourceChannel()      { return sourceChannel; }
+    public void setSourceChannel(SourceChannel c){ this.sourceChannel = c; }
     public String getMetadataJson()              { return metadataJson; }
     public void setMetadataJson(String m)        { this.metadataJson = m; }
     public Instant getCreatedAt()                { return createdAt; }

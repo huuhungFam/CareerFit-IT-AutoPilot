@@ -72,6 +72,10 @@ public class EmployerProfile {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     protected EmployerProfile() {}
 
     public EmployerProfile(UserAccount recruiter, String companyName, String slug) {
@@ -110,4 +114,5 @@ public class EmployerProfile {
     public void setFeatured(boolean f)           { this.isFeatured = f; }
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
+    public long getVersion()                     { return version; }
 }
