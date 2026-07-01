@@ -1,6 +1,6 @@
 # CareerFit E2E Manual Test Script
 
-Tài liệu này dùng để test thực tế các flow mới của `CareerFit IT AutoPilot`: application flow, recruiter discovery/invite, email toggle/no-spam, ranking tie-breaker và Auto-Apply.
+Tài liệu này dùng để test kỹ thuật các flow của `CareerFit IT AutoPilot`: application flow, recruiter discovery/invite, email toggle/no-spam, ranking tie-breaker, Auto-Apply và Admin. Runbook trình diễn tuần tự, có expected result và cleanup, nằm tại `DEMO_FUNCTIONAL_TEST_SCENARIO.md`.
 
 ## 1. Mục tiêu kiểm thử
 
@@ -309,7 +309,7 @@ Manual validation UI:
 3. Gửi form thiếu trường bắt buộc hoặc email sai format.
 4. Kiểm tra lỗi hiển thị tại field, không chỉ toast tổng.
 
-> Trạng thái hiện tại: màn hình tạo CV thủ công mới là UI prototype và chưa submit vào API. Vì vậy phần validation CV phải test bằng API bên dưới cho đến khi form frontend được nối hoàn chỉnh.
+Màn hình tạo CV thủ công đã submit vào `POST /api/cv/manual`. Request bên dưới vẫn dùng để kiểm tra riêng validation envelope của backend.
 
 ```powershell
 $invalidCvBody = @{

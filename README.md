@@ -101,7 +101,9 @@ Invoke-RestMethod -Method Get -Uri http://localhost:8080/api/admin/dashboard -He
 Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/admin/audit-logs?page=0&size=2" -Headers $adminHeaders
 ```
 
-Kich ban test E2E thu cong cho application flow, recruiter discovery/invite, email toggle/no-spam, Auto-Apply, validation/empty-state va Admin MVP nam tai `CAREERFIT_E2E_TEST_SCRIPT.md`.
+Runbook demo theo thu tu Guest -> Candidate -> Recruiter -> Admin, gom ca expected result, negative cases va cleanup, nam tai `DEMO_FUNCTIONAL_TEST_SCENARIO.md`.
+
+Kich ban test E2E/API ky thuat chi tiet cho application flow, recruiter discovery/invite, email toggle/no-spam, Auto-Apply, validation/empty-state va Admin MVP nam tai `CAREERFIT_E2E_TEST_SCRIPT.md`.
 
 Checklist deploy/runtime truoc demo production nam tai `DEPLOYMENT_CHECKLIST.md`.
 

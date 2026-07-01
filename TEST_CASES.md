@@ -62,7 +62,8 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | Backend compile nhanh | Khi chỉ cần kiểm tra compile | `.\mvnw.cmd -DskipTests compile` | Không lỗi compile/import |
 | Frontend build | Sau khi sửa frontend/types/API mapping | `cd Frontend` rồi `npm run build` | TypeScript/Vite build success |
 | API smoke thủ công | Khi backend đang chạy | Dùng curl/PowerShell trong mục regression | Endpoint public 200, protected 401/403 đúng |
-| UI manual E2E | Trước demo | Chạy theo `CAREERFIT_E2E_TEST_SCRIPT.md` | Guest/Candidate/Recruiter/Admin flow chính pass |
+| UI demo tuần tự | Trước demo | Chạy theo `DEMO_FUNCTIONAL_TEST_SCENARIO.md` | Guest/Candidate/Recruiter/Admin flow chính pass và cleanup hoàn tất |
+| API/E2E kỹ thuật | Khi cần đối chứng request/response | Chạy theo `CAREERFIT_E2E_TEST_SCRIPT.md` | Contract và lifecycle API chính pass |
 | DB sạch | Trước khi chốt demo | `docker compose down -v`, start lại DB/backend | Flyway chạy hết, seed `ca/re/ad` hoạt động |
 | Security smoke | Khi sửa auth/role/token | Dùng token sai role gọi protected endpoint | Không bypass được role; inactive user bị chặn |
 
