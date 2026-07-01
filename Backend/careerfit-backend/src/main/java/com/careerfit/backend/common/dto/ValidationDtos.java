@@ -14,4 +14,18 @@ public class ValidationDtos {
             String field,
             String message
     ) {}
+
+    public record FieldViolation(
+            Severity severity,
+            String field,
+            String reason,
+            String message,
+            String suggestion
+    ) {}
+
+    public record ValidationErrorDetails(
+            String code,
+            String message,
+            java.util.List<FieldViolation> fields
+    ) {}
 }

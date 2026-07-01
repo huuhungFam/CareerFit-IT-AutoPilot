@@ -2,6 +2,7 @@ package com.careerfit.backend.scheduler;
 
 import com.careerfit.backend.automation.entity.AutomationPolicy;
 import com.careerfit.backend.automation.repository.AutomationPolicyRepository;
+import com.careerfit.backend.automation.service.AutoApplyService;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.cv.entity.CV;
@@ -14,6 +15,7 @@ import com.careerfit.backend.notification.repository.EmailActionRepository;
 import com.careerfit.backend.notification.service.EmailActionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -45,6 +47,7 @@ import java.util.List;
  *     notification emails for new SCORING_DONE CVs.
  */
 @Component
+@ConditionalOnProperty(name = "app.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 public class AutomationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(AutomationScheduler.class);
@@ -56,6 +59,7 @@ public class AutomationScheduler {
     private final AutomationPolicyRepository policyRepo;
     private final EmailActionService emailActionService;
     private final EmailActionRepository emailActionRepo;
+    private final AutoApplyService autoApplyService;
 
     public AutomationScheduler(MatchingRepository matchingRepo,
                                 ScoringService scoringService,
@@ -63,7 +67,8 @@ public class AutomationScheduler {
                                 CVRepository cvRepo,
                                 AutomationPolicyRepository policyRepo,
                                 EmailActionService emailActionService,
-                                EmailActionRepository emailActionRepo) {
+                                EmailActionRepository emailActionRepo,
+                                AutoApplyService autoApplyService) {
         this.matchingRepo = matchingRepo;
         this.scoringService = scoringService;
         this.candidateRepo = candidateRepo;
@@ -71,6 +76,7 @@ public class AutomationScheduler {
         this.policyRepo = policyRepo;
         this.emailActionService = emailActionService;
         this.emailActionRepo = emailActionRepo;
+        this.autoApplyService = autoApplyService;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -109,7 +115,7 @@ public class AutomationScheduler {
     // ─────────────────────────────────────────────────────────────────────
 
     @Scheduled(cron = "0 0 8 * * *", zone = "Asia/Ho_Chi_Minh")
-    @Transactional(readOnly = true)
+    @Transactional
     public void sendDailyDigest() {
         log.info("[SCHEDULER] Starting daily digest...");
 
@@ -188,7 +194,7 @@ public class AutomationScheduler {
     // ─────────────────────────────────────────────────────────────────────
 
     @Scheduled(fixedDelay = 4 * 60 * 60 * 1000)  // 4 hours
-    @Transactional(readOnly = true)
+    @Transactional
     public void notifyHighMatches() {
         log.info("[SCHEDULER] Scanning for high-value matches to notify...");
 
@@ -238,5 +244,25 @@ public class AutomationScheduler {
             }
         }
         log.info("[SCHEDULER] Match notifications done. Notified {} candidates.", notified);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 5. Auto-apply (every 2 hours)
+    //    Creates AUTO_APPLIED applications for candidate policies above threshold.
+    // ─────────────────────────────────────────────────────────────────────
+
+    @Scheduled(fixedDelay = 2 * 60 * 60 * 1000)
+    public void executeAutoApply() {
+        log.info("[SCHEDULER] Scanning auto-apply policies...");
+        List<AutomationPolicy> policies = policyRepo.findByAutoApplyEnabledTrue();
+        int created = 0;
+        for (AutomationPolicy policy : policies) {
+            try {
+                created += autoApplyService.runForPolicy(policy);
+            } catch (Exception e) {
+                log.error("[SCHEDULER] Auto-apply failed for policy {}: {}", policy.getId(), e.getMessage());
+            }
+        }
+        log.info("[SCHEDULER] Auto-apply done. Created {} applications.", created);
     }
 }

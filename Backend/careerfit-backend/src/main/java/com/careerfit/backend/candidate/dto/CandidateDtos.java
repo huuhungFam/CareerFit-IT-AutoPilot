@@ -79,7 +79,7 @@ public class CandidateDtos {
     // ── Portfolio links ───────────────────────────────────────────────────
 
     public record PortfolioLinkRequest(
-        @Size(max = 50)  String type,  // GITHUB, LINKEDIN, PORTFOLIO, OTHER
+        @Size(max = 50)  String type,  // GITHUB, LINKEDIN, PORTFOLIO, BLOG, OTHER
         @Size(max = 500) String url
     ) {}
 
@@ -95,7 +95,7 @@ public class CandidateDtos {
         @Size(max = 255) String name,
         @Size(max = 255) String role,
         @Size(max = 3000) String summary,
-        List<@Size(max = 100) String> techStack,
+        @Size(max = 30) List<@Size(max = 100) String> techStack,
         @Size(max = 500) String projectUrl,
         @Size(max = 3000) String impact
     ) {}

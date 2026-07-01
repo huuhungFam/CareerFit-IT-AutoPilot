@@ -5,25 +5,9 @@ import type {
   CandidatePreference,
   EmailAction,
   Job,
-  MockAccount,
   RecruiterSummary,
   TrendPoint,
 } from '../types';
-
-export const mockAccounts: MockAccount[] = [
-  {
-    username: 'ca',
-    password: '1',
-    role: 'candidate',
-    displayName: 'Minh Anh',
-  },
-  {
-    username: 're',
-    password: '1',
-    role: 'recruiter',
-    displayName: 'Northstar Recruiter',
-  },
-];
 
 export const candidate: Candidate = {
   id: 'cand-01',
@@ -45,6 +29,7 @@ export const preference: CandidatePreference = {
 export const automationPolicy: AutomationPolicy = {
   autoApplyEnabled: true,
   autoApplyThreshold: 88,
+  emailNotificationsEnabled: true,
   scanEnabled: true,
   scanFrequency: '6 hours',
   highMatchEmailEnabled: true,
@@ -57,14 +42,17 @@ export const automationPolicy: AutomationPolicy = {
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00',
   cooldownMinutes: 180,
+  notificationCooldownHours: 3,
   replacementAfterSkipEnabled: false,
   replacementDelayMinutes: 45,
   nextScanAt: 'Today, 14:30',
+  updatedAt: null,
 };
 
 export const jobs: Job[] = [
   {
     id: 'job-01',
+    matchingId: 'match-job-01',
     title: 'Senior Frontend Engineer',
     company: 'Northstar HealthTech',
     location: 'Ho Chi Minh City, Hybrid',
@@ -84,6 +72,7 @@ export const jobs: Job[] = [
   },
   {
     id: 'job-02',
+    matchingId: 'match-job-02',
     title: 'Product-minded React Developer',
     company: 'Orbit Talent AI',
     location: 'Remote Vietnam',
@@ -103,6 +92,7 @@ export const jobs: Job[] = [
   },
   {
     id: 'job-03',
+    matchingId: 'match-job-03',
     title: 'Fullstack TypeScript Engineer',
     company: 'Finflow Labs',
     location: 'Da Nang, Onsite',
@@ -122,6 +112,7 @@ export const jobs: Job[] = [
   },
   {
     id: 'job-04',
+    matchingId: 'match-job-04',
     title: 'UI Platform Engineer',
     company: 'AtlasWorks',
     location: 'Ho Chi Minh City',

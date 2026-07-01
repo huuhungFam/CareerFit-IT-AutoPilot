@@ -1,5 +1,6 @@
 package com.careerfit.backend.common.exception;
 
+import com.careerfit.backend.common.dto.ValidationDtos;
 import com.careerfit.backend.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -37,18 +39,50 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ex.getCode(), ex.getMessage()));
     }
 
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDomainValidation(
+            ValidationException ex, HttpServletRequest req) {
+        List<ValidationDtos.FieldViolation> fields = ex.getSignals().stream()
+                .map(signal -> new ValidationDtos.FieldViolation(
+                        signal.severity(),
+                        signal.field(),
+                        signal.code(),
+                        signal.message(),
+                        suggestionFor(signal.code())))
+                .toList();
+        var details = new ValidationDtos.ValidationErrorDetails(
+                "VALIDATION_FAILED",
+                ex.getMessage(),
+                fields);
+        log.warn("[{}] {} - validation failed: {}", req.getMethod(), req.getRequestURI(), fields);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.validationFail(ex.getMessage(), details));
+    }
+
     // ── Bean validation errors ─────────────────────────────────────────────
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(
             MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
+        Map<String, String> legacyFieldErrors = new HashMap<>();
         for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
-            fieldErrors.put(fe.getField(), fe.getDefaultMessage());
+            legacyFieldErrors.put(fe.getField(), fe.getDefaultMessage());
         }
-        log.debug("Validation failed: {}", fieldErrors);
+        List<ValidationDtos.FieldViolation> fields = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ValidationDtos.FieldViolation(
+                        ValidationDtos.Severity.ERROR,
+                        fe.getField(),
+                        "CONSTRAINT_VIOLATION",
+                        fe.getDefaultMessage(),
+                        null))
+                .toList();
+        var details = new ValidationDtos.ValidationErrorDetails(
+                "VALIDATION_FAILED",
+                "Validation failed",
+                fields);
+        log.debug("Validation failed: {}", legacyFieldErrors);
         return ResponseEntity.badRequest()
-                .body(ApiResponse.validationFail("Validation failed", fieldErrors));
+                .body(ApiResponse.validationFail("Validation failed", details));
     }
 
     // ── Spring Security ────────────────────────────────────────────────────
@@ -113,5 +147,26 @@ public class GlobalExceptionHandler {
         log.error("[{}] {} - Unhandled exception: {}", req.getMethod(), req.getRequestURI(), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail("INTERNAL_ERROR", "An unexpected error occurred"));
+    }
+
+    private String suggestionFor(String code) {
+        if (code == null) return null;
+        return switch (code) {
+            case "SALARY_MODE_REQUIRED" -> "Choose a salary mode before publishing the JD.";
+            case "SALARY_NEGATIVE" -> "Use zero or a positive salary value.";
+            case "SALARY_RANGE_INVALID" -> "Make salaryMin less than or equal to salaryMax.";
+            case "SALARY_RANGE_REQUIRED" -> "Provide both salaryMin and salaryMax for RANGE salary mode.";
+            case "SALARY_MIN_REQUIRED" -> "Provide salaryMin for FROM salary mode.";
+            case "SALARY_MAX_REQUIRED" -> "Provide salaryMax for UP_TO salary mode.";
+            case "JD_SENIORITY_EXPERIENCE_MISMATCH", "JD_FRESHER_EXPERIENCE_MISMATCH" ->
+                    "Review seniority level and required years of experience.";
+            case "JD_INTERN_SALARY_HIGH" -> "Verify salary currency, unit, and job level.";
+            case "JD_TOO_SHORT" -> "Add responsibilities, required skills, and working context.";
+            case "JD_REQUIRED_SKILLS_EMPTY" -> "Add at least the core technical skills for this JD.";
+            case "CV_SENIORITY_EXPERIENCE_MISMATCH" -> "Review seniority and yearsOfExperience in the CV profile.";
+            case "CV_TOO_MANY_SKILLS" -> "Keep the most relevant skills for the target role.";
+            case "CV_SUMMARY_TOO_SHORT" -> "Add a concise profile summary with role, stack, and experience.";
+            default -> null;
+        };
     }
 }

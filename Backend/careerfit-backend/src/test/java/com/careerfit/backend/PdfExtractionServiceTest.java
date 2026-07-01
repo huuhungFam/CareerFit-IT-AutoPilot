@@ -8,15 +8,78 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.io.IOException;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PdfExtractionServiceTest {
+
+    @Test
+    void extractsDocxCvText() throws Exception {
+        byte[] bytes;
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            document.createParagraph().createRun().setText(
+                    "Nguyen Van A is a Java Spring Boot backend engineer with PostgreSQL, Docker, REST API and testing experience.");
+            document.write(output);
+            bytes = output.toByteArray();
+        }
+        var file = Files.createTempFile("careerfit-cv-", ".docx");
+        Files.write(file, bytes);
+        try {
+            var result = new PdfExtractionService(new AppProperties()).extractFromFile(file.toFile());
+            assertThat(result.rawText()).contains("Spring Boot", "PostgreSQL");
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
+    void rejectsExtensionAndMimeMismatch() {
+        var upload = new MockMultipartFile("file", "cv.png", "application/pdf", new byte[] {1, 2, 3});
+        var service = new PdfExtractionService(new AppProperties());
+
+        assertThatThrownBy(() -> service.validateSupportedUpload(upload))
+                .isInstanceOf(PdfExtractionService.PdfExtractionException.class)
+                .hasMessageContaining("does not match");
+    }
+
+    @Test
+    void rejectsUnsupportedAndEmptyUploads() {
+        var service = new PdfExtractionService(new AppProperties());
+        var unsupported = new MockMultipartFile("file", "cv.txt", "text/plain", "plain text".getBytes());
+        var empty = new MockMultipartFile("file", "cv.pdf", "application/pdf", new byte[0]);
+
+        assertThatThrownBy(() -> service.validateSupportedUpload(unsupported))
+                .isInstanceOf(PdfExtractionService.PdfExtractionException.class)
+                .hasMessageContaining("Unsupported CV file type");
+        assertThatThrownBy(() -> service.validateSupportedUpload(empty))
+                .isInstanceOf(PdfExtractionService.PdfExtractionException.class)
+                .hasMessageContaining("empty or missing");
+    }
+
+    @Test
+    void imageCvFailsClearlyWhenOcrIsDisabled() throws IOException {
+        AppProperties properties = new AppProperties();
+        ReflectionTestUtils.setField(properties, "ocrEnabled", false);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(200, 100, BufferedImage.TYPE_INT_RGB), "png", output);
+        var upload = new MockMultipartFile("file", "cv.png", "image/png", output.toByteArray());
+
+        assertThatThrownBy(() -> new PdfExtractionService(properties).extractText(upload))
+                .isInstanceOf(PdfExtractionService.PdfExtractionException.class)
+                .hasMessageContaining("requires OCR");
+    }
 
     @Test
     void extractsTextFromTextBasedPdfWithoutOcr() throws IOException {

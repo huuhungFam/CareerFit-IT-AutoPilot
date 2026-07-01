@@ -3,12 +3,15 @@ package com.careerfit.backend.matching.service;
 import com.careerfit.backend.audit.entity.AuditLog;
 import com.careerfit.backend.audit.repository.AuditLogRepository;
 import com.careerfit.backend.cv.entity.CV;
+import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.job.entity.Job;
 import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
+import com.careerfit.backend.notification.service.NotificationEmailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -32,17 +35,23 @@ public class MatchingService {
     private final ScoringService scoringService;
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
+    private final NotificationEmailService notificationEmailService;
+    private final CVRepository cvRepo;
 
     public MatchingService(JobRepository jobRepo,
                            MatchingRepository matchingRepo,
                            ScoringService scoringService,
                            AuditLogRepository auditRepo,
-                           ObjectMapper objectMapper) {
+                           ObjectMapper objectMapper,
+                           NotificationEmailService notificationEmailService,
+                           CVRepository cvRepo) {
         this.jobRepo = jobRepo;
         this.matchingRepo = matchingRepo;
         this.scoringService = scoringService;
         this.auditRepo = auditRepo;
         this.objectMapper = objectMapper;
+        this.notificationEmailService = notificationEmailService;
+        this.cvRepo = cvRepo;
     }
 
     /**
@@ -74,6 +83,7 @@ public class MatchingService {
         }
 
         log.info("Batch matching done for CV={}. Scored={}, Skipped={}", cv.getId(), scored, skipped);
+        notifyCandidateWhenNoUsefulMatches(cv, activeJobs.size(), scored);
 
         auditRepo.save(new AuditLog(AuditLog.ActorType.SYSTEM, null, "CV_BATCH_MATCH_DONE")
                 .withTarget("CV", cv.getId())
@@ -95,16 +105,18 @@ public class MatchingService {
     @Transactional
     public void scoreJobAgainstAllCvs(Job job) {
         log.info("Scoring job id={} against all CVs...", job.getId());
-        // In a larger system, we'd query relevant CVs by language/domain.
-        // For now, fetch CVs that have tfidf vectors (status=SCORING_DONE).
-        // This avoids loading all CVs unnecessarily.
-        List<Matching> existingMatchings = matchingRepo.findByJobId(job.getId());
-        log.info("Job {} has {} existing matchings to recompute", job.getId(), existingMatchings.size());
-
-        for (Matching m : existingMatchings) {
-            m.setNeedsRecompute(true);
+        List<CV> cvs = cvRepo.findByStatus(CV.CvStatus.SCORING_DONE);
+        int scored = 0;
+        for (CV cv : cvs) {
+            if (!isLanguageCompatible(cv.getLanguage(), job.getLanguage())) continue;
+            try {
+                upsertMatching(cv, job);
+                scored++;
+            } catch (Exception e) {
+                log.error("Failed to score Job={} against CV={}: {}", job.getId(), cv.getId(), e.getMessage());
+            }
         }
-        matchingRepo.saveAll(existingMatchings);
+        log.info("Job {} matching complete. CVs={}, scored={}", job.getId(), cvs.size(), scored);
     }
 
     // ── Core upsert ───────────────────────────────────────────────────────
@@ -155,5 +167,26 @@ public class MatchingService {
     private boolean isLanguageCompatible(String cvLang, String jobLang) {
         if (cvLang == null || jobLang == null) return true; // unknown — allow
         return cvLang.equals(jobLang) || "en".equals(jobLang); // English jobs accept all CVs
+    }
+
+    private void notifyCandidateWhenNoUsefulMatches(CV cv, int activeJobCount, int scored) {
+        var user = cv.getCandidate().getUser();
+        if (activeJobCount == 0 || scored == 0) {
+            notificationEmailService.sendNoMatches(user, cv.getDisplayName());
+            return;
+        }
+
+        var best = matchingRepo.findTopMatchesByCvId(cv.getId(), PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (best == null) {
+            notificationEmailService.sendNoMatches(user, cv.getDisplayName());
+            return;
+        }
+        double bestScore = best.getNormalizedScore().doubleValue();
+        if (bestScore < 40.0) {
+            notificationEmailService.sendLowMatches(user, bestScore);
+        }
     }
 }

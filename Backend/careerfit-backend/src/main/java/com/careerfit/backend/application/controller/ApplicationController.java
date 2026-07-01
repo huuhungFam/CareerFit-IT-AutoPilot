@@ -75,4 +75,14 @@ public class ApplicationController {
         applicationService.updateStatus(id, userId, req);
         return ResponseEntity.ok(ApiResponse.ok());
     }
+
+    @PostMapping("/api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite")
+    @Operation(summary = "Invite a matching candidate who has not applied yet (RECRUITER)")
+    public ResponseEntity<ApiResponse<ApplicationDtos.ApplicantResponse>> inviteCandidate(
+            @PathVariable UUID jobId,
+            @PathVariable UUID candidateId,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(applicationService.inviteCandidate(jobId, candidateId, userId)));
+    }
 }

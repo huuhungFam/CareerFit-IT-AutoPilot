@@ -14,6 +14,7 @@ import com.careerfit.backend.job.entity.Job;
 import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
+import com.careerfit.backend.notification.service.NotificationEmailService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -40,6 +42,7 @@ public class ApplicationService {
     private final MatchingRepository matchingRepo;
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
+    private final NotificationEmailService notificationEmailService;
 
     public ApplicationService(ApplicationRepository appRepo,
                                CandidateRepository candidateRepo,
@@ -47,7 +50,8 @@ public class ApplicationService {
                                CVRepository cvRepo,
                                MatchingRepository matchingRepo,
                                AuditLogRepository auditRepo,
-                               ObjectMapper objectMapper) {
+                               ObjectMapper objectMapper,
+                               NotificationEmailService notificationEmailService) {
         this.appRepo = appRepo;
         this.candidateRepo = candidateRepo;
         this.jobRepo = jobRepo;
@@ -55,6 +59,7 @@ public class ApplicationService {
         this.matchingRepo = matchingRepo;
         this.auditRepo = auditRepo;
         this.objectMapper = objectMapper;
+        this.notificationEmailService = notificationEmailService;
     }
 
     // ── Candidate: Submit application ─────────────────────────────────────
@@ -96,6 +101,8 @@ public class ApplicationService {
                 .withChannel(AuditLog.SourceChannel.WEB));
 
         log.info("Application submitted: candidate={} job={}", candidate.getId(), req.jobId());
+        notificationEmailService.sendApplicationSubmitted(application);
+        notificationEmailService.sendRecruiterNewApplication(application);
         return toMyApplicationResponse(application, matching);
     }
 
@@ -117,6 +124,7 @@ public class ApplicationService {
                 .withTarget("Application", applicationId)
                 .withChannel(AuditLog.SourceChannel.WEB));
         log.info("Application {} withdrawn by user={}", applicationId, userId);
+        notificationEmailService.sendApplicationWithdrawn(app);
     }
 
     // ── Candidate: my applications ────────────────────────────────────────
@@ -134,7 +142,8 @@ public class ApplicationService {
 
         return new ApplicationDtos.MyApplicationPageResponse(
                 responses, resultPage.getTotalElements(),
-                page, size, resultPage.getTotalPages());
+                page, size, resultPage.getTotalPages(),
+                applicationListMeta(responses, resultPage.getTotalElements(), null));
     }
 
     // ── Recruiter: view applicants ────────────────────────────────────────
@@ -166,7 +175,8 @@ public class ApplicationService {
         return new ApplicationDtos.ApplicantPageResponse(
                 jobId, job.getTitle(), applicants,
                 resultPage.getTotalElements(), page, size,
-                resultPage.getTotalPages());
+                resultPage.getTotalPages(),
+                applicationListMeta(applicants, resultPage.getTotalElements(), status));
     }
 
     // ── Recruiter: update application status ─────────────────────────────
@@ -201,6 +211,54 @@ public class ApplicationService {
                 .withMetadata("{\"status\":\"" + req.status() + "\"}"));
 
         log.info("Application {} status updated to {} by recruiter={}", applicationId, req.status(), recruiterId);
+        notificationEmailService.sendApplicationStatusChanged(app);
+    }
+
+    // ── Recruiter: invite not-yet-applied candidate ──────────────────────
+
+    @Transactional
+    public ApplicationDtos.ApplicantResponse inviteCandidate(UUID jobId, UUID candidateId, UUID recruiterId) {
+        Job job = jobRepo.findByIdWithRecruiter(jobId)
+                .orElseThrow(() -> AppException.notFound("Job", jobId));
+
+        if (!job.getRecruiter().getId().equals(recruiterId)) {
+            throw AppException.forbidden("You do not own this job");
+        }
+        if (job.getStatus() != Job.JobStatus.ACTIVE) {
+            throw AppException.badRequest("Job is no longer accepting invitations");
+        }
+
+        Candidate candidate = candidateRepo.findById(candidateId)
+                .orElseThrow(() -> AppException.notFound("Candidate", candidateId));
+
+        Application existing = appRepo.findByCandidateIdAndJobId(candidateId, jobId).orElse(null);
+        if (existing != null) {
+            return toApplicantResponse(existing);
+        }
+
+        CV cv = cvRepo.findByCandidateIdAndIsDefaultTrue(candidateId)
+                .orElseThrow(() -> AppException.badRequest("Candidate has no default CV to invite"));
+        Matching matching = matchingRepo.findByCvIdAndJobId(cv.getId(), jobId).orElse(null);
+
+        Application invitation = new Application(candidate, job, cv, matching, false);
+        invitation.setStatus(Application.ApplicationStatus.INVITED);
+
+        try {
+            appRepo.saveAndFlush(invitation);
+        } catch (DataIntegrityViolationException e) {
+            return appRepo.findByCandidateIdAndJobId(candidateId, jobId)
+                    .map(this::toApplicantResponse)
+                    .orElseThrow(() -> AppException.conflict("Candidate invitation conflicted with another write"));
+        }
+
+        auditRepo.save(new AuditLog(AuditLog.ActorType.USER, recruiterId, "CANDIDATE_INVITED")
+                .withTarget("Job", jobId)
+                .withMetadata("{\"candidateId\":\"" + candidateId + "\"}")
+                .withChannel(AuditLog.SourceChannel.WEB));
+
+        log.info("Candidate invited: candidate={} job={} recruiter={}", candidateId, jobId, recruiterId);
+        notificationEmailService.sendApplicationStatusChanged(invitation);
+        return toApplicantResponse(invitation);
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────
@@ -246,6 +304,38 @@ public class ApplicationService {
                 app.getCoverLetter(),
                 app.getAppliedAt()
         );
+    }
+
+    private ApplicationDtos.ListMeta applicationListMeta(List<?> rows,
+                                                         long total,
+                                                         Application.ApplicationStatus statusFilter) {
+        Instant generatedAt = Instant.now();
+        Instant lastUpdatedAt = rows.stream()
+                .map(this::extractUpdatedAt)
+                .filter(java.util.Objects::nonNull)
+                .max(Instant::compareTo)
+                .orElse(null);
+        String state = total == 0 ? "NO_MATCH" : rows.isEmpty() ? "NO_FILTERED_RESULTS" : "READY";
+        String message = switch (state) {
+            case "NO_MATCH" -> "No applications found.";
+            case "NO_FILTERED_RESULTS" -> "No applications match the current page or filters.";
+            default -> "Application results are ready.";
+        };
+        List<String> suggestions = switch (state) {
+            case "NO_MATCH" -> List.of("Apply to a matched job or wait for a recruiter invitation.");
+            case "NO_FILTERED_RESULTS" -> List.of("Clear status filters or move back to the first page.");
+            default -> List.of();
+        };
+        if (statusFilter != null && "NO_MATCH".equals(state)) {
+            suggestions = List.of("Clear the status filter to see all applications.");
+        }
+        return new ApplicationDtos.ListMeta(generatedAt, lastUpdatedAt, state, message, suggestions);
+    }
+
+    private Instant extractUpdatedAt(Object row) {
+        if (row instanceof ApplicationDtos.MyApplicationResponse app) return app.updatedAt();
+        if (row instanceof ApplicationDtos.ApplicantResponse app) return app.appliedAt();
+        return null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

@@ -49,7 +49,9 @@ public class ScoringService {
      */
     public ScoringResult score(CV cv, Job job) {
         Map<String, Double> cvVec  = parseVector(cv.getExtractedTermsJson(), "CV", cv.getId().toString());
-        Map<String, Double> jobVec = parseVector(job.getTfidfVectorJson(), "Job", job.getId().toString());
+        String jobVecStr = (job.getLearnedProfileVectorJson() != null && !job.getLearnedProfileVectorJson().isBlank() && !job.getLearnedProfileVectorJson().equals("{}"))
+                ? job.getLearnedProfileVectorJson() : job.getTfidfVectorJson();
+        Map<String, Double> jobVec = parseVector(jobVecStr, "Job", job.getId().toString());
 
         double rawScore = tfidf.cosineSimilarity(cvVec, jobVec);
         BigDecimal normalized = BigDecimal.valueOf(rawScore * 100.0)

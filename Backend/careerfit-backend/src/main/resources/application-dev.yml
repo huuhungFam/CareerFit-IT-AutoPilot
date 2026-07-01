@@ -11,7 +11,7 @@ spring:
 
 app:
   mail:
-    enabled: false # Use NoOpMailService in DEV
+    enabled: ${APP_MAIL_ENABLED:false} # Use NoOpMailService in DEV unless explicitly enabled
 
 logging:
   level:

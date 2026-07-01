@@ -11,7 +11,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Base class for Integration Tests.
  * Uses Testcontainers to spin up an ephemeral PostgreSQL instance.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+    }
+)
+@org.springframework.context.annotation.Import(com.careerfit.backend.config.TestAsyncConfig.class)
 @Testcontainers(disabledWithoutDocker = true)
 public abstract class BaseIntegrationTest {
 
@@ -33,5 +39,9 @@ public abstract class BaseIntegrationTest {
         
         // Disable real email sending during tests
         registry.add("app.mail.enabled", () -> "false");
+        // Background jobs must not race the Testcontainers shutdown lifecycle.
+        registry.add("app.scheduling.enabled", () -> "false");
+        // Allow overriding taskExecutor with TestAsyncConfig
+        registry.add("spring.main.allow-bean-definition-overriding", () -> "true");
     }
 }

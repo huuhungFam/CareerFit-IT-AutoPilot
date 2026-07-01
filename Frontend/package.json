@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "check-bundle": "node -e \"const fs = require('fs'); const path = require('path'); const files = fs.readdirSync('dist/assets'); let found = false; for (const file of files) { if (file.endsWith('.js')) { const content = fs.readFileSync(path.join('dist/assets', file), 'utf8'); if (content.includes('localhost:8080/api')) { console.error('Found localhost:8080/api in ' + file); found = true; } } } if (found) process.exit(1); console.log('Bundle check passed');\"",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:e2e": "playwright test",
+    "test:e2e:prod": "playwright test --config=playwright.prod.config.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
@@ -20,6 +23,8 @@
     "vite": "^5.4.21"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7"
   }

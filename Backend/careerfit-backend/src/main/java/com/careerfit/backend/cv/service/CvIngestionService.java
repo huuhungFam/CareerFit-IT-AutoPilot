@@ -83,19 +83,16 @@ public class CvIngestionService {
      * Returns immediately so the HTTP request doesn't wait for scoring.
      */
     @Transactional
-    public CvDtos.CvUploadResponse acceptPdfUpload(MultipartFile file,
+    public CvDtos.CvUploadResponse acceptDocumentUpload(MultipartFile file,
                                                     String displayName,
                                                     UUID userId) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
 
-        // Validate early (MIME check before storing)
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.equals("application/pdf")) {
-            if (file.getOriginalFilename() == null ||
-                    !file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
-                throw AppException.badRequest("Only PDF files are accepted");
-            }
+        try {
+            pdfService.validateSupportedUpload(file);
+        } catch (PdfExtractionService.PdfExtractionException e) {
+            throw AppException.badRequest(e.getMessage());
         }
 
         String name = (displayName != null && !displayName.isBlank())
@@ -123,13 +120,13 @@ public class CvIngestionService {
                 .withResult(AuditLog.Result.SUCCESS));
 
         // Trigger async processing
-        processPdfAsync(cv.getId());
+        processDocumentAsync(cv.getId());
 
         return new CvDtos.CvUploadResponse(
                 cv.getId().toString(),
                 cv.getDisplayName(),
                 cv.getStatus().name(),
-                "CV uploaded. Processing started in background.",
+                "CV document uploaded. Processing started in background.",
                 List.of()
         );
     }
@@ -177,7 +174,7 @@ public class CvIngestionService {
     // ── Async Workers ─────────────────────────────────────────────────────
 
     @Async
-    public void processPdfAsync(UUID cvId) {
+    public void processDocumentAsync(UUID cvId) {
         CV cv = cvRepo.findById(cvId).orElse(null);
         if (cv == null) {
             log.error("CV not found for async processing: {}", cvId);
@@ -188,13 +185,13 @@ public class CvIngestionService {
             cv.setStatus(CV.CvStatus.VALIDATING);
             cvRepo.save(cv);
 
-            // Extract text from stored PDF
+            // Extract text from the stored PDF, image or DOCX document.
             if (cv.getFilePath() == null) {
                 throw new IllegalStateException("CV has no file path stored");
             }
 
-            var pdfFile = storage.resolve(cv.getFilePath());
-            var extracted = pdfService.extractFromFile(pdfFile);
+            var documentFile = storage.resolve(cv.getFilePath());
+            var extracted = pdfService.extractFromFile(documentFile);
 
             cv.setStatus(CV.CvStatus.PROCESSING);
             cv.setRawText(extracted.rawText());
@@ -204,7 +201,7 @@ public class CvIngestionService {
             vectorizeAndScore(cv);
 
         } catch (PdfExtractionService.PdfExtractionException e) {
-            log.error("PDF extraction failed for CV={}: {}", cvId, e.getMessage());
+            log.error("Document extraction failed for CV={}: {}", cvId, e.getMessage());
             markFailed(cv, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error processing CV={}: {}", cvId, e.getMessage(), e);

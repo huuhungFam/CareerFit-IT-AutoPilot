@@ -72,6 +72,9 @@ public class AutomationPolicy {
 
     // ── High-match notification ───────────────────────────────────────────
 
+    @Column(name = "email_notifications_enabled", nullable = false)
+    private boolean emailNotificationsEnabled = true;
+
     @Column(name = "high_match_email_enabled", nullable = false)
     private boolean highMatchEmailEnabled = false;
 
@@ -146,6 +149,8 @@ public class AutomationPolicy {
     public void setJobScanEnabled(boolean b)              { this.jobScanEnabled = b; }
     public int getJobScanFrequencyHours()                 { return jobScanFrequencyHours; }
     public void setJobScanFrequencyHours(int h)           { this.jobScanFrequencyHours = h; }
+    public boolean isEmailNotificationsEnabled()          { return emailNotificationsEnabled; }
+    public void setEmailNotificationsEnabled(boolean b)   { this.emailNotificationsEnabled = b; }
     public boolean isHighMatchEmailEnabled()              { return highMatchEmailEnabled; }
     public void setHighMatchEmailEnabled(boolean b)       { this.highMatchEmailEnabled = b; }
     public BigDecimal getHighMatchThreshold()             { return highMatchThreshold; }
@@ -199,12 +204,22 @@ public class AutomationPolicy {
 
     public record PolicySummary(
         boolean autopilotEnabled,
+        boolean autoApplyEnabled,
+        Double autoApplyThreshold,
+        boolean emailNotificationsEnabled,
         boolean digestEnabled,
         String digestFrequency,
         Double minScoreToNotify,
         boolean notifyOnHighOnly,
         boolean notifyPotential,
         Integer maxNotificationsPerDay,
-        Instant pausedUntil
+        Integer notificationCooldownHours,
+        boolean quietHoursEnabled,
+        LocalTime quietHoursStart,
+        LocalTime quietHoursEnd,
+        boolean replacementAfterSkipEnabled,
+        Integer replacementDelayMinutes,
+        Instant pausedUntil,
+        Instant updatedAt
     ) {}
 }

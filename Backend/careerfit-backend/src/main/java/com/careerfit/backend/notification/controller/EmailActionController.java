@@ -5,6 +5,7 @@ import com.careerfit.backend.feedback.entity.Feedback;
 import com.careerfit.backend.feedback.service.FeedbackService;
 import com.careerfit.backend.notification.entity.EmailAction;
 import com.careerfit.backend.notification.repository.EmailActionRepository;
+import com.careerfit.backend.notification.service.NotificationEmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,11 +43,14 @@ public class EmailActionController {
 
     private final EmailActionRepository emailActionRepo;
     private final FeedbackService feedbackService;
+    private final NotificationEmailService notificationEmailService;
 
     public EmailActionController(EmailActionRepository emailActionRepo,
-                                 FeedbackService feedbackService) {
+                                 FeedbackService feedbackService,
+                                 NotificationEmailService notificationEmailService) {
         this.emailActionRepo = emailActionRepo;
         this.feedbackService = feedbackService;
+        this.notificationEmailService = notificationEmailService;
     }
 
     @GetMapping(value = "/redeem", produces = MediaType.TEXT_HTML_VALUE)
@@ -92,6 +96,9 @@ public class EmailActionController {
                                 feedbackType,
                                 Feedback.SourceChannel.EMAIL
                         );
+                        if (action.getActionType() == EmailAction.ActionType.NOT_INTERESTED) {
+                            notificationEmailService.sendAfterSkip(action.getRecipient(), action.getMatching());
+                        }
                     }
                 }
                 case UNSUBSCRIBE_DIGEST -> {

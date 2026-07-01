@@ -1,7 +1,7 @@
 package com.careerfit.backend.common.service;
 
 import com.careerfit.backend.common.dto.ValidationDtos;
-import com.careerfit.backend.common.exception.AppException;
+import com.careerfit.backend.common.exception.ValidationException;
 import com.careerfit.backend.cv.dto.CvDtos;
 import com.careerfit.backend.job.dto.JobDtos;
 import com.careerfit.backend.job.entity.Job;
@@ -204,7 +204,7 @@ public class QualityValidationService {
                 .filter(signal -> signal.severity() == ValidationDtos.Severity.ERROR)
                 .toList();
         if (!errors.isEmpty()) {
-            throw AppException.badRequest(errors.get(0).message());
+            throw new ValidationException("Validation failed: " + errors.get(0).message(), signals);
         }
     }
 

@@ -17,6 +17,7 @@ src/main/resources/application.yml
 src/main/resources/db/migration/V1__init_schema.sql
 src/main/java/com/careerfit/backend/config
 src/main/java/com/careerfit/backend/common
+src/main/java/com/careerfit/backend/admin
 src/main/java/com/careerfit/backend/auth
 src/main/java/com/careerfit/backend/candidate
 src/main/java/com/careerfit/backend/cv
@@ -80,11 +81,12 @@ Swagger:
 http://localhost:8080/swagger-ui.html
 ```
 
-Demo accounts:
+Seeded test accounts:
 
 ```text
 Candidate: ca / 1
 Recruiter: re / 1
+Admin: ad / 1
 ```
 
 ## 3. Cấu Trúc Package
@@ -99,6 +101,7 @@ Các package chính:
 
 | Package | Chức năng |
 | --- | --- |
+| `admin` | Admin control panel: dashboard, user moderation, job moderation, audit/email monitor |
 | `auth` | Đăng ký, đăng nhập, JWT, passwordless token |
 | `candidate` | Hồ sơ ứng viên, CV list, portfolio |
 | `cv` | Upload CV, CV nhập tay, xử lý PDF/text |
@@ -112,7 +115,7 @@ Các package chính:
 | `notification` | Email, email action token |
 | `scheduler` | Tác vụ chạy nền |
 | `analytics` | Thống kê thị trường/job |
-| `audit` | Audit log, admin endpoints |
+| `audit` | Audit log domain và repository |
 | `common` | Response, exception, utility |
 | `config` | Security, async, Jackson, OpenAPI |
 
@@ -244,6 +247,7 @@ V1__init_schema.sql
 V2__phase4_additions.sql
 V3__phase5_and_6_additions.sql
 ...
+V11__scraped_job_source_metadata.sql
 ```
 
 Các table chính:
@@ -264,6 +268,17 @@ Các table chính:
 | `audit_log` | `AuditLog` | Lịch sử hành động |
 | `job_market_snapshot` | `JobMarketSnapshot` | Snapshot thống kê |
 | `analytics_event` | `AnalyticsEvent` | Event tracking cho Advanced Analytics |
+
+`V11__scraped_job_source_metadata.sql` thêm các field metadata cho job crawl:
+
+```text
+source_platform
+source_url
+scraped_at
+external_hash
+```
+
+`external_hash` có unique index để script import có thể upsert dữ liệu crawl nhiều lần mà không tạo trùng.
 
 Quan hệ chính:
 
@@ -549,6 +564,13 @@ if (req.phone() != null) candidate.setPhone(req.phone());
 
 JSONB như `desiredSkills` được DTO nhận là `List<String>`, service serialize thành JSON string bằng `ObjectMapper`.
 
+Portfolio có thêm các quy tắc dữ liệu:
+
+- Link type chỉ nhận `GITHUB`, `LINKEDIN`, `PORTFOLIO`, `BLOG`, `OTHER` và được chuẩn hóa uppercase.
+- URL link bắt buộc; URL dự án không bắt buộc. URL có giá trị chỉ nhận scheme `http` hoặc `https`, phải có host và không chứa user-info.
+- Tech stack được trim và loại trùng không phân biệt hoa thường; tối đa 30 phần tử theo DTO validation.
+- Mọi thao tác sửa/xóa đều kiểm tra candidate hiện tại sở hữu link/project; truy cập tài nguyên của candidate khác trả `403`.
+
 ## 12. CV Domain
 
 Mở:
@@ -568,7 +590,7 @@ Routes:
 
 | Method | Path | Ý nghĩa |
 | --- | --- | --- |
-| `POST` | `/api/cv/upload` | Upload PDF |
+| `POST` | `/api/cv/upload` | Upload PDF, PNG, JPG/JPEG hoặc DOCX |
 | `POST` | `/api/cv/manual` | Tạo CV thủ công |
 | `GET` | `/api/cv/me` | List CV |
 | `GET` | `/api/cv/{cvId}` | Chi tiết CV |
@@ -584,19 +606,19 @@ UPLOADED -> VALIDATING -> PROCESSING -> SCORING_DONE
                               -> FAILED
 ```
 
-Upload PDF flow:
+Upload document flow:
 
 ```text
 1. Controller nhận multipart file.
 2. Service tìm Candidate theo userId.
-3. Check file là PDF.
+3. Kiểm tra extension và MIME thuộc PDF/PNG/JPG/JPEG/DOCX.
 4. Tạo CV status UPLOADED.
 5. Lưu file vào disk qua StorageService.
 6. Nếu chưa có default CV, set CV này làm default.
 7. Save AuditLog CV_UPLOAD.
-8. Gọi processPdfAsync.
-9. Worker đọc PDF, lấy raw text bằng PDFBox.
-10. Nếu PDF là scan/image-only hoặc text quá ít, render PDF thành ảnh và chạy Tesseract OCR.
+8. Gọi processDocumentAsync.
+9. Worker chọn parser theo extension: PDFBox cho PDF, Apache POI cho DOCX, ImageIO cho ảnh.
+10. PDF scan/image-only và ảnh chạy Tesseract OCR `vie+eng` trong Docker.
 11. Detect language.
 12. Normalize text thành tokens.
 13. Build TF-IDF vector.
@@ -604,6 +626,8 @@ Upload PDF flow:
 15. Set status SCORING_DONE.
 16. Gọi MatchingService.scoreAllJobsForCv.
 ```
+
+Sau khi import nhiều JD, chạy `node scripts\rebuild-matchings.mjs`. Batch dùng sort tổng thứ tự `createdAt DESC, id ASC`; không được phân trang chỉ theo `createdAt` vì dữ liệu scrape có nhiều timestamp bằng nhau.
 
 Manual CV flow:
 
@@ -725,6 +749,15 @@ Spring Data JPA có hai kiểu query:
 
 - Query tự sinh từ tên method: `findByStatus`, `findByRecruiterIdAndStatus`.
 - Query viết tay bằng `@Query`.
+
+Project cũng có script import dữ liệu job crawl:
+
+```powershell
+node scripts\import-scraped-jobs.mjs --dry-run
+node scripts\import-scraped-jobs.mjs
+```
+
+Script đọc `scraped-data/jobs_for_careerfit_import.json`, normalize dữ liệu scrape, tạo recruiter/employer sinh từ company và upsert vào bảng `job` bằng `external_hash`.
 
 ## 15. Employer Domain
 
@@ -859,6 +892,7 @@ Routes:
 | `DELETE` | `/api/applications/{id}` | Candidate owner |
 | `GET` | `/api/recruiter/jobs/{jobId}/applicants` | Recruiter owner |
 | `PATCH` | `/api/recruiter/applications/{id}/status` | Recruiter owner |
+| `POST` | `/api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite` | Recruiter owner |
 
 Submit application flow:
 
@@ -877,6 +911,31 @@ Submit application flow:
 
 Withdraw không xóa row, mà set status `NOT_INTERESTED`.
 
+`GET /api/applications/me` và `GET /api/recruiter/jobs/{jobId}/applicants` trả thêm `meta`:
+
+```text
+generatedAt
+lastUpdatedAt
+resultState
+message
+suggestions
+```
+
+Invite candidate chưa apply:
+
+```text
+1. Recruiter phải sở hữu job.
+2. Job phải ACTIVE.
+3. Candidate phải tồn tại và có default CV.
+4. Nếu đã có application cho candidate/job, trả application hiện tại, không tạo trùng.
+5. Nếu chưa có, tạo Application status INVITED.
+6. Gắn matching nếu có.
+7. Save AuditLog CANDIDATE_INVITED.
+8. Gửi lifecycle email qua NotificationEmailService và NotificationPolicyGuard.
+```
+
+Auto-Apply tạo application bằng constructor `new Application(candidate, job, cv, matching, true)`, status tự thành `AUTO_APPLIED`.
+
 ## 19. Feedback Và Rocchio
 
 Mở:
@@ -891,7 +950,8 @@ src/main/java/com/careerfit/backend/feedback/entity/Feedback.java
 Route:
 
 ```text
-POST /api/matches/{matchingId}/feedback
+POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE
+POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER
 ```
 
 Feedback types:
@@ -946,8 +1006,46 @@ Automation policy routes:
 | --- | --- |
 | `GET` | `/api/automation/policy` |
 | `PATCH` | `/api/automation/policy` |
+| `PATCH` | `/api/automation/policy/email-notifications` |
+| `POST` | `/api/automation/auto-apply/run-now` |
 | `POST` | `/api/automation/pause` |
 | `POST` | `/api/automation/resume` |
+
+`AutomationPolicyService` expose/update các field chính cho frontend:
+
+```text
+autoApplyEnabled
+autoApplyThreshold
+emailNotificationsEnabled
+digestEnabled
+minScoreToNotify
+notifyOnHighOnly
+notifyPotential
+maxNotificationsPerDay
+notificationCooldownHours
+quietHoursEnabled
+quietHoursStart
+quietHoursEnd
+replacementAfterSkipEnabled
+replacementDelayMinutes
+pausedUntil
+```
+
+`autoApplyThreshold` được validate trong khoảng `50-100`.
+Nếu sai range, backend trả `ValidationException` với field `autoApplyThreshold`, code `AUTO_APPLY_THRESHOLD_RANGE`.
+
+`AutoApplyService.runForPolicy(policy)`:
+
+```text
+1. Tìm candidate theo policy user.
+2. Lấy default CV.
+3. Chỉ chạy nếu CV status SCORING_DONE.
+4. Lấy top matching theo CV.
+5. Bỏ qua job inactive, score dưới threshold, hoặc application đã tồn tại.
+6. Tạo tối đa 3 application AUTO_APPLIED mỗi lần chạy.
+7. Ghi audit AUTO_APPLY_EXECUTED.
+8. Gửi/log email candidate auto-applied và recruiter new application qua notification/no-spam policy.
+```
 
 `MailService` chỉ bật khi:
 
@@ -982,6 +1080,41 @@ Scheduler:
 | `sendDailyDigest` | 08:00 ICT | Gửi digest |
 | `cleanupExpiredTokens` | 03:00 ICT | Expire/purge token |
 | `notifyHighMatches` | mỗi 4 giờ | Gửi high-match email |
+| `executeAutoApply` | mỗi 2 giờ | Tạo application AUTO_APPLIED cho policy đủ điều kiện |
+
+## 20.1 List Metadata Convention
+
+Các response list quan trọng có metadata để frontend không phải suy luận empty state:
+
+```text
+generatedAt
+lastUpdatedAt
+resultState
+message
+suggestions
+```
+
+Áp dụng:
+
+- `MatchingDtos.MatchedJobPageResponse.meta`
+- `MatchingDtos.CandidateJobCardPageResponse.meta`
+- `MatchingDtos.RankingPageResponse.meta`
+- `MatchingDtos.RecruiterCandidateDiscoveryPageResponse.generatedAt/lastUpdatedAt/suggestions`
+- `ApplicationDtos.MyApplicationPageResponse.meta`
+- `ApplicationDtos.ApplicantPageResponse.meta`
+
+State được dùng:
+
+```text
+READY
+NO_MATCH
+LOW_MATCH_ONLY
+HIGH_TIE
+PROCESSING
+FAILED
+NO_FILTERED_RESULTS
+NO_CANDIDATE_MATCHES
+```
 
 ## 21. Analytics, Recruiter Dashboard, Admin
 
@@ -1017,15 +1150,16 @@ Scheduler:
 - `/api/recruiter/jobs/{jobId}/top-candidates`
 - `/api/recruiter/jobs`
 
-`AdminController`:
+Admin MVP controllers:
 
-- `/api/admin/audit-logs`
-- `/api/admin/users`
-- activate/deactivate user
-- force matching rebuild
-- system stats
+- `AdminDashboardController`: `GET /api/admin/dashboard`
+- `AdminUserController`: `GET /api/admin/users`, `GET /api/admin/users/{userId}`, `POST /api/admin/users/{userId}/suspend`, `POST /api/admin/users/{userId}/activate`
+- `AdminJobController`: `GET /api/admin/jobs`, `POST /api/admin/jobs/{jobId}/hide`, `POST /api/admin/jobs/{jobId}/restore`
+- `AdminAuditLogController`: `GET /api/admin/audit-logs`
+- `AdminEmailMonitorController`: `GET /api/admin/email-actions`, `POST /api/admin/email-actions/{actionId}/retry`, `GET /api/admin/email-tokens`, `POST /api/admin/email-tokens/{tokenId}/revoke`
+- `AdminSystemController`: `POST /api/admin/matching/rebuild?cvId=...`
 
-Một số controller dashboard/admin dùng repository trực tiếp thay vì service. Khi đọc project, cứ hiểu trước; nếu refactor sau thì có thể tách service để đồng nhất kiến trúc.
+Admin control panel chỉ phục vụ vận hành hệ thống ở mức MVP: giám sát, khóa/mở user, ẩn/khôi phục job, xem audit log và monitor email/magic-link. Không đặt business logic candidate/recruiter vào package admin.
 
 ## 22. Các Flow End-to-End Quan Trọng
 
@@ -1100,7 +1234,7 @@ POST /api/applications
 ### 22.6 Feedback
 
 ```text
-POST /api/matches/{matchingId}/feedback
+POST /api/matches/{matchingId}/feedback?type=...&channel=WEB&role=...
   -> FeedbackService.submitFeedback
   -> FeedbackRepository.save
   -> RocchioService.updateJobVector
@@ -1256,7 +1390,8 @@ Dùng cho tiền và score cần precision tốt hơn `double`.
 12. `ApplicationService.java`
 13. `FeedbackService.java`, `RocchioService.java`
 14. `AutomationScheduler.java`, `EmailActionService.java`
-15. `AnalyticsService.java`, `AdminController.java`
+15. `AnalyticsService.java`
+16. `admin/controller/*`, `admin/service/*`
 
 ## 28. Cách Tự Kiểm Tra Khi Đọc Một File
 

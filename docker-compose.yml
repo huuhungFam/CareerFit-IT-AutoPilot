@@ -35,7 +35,14 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-careerfit}
       JWT_SECRET: ${JWT_SECRET:-careerfit-dev-secret-key-must-be-at-least-32-chars-long}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      MAGIC_LINK_EXPOSE_TOKEN: ${MAGIC_LINK_EXPOSE_TOKEN:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       STORAGE_PATH: /app/storage/cv
+      APP_MAIL_ENABLED: ${APP_MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       OCR_ENABLED: ${OCR_ENABLED:-true}
       TESSERACT_COMMAND: ${TESSERACT_COMMAND:-tesseract}
       OCR_LANGUAGES: ${OCR_LANGUAGES:-vie+eng}

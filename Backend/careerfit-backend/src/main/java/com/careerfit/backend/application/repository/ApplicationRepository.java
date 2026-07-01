@@ -38,6 +38,10 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
                                    @Param("status") Application.ApplicationStatus status,
                                    Pageable pageable);
 
+    @EntityGraph(attributePaths = {"candidate", "candidate.user", "cv", "matching", "job"})
+    @Query("SELECT a FROM Application a WHERE a.job.id = :jobId")
+    List<Application> findAllByJobIdWithDetails(@Param("jobId") UUID jobId);
+
     /** Count applicants per job. */
     long countByJobId(UUID jobId);
 

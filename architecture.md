@@ -760,8 +760,23 @@ Quy tắc:
 
 - Suggestions không phải là phần cố định của trang kết quả; chỉ hiển thị trong trạng thái nhập liệu.
 - Trang tổng quan chỉ hiển thị một phần job mới/nổi bật và có link `Xem tất cả`.
+- Khi danh sách rỗng, frontend hiển thị no-match CTA như reset filter, clear search, update profile hoặc upload CV khác tùy role/context.
+- Khi toàn bộ kết quả là Low/điểm thấp, frontend cảnh báo nhẹ và không ưu tiên auto-apply CTA.
+- Khi nhiều kết quả cùng điểm, frontend giữ sort ổn định và hiển thị tie-break note nếu backend trả metadata.
 
-### 7.8.1. Guest access và login redirect
+### 7.8.1. Recruiter candidate filtering
+
+Luồng:
+
+1. Recruiter mở `/recruiter/jobs/{jobId}/applicants` hoặc `/potential`.
+2. Frontend giữ tab `Applied CVs` và `AI Potential Matches`.
+3. Frontend áp thêm filter `match=HIGH|POTENTIAL|HIGH_OR_POTENTIAL|APPLIED|NOT_APPLIED` trên URL.
+4. Backend nên trả `label`, `isPotential`, `applicationStatus`, `normalizedScore` và tie-break metadata nếu có.
+5. Nếu filter không có kết quả, frontend hiển thị empty state riêng và CTA xem toàn bộ ranking hoặc xóa search.
+
+Backend vẫn là nguồn sự thật cho score, label, potential và application status. Frontend chỉ hiển thị/lọc theo dữ liệu trả về hoặc fallback mock khi backend chưa sẵn sàng.
+
+### 7.8.2. Guest access và login redirect
 
 Luồng:
 
@@ -813,10 +828,7 @@ Luồng:
 
 ### 8.1. Email / Action
 
-- `POST /api/automation/email-actions`
-- `GET /api/automation/actions/confirm?token=...`
-- `POST /api/automation/actions/confirm`
-- `POST /api/automation/actions/reject`
+- `GET /api/email-action/redeem?token=...`
 
 ### 8.2. Magic-Link Login
 
@@ -828,9 +840,12 @@ Luồng:
 
 ### 8.3. AutoFit Policy
 
-- `GET /api/automation/policies/me`
-- `POST /api/automation/policies/me`
-- `PUT /api/automation/policies/me`
+- `GET /api/automation/policy`
+- `PATCH /api/automation/policy`
+- `PATCH /api/automation/policy/email-notifications`
+- `POST /api/automation/auto-apply/run-now`
+- `POST /api/automation/pause?until=...`
+- `POST /api/automation/resume`
 
 ### 8.4. Recommendation Interaction
 
@@ -860,6 +875,7 @@ Luồng:
 - `GET /api/jobs/suggestions`
 - `GET /api/jobs/{jobId}`
 - `GET /api/matches/me/cards`
+- `GET /api/recruiter/jobs/{jobId}/candidates?match=HIGH_OR_POTENTIAL&applicationStatus=...&minScore=...&sort=...`
 
 ### 8.7. Employer
 
@@ -877,8 +893,14 @@ Luồng:
 
 ### 8.9. Feedback
 
-- `POST /api/matchings/{matchingId}/feedback`
-- `POST /api/automation/actions/feedback`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=RECRUITER`
+- `GET /api/email-action/redeem?token=...`
 
 ### 8.10. Analytics
 
@@ -910,8 +932,9 @@ Các endpoint candidate/recruiter analytics phải role-scoped để không lộ
 
 ### 8.11. Audit
 
-- `GET /api/audit-logs`
-- `GET /api/audit-logs/{id}`
+- `GET /api/admin/audit-logs`
+
+Audit log là dữ liệu vận hành nhạy cảm, chỉ role `ADMIN` được xem qua Admin control panel. Candidate/Recruiter không có endpoint audit log riêng.
 
 ---
 
@@ -1034,11 +1057,32 @@ Kiến trúc automation chỉ coi là xong khi:
 - high-match email chỉ gửi ngay khi vượt ngưỡng và không vượt quota
 - skip qua web ẩn job ngay, skip qua email không spam job kế tiếp
 - search suggestion và search results hoạt động đúng query/filter
+- candidate job results có no-match CTA, low-match-only warning và tie-score stable ranking/tie-break note
 - employer detail trả được profile và job đang mở
 - candidate quản lý được nhiều CV, hồ sơ cố định và portfolio
 - recruiter overview tách khỏi HR job management dashboard
+- recruiter job workspace lọc được High, Potential, High or Potential, Applied và Not applied mà không thay thế tab Applied CVs / AI Potential Matches
 - job market dashboard hiển thị số job đăng tuyển, không hiển thị nhầm matching count
+- validation suggestion phân biệt hard error, warning và quality flag, hiển thị gần field liên quan
 - audit log ghi được toàn bộ action
 - feedback từ web/email cập nhật được Rocchio vector
 - web có control panel để xem policy, queue, action history và audit summary
 - replay và link scanner không làm hỏng state
+
+---
+
+## 12. Updates từ Production Security & UAT Evaluation
+
+### 12.1. Network Isolation & Nginx Actuator Security
+- Backend và DB giao tiếp thông qua network `internal` (isolated). Frontend truy cập backend thông qua `edge` network và Nginx proxy.
+- Các endpoint `/actuator` nhạy cảm bị chặn truy cập từ internet tại level Nginx. Chỉ cho phép `/actuator/health` được public cho purpose monitoring/load balancing. `/actuator/prometheus` chỉ được truy cập nội bộ bởi container Prometheus.
+
+### 12.2. Thuật toán Rocchio & Evaluation
+- Tích hợp TextNormalizationService cho cả test evaluator và production service, loại bỏ sai lệch về chuẩn hóa chữ viết thường và Unicode tiếng Việt.
+- Cơ chế feedback Rocchio Learning cập nhật vector asynchoronously thông qua Message Queue / Scheduler để re-compute `learnedProfileVectorJson`, giúp cải thiện ranking cá nhân hóa cho từng recruiter/job mà không blocking thao tác người dùng.
+- Thêm cơ chế test đánh giá qua nDCG, MRR với baseline threshold P@5 > 80% (System đạt 86.6% P@5, và > 0.9 nDCG@5 trên tập dataset mở rộng).
+
+### 12.3. APIs Mới Bổ Sung
+
+- `POST /api/admin/users/{userId}/suspend` - Admin suspend User Account.
+- Role/Permission: `ADMIN` mới được phép call các api bắt đầu bằng `/api/admin/*`.

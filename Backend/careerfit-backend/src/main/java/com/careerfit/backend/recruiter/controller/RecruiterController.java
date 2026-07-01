@@ -39,4 +39,20 @@ public class RecruiterController {
                 matchingQueryService.getRankedCandidates(jobId, userId, page, size, potentialOnly)));
     }
 
+    @GetMapping("/jobs/{jobId}/candidates")
+    @Operation(summary = "Discover matching candidates for a recruiter job with filters and tie-breaker metadata")
+    public ResponseEntity<ApiResponse<MatchingDtos.RecruiterCandidateDiscoveryPageResponse>> discoverCandidates(
+            @PathVariable UUID jobId,
+            @RequestAttribute("userId") UUID userId,
+            @RequestParam(required = false) String label,
+            @RequestParam(required = false) Boolean isPotential,
+            @RequestParam(required = false) String applicationStatus,
+            @RequestParam(defaultValue = "0") double minScore,
+            @RequestParam(defaultValue = "score_desc") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                matchingQueryService.discoverCandidates(jobId, userId, label, isPotential,
+                        applicationStatus, minScore, sort, page, size)));
+    }
 }

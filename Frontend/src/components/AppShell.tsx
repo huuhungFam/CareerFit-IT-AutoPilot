@@ -48,11 +48,19 @@ const recruiterLinks = [
   { to: '/recruiter/automation', key: 'automation', icon: SlidersHorizontal },
 ];
 
+const adminLinks = [
+  { to: '/admin', key: 'dashboard', icon: Home },
+  { to: '/admin/users', key: 'users', icon: UserRound },
+  { to: '/admin/jobs', key: 'jobs', icon: BriefcaseBusiness },
+  { to: '/admin/audit-logs', key: 'auditLogs', icon: FileText },
+  { to: '/admin/email-monitor', key: 'emailMonitor', icon: Bell },
+];
+
 export function AppShell({ role }: { role: ShellRole }) {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
-  const links = role === 'guest' ? guestLinks : role === 'candidate' ? candidateLinks : recruiterLinks;
-  const homePath = role === 'guest' ? '/' : role === 'candidate' ? '/candidate' : '/recruiter';
+  const links = role === 'guest' ? guestLinks : role === 'admin' ? adminLinks : role === 'candidate' ? candidateLinks : recruiterLinks;
+  const homePath = role === 'guest' ? '/' : role === 'admin' ? '/admin' : role === 'candidate' ? '/candidate' : '/recruiter';
 
   return (
     <div className={role === 'guest' ? 'app-shell guest-shell' : 'app-shell signed-shell'}>
@@ -66,7 +74,7 @@ export function AppShell({ role }: { role: ShellRole }) {
             </span>
           </button>
 
-          <nav className="top-nav" aria-label="Primary">
+          <nav className="top-nav" aria-label={language === 'vi' ? 'Điều hướng chính' : 'Primary navigation'}>
             {links.map(({ to, key, icon: Icon }) => (
               <NavLink key={to} to={to} end={to === '/' || to === '/candidate' || to === '/recruiter'}>
                 <Icon size={17} />
@@ -86,8 +94,8 @@ export function AppShell({ role }: { role: ShellRole }) {
               </>
             ) : (
               <>
-                <div className="role-switch single" aria-label="Role">
-                  <button className="active">{role === 'candidate' ? t('candidate') : t('recruiter')}</button>
+                <div className="role-switch single" aria-label={t('role')}>
+                  <button className="active">{role === 'admin' ? t('admin') : role === 'candidate' ? t('candidate') : t('recruiter')}</button>
                 </div>
                 <button className="icon-pill" aria-label={t('notifications')}>
                   <Bell size={18} />
@@ -95,7 +103,7 @@ export function AppShell({ role }: { role: ShellRole }) {
                 </button>
                 <button
                   className="icon-pill settings-shortcut"
-                  onClick={() => navigate(role === 'candidate' ? '/candidate/settings' : '/recruiter/settings')}
+                  onClick={() => navigate(role === 'admin' ? '/admin' : role === 'candidate' ? '/candidate/settings' : '/recruiter/settings')}
                   aria-label={t('settings')}
                   title={t('settings')}
                 >

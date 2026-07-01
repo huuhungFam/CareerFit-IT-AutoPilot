@@ -55,6 +55,15 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(authEntryPoint())
                 .accessDeniedHandler(accessDeniedHandler()))
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())
+                .xssProtection(xss -> xss.disable()) // using CSP instead
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'; sandbox"))
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+            )
             .authorizeHttpRequests(auth -> auth
                 // ── Fully public ───────────────────────────────────────────
                 .requestMatchers(
@@ -62,7 +71,9 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",
-                    "/actuator/health"
+                    "/actuator/health",
+                    "/actuator/health/**",
+                    "/actuator/prometheus"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
@@ -77,6 +88,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                 .requestMatchers("/api/employers/me", "/api/employers/me/**").hasRole("RECRUITER")
                 .requestMatchers(HttpMethod.GET, "/api/recommendations/jobs").hasRole("CANDIDATE")
+                .requestMatchers(HttpMethod.GET, "/api/jobs/export").hasRole("RECRUITER")
                 // Public GET-only routes (jobs / employers / analytics / similar jobs)
                 .requestMatchers(HttpMethod.GET,
                     "/api/jobs",

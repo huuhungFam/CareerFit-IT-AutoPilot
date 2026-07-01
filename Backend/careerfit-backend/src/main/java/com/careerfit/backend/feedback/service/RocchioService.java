@@ -80,12 +80,8 @@ public class RocchioService {
 
         log.info("Running Rocchio update for job id={}", jobId);
 
-        // Step 1: Load current query vector
-        Map<String, Double> q = parseVector(
-                job.getLearnedProfileVectorJson() != null
-                    ? job.getLearnedProfileVectorJson()
-                    : job.getTfidfVectorJson()
-        );
+        // Step 1: Load BASE query vector for idempotent Rocchio calculation
+        Map<String, Double> q = parseVector(job.getTfidfVectorJson());
 
         if (q.isEmpty()) {
             log.warn("Rocchio skipped — job id={} has no base vector", jobId);

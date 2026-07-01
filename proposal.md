@@ -445,11 +445,12 @@ MVP nên hoàn thành theo thứ tự:
 5. TF-IDF vectorization + cosine matching.
 6. Recommendation candidate-to-job.
 7. Score 0-100%, label và Potential heuristic.
-8. Feedback Good/Potential/Bad + Rocchio update.
+8. Feedback Good/Potential/Bad/Not Interested + Rocchio update.
 9. AutoFit policy cơ bản: auto-apply threshold, notify/email action.
 10. Một luồng actionable email hoàn chỉnh bằng magic-link.
 11. Audit log cho action chính.
 12. Dashboard candidate/recruiter, job market analytics, Advanced Analytics UI theo role và bilingual UI cơ bản.
+13. Recruiter candidate filter theo High/Potential/Applied/Not Applied, matching edge-case UI và validation suggestions gần field nhập liệu.
 
 ## TÍNH NĂNG PHASE SAU
 
@@ -476,16 +477,18 @@ Luồng demo đề xuất:
 7. Candidate mở Hồ sơ & CV, chọn CV mặc định và bổ sung portfolio dự án.
 8. Candidate upload CV, backend trả trạng thái xử lý và chạy parse/scoring async.
 9. Candidate xem job feed cá nhân từ `/api/matches/me/cards` với score %, label và lý do match.
-10. Đăng nhập bằng `re` / `1` hoặc account recruiter đã seed; recruiter mở tổng quan để xem chart/metrics/ranking summary từ backend.
-11. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
-12. Mở `/candidate/advanced-analytics` hoặc `/recruiter/advanced-analytics` để xem market overview, skill demand, salary distribution và panel analytics theo role.
-13. Candidate bật auto-apply threshold, ví dụ 95%.
-14. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
-15. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
-16. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
-17. Recruiter feedback `Good/Potential/Bad`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
-18. Mở audit log để chứng minh mọi automation đều truy vết được.
-19. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
+10. Candidate thử filter quá hẹp để thấy no-match CTA; thử low-match set để thấy cảnh báo cải thiện CV/preference; mở form Manual Creation để thấy validation suggestions.
+11. Đăng nhập bằng `re` / `1` hoặc account recruiter đã seed; recruiter mở tổng quan để xem chart/metrics/ranking summary từ backend.
+12. Recruiter mở trang Việc làm HR Dashboard để xem requisition, applicants và AI Potential Matches.
+13. Recruiter dùng filter `High`, `Potential`, `High or Potential`, `Applied`, `Not applied`; kiểm tra tie-break note khi ứng viên cùng điểm.
+14. Mở `/candidate/advanced-analytics` hoặc `/recruiter/advanced-analytics` để xem market overview, skill demand, salary distribution và panel analytics theo role.
+15. Candidate bật auto-apply threshold, ví dụ 95%.
+16. Backend phát hiện job đủ điều kiện, tạo application nội bộ hoặc gửi email xin xác nhận tùy policy.
+17. Mở email demo, bấm `Apply` hoặc `Invite`, magic-link mở confirm page.
+18. Confirm action, hệ thống thực thi bằng POST và ghi audit log.
+19. Candidate/recruiter feedback `Good/Potential/Bad/Not Interested`, hệ thống cập nhật vector bằng Rocchio và recompute ranking.
+20. Mở audit log để chứng minh mọi automation đều truy vết được.
+21. Chuyển ngôn ngữ Việt/Anh và mở chart xu hướng công việc đăng tuyển.
 
 ## CÂU CHỐT KHI BẢO VỆ
 

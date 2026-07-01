@@ -27,7 +27,8 @@ public class MatchingDtos {
         boolean isPotential,
         List<String> matchReasons,
         String potentialReason,
-        Instant matchedAt
+        Instant matchedAt,
+        TieBreakMeta tie
     ) {}
 
     public record RankingPageResponse(
@@ -37,7 +38,8 @@ public class MatchingDtos {
         long total,
         int page,
         int size,
-        int totalPages
+        int totalPages,
+        ListMeta meta
     ) {}
 
     // ── Candidate: Matched Job Feed ───────────────────────────────────────
@@ -58,7 +60,8 @@ public class MatchingDtos {
         boolean isPotential,
         List<String> matchReasons,
         String potentialReason,
-        Instant matchedAt
+        Instant matchedAt,
+        TieBreakMeta tie
     ) {}
 
     public record MatchedJobPageResponse(
@@ -90,7 +93,8 @@ public class MatchingDtos {
         boolean isPotential,
         List<String> reasons,
         String potentialReason,
-        Instant matchedAt
+        Instant matchedAt,
+        TieBreakMeta tie
     ) {}
 
     public record CandidateJobCardPageResponse(
@@ -109,7 +113,67 @@ public class MatchingDtos {
         String emptyReason,
         int hiddenLowScoreCount,
         BigDecimal minimumVisibleScore,
-        BigDecimal strongMatchThreshold
+        BigDecimal strongMatchThreshold,
+        Instant generatedAt,
+        Instant lastUpdatedAt,
+        String resultState,
+        String message,
+        List<String> suggestions
+    ) {}
+
+    public record TieBreakMeta(
+        int rank,
+        int tieRank,
+        int tieGroupSize,
+        boolean tied,
+        String sortKey,
+        Instant lastUpdatedAt
+    ) {}
+
+    public record RecruiterCandidateDiscoveryResponse(
+        String matchingId,
+        String cvId,
+        String candidateId,
+        String candidateName,
+        String candidateEmail,
+        String desiredTitle,
+        String location,
+        Integer yearsOfExperience,
+        List<String> topSkills,
+        String cvSummary,
+        BigDecimal normalizedScore,
+        String label,
+        boolean isPotential,
+        String applicationId,
+        String applicationStatus,
+        boolean hasApplied,
+        List<String> matchReasons,
+        String potentialReason,
+        Instant matchedAt,
+        TieBreakMeta tie
+    ) {}
+
+    public record RecruiterCandidateDiscoveryPageResponse(
+        String jobId,
+        String jobTitle,
+        String resultState,
+        String message,
+        List<RecruiterCandidateDiscoveryResponse> candidates,
+        long total,
+        int page,
+        int size,
+        int totalPages,
+        Instant generatedAt,
+        Instant lastUpdatedAt,
+        List<String> suggestions
+    ) {}
+
+    public record ListMeta(
+        Instant generatedAt,
+        Instant lastUpdatedAt,
+        String resultState,
+        String message,
+        List<String> suggestions
     ) {}
 
     public record FeedbackRequest(

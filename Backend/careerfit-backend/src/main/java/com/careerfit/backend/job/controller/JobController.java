@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,7 +76,7 @@ public class JobController {
     @Operation(summary = "Update a job (RECRUITER only, partial update)")
     public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> updateJob(
             @PathVariable UUID id,
-            @RequestBody JobDtos.UpdateJobRequest req,
+            @Valid @RequestBody JobDtos.UpdateJobRequest req,
             @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(ApiResponse.ok(jobService.updateJob(id, userId, req)));
     }
@@ -95,5 +97,15 @@ public class JobController {
             @RequestAttribute("userId") UUID userId) {
         jobService.deleteJob(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv")
+    @Operation(summary = "Export all jobs owned by the authenticated recruiter as UTF-8 CSV")
+    public ResponseEntity<byte[]> exportJobs(@RequestAttribute("userId") UUID userId) {
+        byte[] csv = jobService.exportMyJobsCsv(userId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=careerfit-jobs.csv")
+                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
     }
 }

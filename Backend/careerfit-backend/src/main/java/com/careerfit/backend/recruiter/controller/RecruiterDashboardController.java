@@ -7,6 +7,8 @@ import com.careerfit.backend.job.entity.Job;
 import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,13 +33,16 @@ public class RecruiterDashboardController {
     private final JobRepository jobRepo;
     private final MatchingRepository matchingRepo;
     private final ApplicationRepository applicationRepo;
+    private final ObjectMapper objectMapper;
 
     public RecruiterDashboardController(JobRepository jobRepo,
                                         MatchingRepository matchingRepo,
-                                        ApplicationRepository applicationRepo) {
+                                        ApplicationRepository applicationRepo,
+                                        ObjectMapper objectMapper) {
         this.jobRepo = jobRepo;
         this.matchingRepo = matchingRepo;
         this.applicationRepo = applicationRepo;
+        this.objectMapper = objectMapper;
     }
 
     // ── Overview dashboard ────────────────────────────────────────────────
@@ -191,13 +197,29 @@ public class RecruiterDashboardController {
                 .map(j -> new MyJobItem(
                         j.getId(), j.getTitle(), j.getCompany(),
                         j.getLocation(), j.getSeniorityLevel(),
+                        j.getEmploymentType(), j.getRemoteType(), j.getDomain(),
                         j.getStatus().name(),
                         applicationRepo.countByJobId(j.getId()),
                         matchingRepo.countByJobId(j.getId()),
+                        parseSkills(j.getRequiredSkillsJson()),
+                        parseSkills(j.getNiceToHaveSkillsJson()),
+                        j.getOriginalText(),
+                        j.getSalaryMode().name(), j.getSalaryMin(), j.getSalaryMax(),
+                        j.getSalaryCurrency(), j.isSalaryIsVisible(), j.getSalaryDisplayText(),
+                        j.getLanguage(),
                         j.getCreatedAt()))
                 .toList();
 
         return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    private List<String> parseSkills(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception ignored) {
+            return List.of();
+        }
     }
 
     // ── Response records ──────────────────────────────────────────────────
@@ -232,8 +254,14 @@ public class RecruiterDashboardController {
 
     public record MyJobItem(
         UUID id, String title, String company,
-        String location, String seniorityLevel, String status,
+        String location, String seniorityLevel,
+        String employmentType, String remoteType, String domain,
+        String status,
         long applicantCount, long matchCount,
-        Instant createdAt
+        List<String> requiredSkills, List<String> niceToHaveSkills,
+        String originalText,
+        String salaryMode, BigDecimal salaryMin, BigDecimal salaryMax,
+        String salaryCurrency, boolean salaryIsVisible, String salaryDisplayText,
+        String language, Instant createdAt
     ) {}
 }

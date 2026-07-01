@@ -41,7 +41,7 @@ export function PotentialBadge() {
 export function ReasonChips({ reasons }: { reasons: string[] }) {
   return (
     <div className="chips">
-      {reasons.map((reason) => (
+      {[...new Set(reasons)].map((reason) => (
         <span key={reason}>{reason}</span>
       ))}
     </div>

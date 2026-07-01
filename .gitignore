@@ -20,3 +20,5 @@ Backend/build/
 .vscode/
 *.log
 Thumbs.db
+
+evidence/*.txt

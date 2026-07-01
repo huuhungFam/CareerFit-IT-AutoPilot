@@ -43,7 +43,7 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 |---|---|
 | `CANDIDATE_TOKEN` | JWT lấy từ `POST /api/auth/login` với `ca` / `1` |
 | `RECRUITER_TOKEN` | JWT lấy từ `POST /api/auth/login` với `re` / `1` |
-| `ADMIN_TOKEN` | JWT của tài khoản role `ADMIN`, tạo bằng seed/test fixture nếu chưa có |
+| `ADMIN_TOKEN` | JWT lấy từ `POST /api/auth/login` với `ad` / `1` sau khi Flyway chạy đến V13 |
 | `ACTIVE_JOB_ID` | Job có `status = ACTIVE` |
 | `CLOSED_JOB_ID` | Job có `status = CLOSED` |
 | `DRAFT_JOB_ID` | Job có `status = DRAFT` |
@@ -52,6 +52,65 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | `APPLICATION_ID` | Application thuộc Candidate hiện tại |
 | `OTHER_APPLICATION_ID` | Application thuộc Candidate khác |
 | `EMAIL_ACTION_TOKEN` | Token email action còn hạn và status pending |
+
+### 1.5. Cách Test Theo Cấp Độ
+
+| Cấp độ test | Khi nào dùng | Lệnh/cách chạy | Kết quả cần đạt |
+|---|---|---|---|
+| Smoke local infra | Trước mọi buổi code/demo | `docker compose up -d postgres` và `docker compose ps` | PostgreSQL healthy, port `5433->5432` |
+| Backend unit/integration | Sau khi sửa backend | `cd Backend\careerfit-backend` rồi `.\mvnw.cmd test` | Build success; test fail phải sửa trước khi demo |
+| Backend compile nhanh | Khi chỉ cần kiểm tra compile | `.\mvnw.cmd -DskipTests compile` | Không lỗi compile/import |
+| Frontend build | Sau khi sửa frontend/types/API mapping | `cd Frontend` rồi `npm run build` | TypeScript/Vite build success |
+| API smoke thủ công | Khi backend đang chạy | Dùng curl/PowerShell trong mục regression | Endpoint public 200, protected 401/403 đúng |
+| UI manual E2E | Trước demo | Chạy theo `CAREERFIT_E2E_TEST_SCRIPT.md` | Guest/Candidate/Recruiter/Admin flow chính pass |
+| DB sạch | Trước khi chốt demo | `docker compose down -v`, start lại DB/backend | Flyway chạy hết, seed `ca/re/ad` hoạt động |
+| Security smoke | Khi sửa auth/role/token | Dùng token sai role gọi protected endpoint | Không bypass được role; inactive user bị chặn |
+
+### 1.5.1. Coverage Backend Tự Động Hiện Có
+
+Tại ngày 2026-06-21, lệnh `./mvnw test` chạy **44 test, 0 failures, 0 errors, 0 skipped**. Docker Desktop phải hoạt động để các test Testcontainers chạy trên PostgreSQL thật; nếu Docker không khả dụng thì không được coi là một lần regression đầy đủ.
+
+| Lớp test | Số test | Phạm vi chính |
+|---|---:|---|
+| `ApiContractIntegrationTest` | 4 | Login seed, role security, settings persistence, validation envelope, recruiter JD lifecycle và CSV UTF-8 |
+| `ApplicationContextTest` | 1 | Spring context, PostgreSQL Testcontainers và Flyway V1-V14 |
+| `AutoApplyServiceTest` | 4 | Policy, threshold, giới hạn mỗi lần chạy và duplicate application |
+| `CandidateProfileServiceTest` | 4 | Portfolio normalization, URL security và ownership |
+| `JobServiceTest` | 4 | Recruiter/admin status boundary, delete guard, CSV escaping và authorization |
+| `MatchingBatchServiceTest` | 2 | Pagination ổn định và cô lập lỗi theo từng JD |
+| `PdfExtractionServiceTest` | 6 | PDF text, DOCX, file rỗng/sai loại và image/OCR failure rõ ràng |
+| `QualityValidationServiceTest` | 3 | Validation chất lượng CV/JD |
+| `SettingsServiceTest` | 6 | Default theo role, merge persistence và type/range validation |
+| `TfIdfPipelineTest` | 10 | Normalize, TF-IDF, cosine similarity và edge cases |
+
+Quy tắc đọc kết quả:
+
+- P0 fail: không demo, phải sửa.
+- P1 fail: có thể demo nếu không nằm trong luồng bảo vệ, nhưng phải ghi bug/tồn đọng.
+- P2 fail: ghi nhận cải thiện sau.
+- Nếu backend trả HTML cho JSON API, xem là contract bug, trừ `/api/email-action/redeem`.
+- Nếu frontend loading vô hạn, xem là UI bug dù backend lỗi đúng.
+
+### 1.6. Traceability Use Case - Test Group
+
+| Use case SRS | Nhóm test chính | Ghi chú |
+|---|---|---|
+| UC-C01, UC-R01 | Authentication, UI guard | Login password/passwordless, role redirect, suspended user |
+| UC-C02, UC-C03, UC-C04, UC-C16, UC-C17 | Candidate Profile, CV, Portfolio | Upload PDF, manual CV, default CV, validation |
+| UC-C05, UC-C06, UC-C14, UC-C15 | Job Portal Public, UI E2E | Search, filter, job detail, employer detail |
+| UC-C07, UC-C18 | Matching, Recommendation, Contract | Score, label, potential, empty state, tie state |
+| UC-C08, UC-C11 | Application Flow | Apply, duplicate prevention, withdraw, application history |
+| UC-C09, UC-C13, UC-C19 | Automation Policy | Auto-Apply, threshold, email toggle, quiet hours/cooldown |
+| UC-C10, UC-R10 | Email Action | Magic-link token, redeem, scanner protection, HTML success |
+| UC-C12, UC-R08 | Matching, Recommendation, Feedback | Good/Bad/Potential/Not Interested, Rocchio effect |
+| UC-R02, UC-R03 | Recruiter Job Management | Create/update/close JD, salary validation, recompute |
+| UC-R04, UC-R05, UC-R06, UC-R12 | Recruiter Dashboard | Ranking, applicants, high/potential filter, tie metadata |
+| UC-R07, UC-R13 | Application Flow | Invite candidate, update application status |
+| UC-R09, UC-R11 | Automation, Analytics | Recruiter policy, digest, analytics overview |
+| UC-A01, UC-A02 | Analytics, Audit, Admin | User suspend/activate, audit log filter |
+| UC-A03, UC-A04 | Admin Email Monitor | Email action list/retry, token list/revoke, redaction |
+| UC-A06, UC-A07 | Admin Job/System | Hide/restore job, rebuild matching |
+| UC-S01 - UC-S14 | Smoke, DB, Contract, Reliability | Background jobs, scoring, notification, audit, inactive user |
 
 ## 2. Smoke Test Và Infrastructure
 
@@ -69,6 +128,7 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | SMK-010 | P1 | Config | Backend dùng DB host đúng khi chạy Docker profile | Chạy `docker compose --profile backend up -d --build` | Xem log backend | Datasource là `postgres:5432`, backend không lỗi connection refused |
 | SMK-011 | P1 | API contract | API public jobs không trả 500 | DB có job active | Gọi `GET /api/jobs/search?page=0&size=20` | HTTP 200, body có `success=true`, `data.jobs` là array |
 | SMK-012 | P1 | API contract | API suggestions hoạt động | DB có seed job | Gọi `GET /api/jobs/search/suggestions?keyword=React` | HTTP 200, trả danh sách titles/companies/skills |
+| SMK-013 | P1 | DB | Admin migration đã chạy | Backend từng khởi động | Query `flyway_schema_history` và login `ad` / `1` | Có V13 success, login trả role `ADMIN` |
 
 ## 3. Authentication Và Authorization
 
@@ -82,9 +142,10 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | AUTH-006 | P0 | API | Đăng ký role không hợp lệ | Guest | Role `MANAGER` | HTTP 400, message role chỉ nhận Candidate hoặc Recruiter |
 | AUTH-007 | P0 | API | Login Candidate hợp lệ | Guest | `POST /api/auth/login` với `ca` / `1` | HTTP 200, trả token Bearer và user role `CANDIDATE` |
 | AUTH-008 | P0 | API | Login Recruiter hợp lệ | Guest | `POST /api/auth/login` với `re` / `1` | HTTP 200, trả token Bearer và user role `RECRUITER` |
+| AUTH-008A | P0 | API | Login Admin hợp lệ | Guest | `POST /api/auth/login` với `ad` / `1` | HTTP 200, trả token Bearer và user role `ADMIN` |
 | AUTH-009 | P0 | API | Login sai password | Guest | Gửi password sai | HTTP 401, không trả token |
 | AUTH-010 | P0 | API | Login user không tồn tại | Guest | Email chưa đăng ký | HTTP 401, không leak thông tin user |
-| AUTH-011 | P0 | API | Login tài khoản bị deactivate | Guest | Deactivate user trước | Login | HTTP 403, message account disabled |
+| AUTH-011 | P0 | API | Login tài khoản bị suspend/inactive | Guest | Admin suspend user trước | Login | HTTP 403, message account disabled |
 | AUTH-012 | P0 | API | Lấy current user với token hợp lệ | Candidate | `GET /api/auth/me` với `CANDIDATE_TOKEN` | HTTP 200, trả email, fullName, role, language |
 | AUTH-013 | P0 | Security | Truy cập protected API không token | Guest | Gọi `/api/cv/me` | HTTP 401 |
 | AUTH-014 | P0 | Security | Candidate gọi recruiter API | Candidate | Gọi `GET /api/recruiter/dashboard` | HTTP 403 |
@@ -154,10 +215,12 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | CV-002 | P0 | API | Upload không có file | Candidate | Gửi multipart thiếu file | HTTP 400 |
 | CV-003 | P0 | API | Guest upload CV | Guest | Gọi `/api/cv/upload` không JWT | HTTP 401 |
 | CV-004 | P0 | API | Recruiter upload CV | Recruiter | Gọi `/api/cv/upload` | HTTP 403 |
-| CV-005 | P1 | API | Upload file không phải PDF | Candidate | Upload `.txt` hoặc `.png` | HTTP 400, không tạo CV |
+| CV-005 | P1 | API | Upload file không được hỗ trợ | Candidate | Upload `.txt`, `.exe` hoặc MIME không khớp extension | HTTP 400, không tạo CV |
 | CV-006 | P1 | API | Upload PDF rỗng/quá ngắn | Candidate | PDF ít text | HTTP 400 hoặc CV status failed với failureReason |
 | CV-007 | P1 | API | Upload PDF image-only có OCR | Candidate | PDF scan có nội dung rõ, Tesseract sẵn sàng | CV xử lý thành công hoặc status `SCORING_DONE`, có raw text/summary |
 | CV-007B | P1 | API | Upload PDF image-only OCR fail | Candidate | Tesseract thiếu hoặc OCR text quá ít | CV status `FAILED` hoặc response lỗi rõ, không crash backend |
+| CV-007C | P0 | API | Upload ảnh CV | Candidate | PNG/JPG rõ chữ, MIME đúng, Docker có Tesseract `vie+eng` | CV chuyển `SCORING_DONE`, raw text có nội dung OCR |
+| CV-007D | P0 | API | Upload DOCX CV | Candidate | DOCX hợp lệ có ít nhất 50 ký tự | CV chuyển `SCORING_DONE`, raw text do Apache POI trích xuất |
 | CV-008 | P1 | API | Upload file quá lớn | Candidate | File vượt limit cấu hình | HTTP 413 hoặc 400, không lưu file |
 | CV-009 | P1 | Security | Upload filename path traversal | Candidate | Filename `../../x.pdf` | File lưu bằng safe path, không ghi ngoài storage |
 | CV-010 | P0 | API | Manual CV hợp lệ | Candidate | `POST /api/cv/manual` với displayName/fullName/email/desiredTitle/years/skills | HTTP 200/201, tạo CV source `MANUAL` |
@@ -229,12 +292,13 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | REC-003 | P0 | Security | Recruiter xem recommendations candidate | Recruiter | `GET /api/recommendations/jobs` | HTTP 403 |
 | REC-004 | P1 | API | Similar jobs public | Guest | `GET /api/recommendations/jobs/{jobId}/similar` | HTTP 200, trả job tương tự |
 | REC-005 | P1 | API | Similar jobs với job không tồn tại | Guest | UUID random | HTTP 404 |
-| FB-001 | P0 | API | Candidate feedback GOOD_MATCH | Candidate | `POST /api/matches/{matchingId}/feedback` | HTTP 200, tạo feedback, trigger Rocchio/recompute nếu có |
-| FB-002 | P0 | API | Candidate feedback NOT_INTERESTED | Candidate | Submit not interested | Feedback lưu, recommendation giảm ưu tiên job tương tự |
+| FB-001 | P0 | API | Candidate feedback GOOD_MATCH | Candidate | `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE` | HTTP 200, tạo feedback, trigger Rocchio/recompute nếu có |
+| FB-002 | P0 | API | Candidate feedback NOT_INTERESTED | Candidate | `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE` | Feedback lưu, recommendation giảm ưu tiên job tương tự |
 | FB-003 | P0 | Security | Feedback match người khác | Candidate | matchingId không thuộc Candidate | HTTP 403 hoặc 404 |
 | FB-004 | P1 | API | Feedback type không hợp lệ | Candidate | type `UNKNOWN` | HTTP 400 |
 | FB-005 | P1 | API | Feedback duplicate cùng match | Candidate | Gửi feedback nhiều lần | Hệ thống update hoặc reject nhất quán, không tạo duplicate ngoài ý muốn |
-| FB-006 | P1 | Integration | Feedback qua email tạo cùng effect với web | Email Recipient | Redeem GOOD_MATCH token | Feedback source `EMAIL`, matching được cập nhật như web |
+| FB-006 | P1 | Integration | Feedback qua email tạo cùng effect với web | Email Recipient | Redeem GOOD_MATCH token hoặc submit với `channel=EMAIL` khi có token hợp lệ | Feedback source `EMAIL`, matching được cập nhật như web |
+| FB-007 | P1 | API | Recruiter đánh dấu Potential | Recruiter | `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER` | Feedback lưu với role Recruiter, ranking/potential pool cập nhật nhất quán |
 
 ## 7. Application Flow
 
@@ -314,6 +378,10 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | AUTO-009 | P1 | API | Resume automation | Candidate/Recruiter | `POST /api/automation/resume` | Policy active lại |
 | AUTO-010 | P1 | UI | Candidate automation page render | Candidate | Mở `/candidate/automation` | Panel policy hiển thị toggle/threshold/digest |
 | AUTO-011 | P1 | UI | Recruiter automation page render | Recruiter | Mở `/recruiter/automation` | Panel policy phù hợp recruiter |
+| AUTO-012 | P0 | API | Auto-Apply run-now khi policy tắt | Candidate | `POST /api/automation/auto-apply/run-now` với `autoApplyEnabled=false` | HTTP 200, `created=0`, `reason=AUTO_APPLY_DISABLED` |
+| AUTO-013 | P0 | API | Auto-Apply run-now tạo application | Candidate | Bật `autoApplyEnabled=true`, threshold đủ thấp, gọi run-now | Tạo tối đa 3 application `AUTO_APPLIED`, không tạo trùng |
+| AUTO-014 | P0 | API | Auto-Apply threshold ngoài range | Candidate | `PATCH /api/automation/policy` với `autoApplyThreshold=40` hoặc `101` | HTTP 400 structured validation, field `autoApplyThreshold`, reason `AUTO_APPLY_THRESHOLD_RANGE` |
+| AUTO-015 | P1 | API | Email notification toggle off | Candidate | `PATCH /api/automation/policy/email-notifications` `{enabled:false}`, thực hiện action có email | Domain action vẫn chạy, email bị skip/log bởi notification policy |
 | EMAIL-001 | P0 | API | Redeem GOOD_MATCH token pending | Email Recipient | `GET /api/email-action/redeem?token=...` | HTTP 200 HTML success, token status redeemed, feedback được ghi |
 | EMAIL-002 | P0 | API | Redeem POTENTIAL token pending | Email Recipient | Redeem token POTENTIAL | Feedback Potential được ghi |
 | EMAIL-003 | P0 | API | Redeem NOT_INTERESTED token pending | Email Recipient | Redeem skip token | Feedback Not Interested, token redeemed |
@@ -348,15 +416,25 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | AUD-001 | P0 | DB | Register ghi audit log | Guest/System | Register user mới | Bảng `audit_log` có action `REGISTER` |
 | AUD-002 | P0 | DB | Submit application ghi audit log | Candidate/System | Apply job | Audit action `APPLICATION_SUBMITTED` |
 | AUD-003 | P1 | DB | Withdraw application ghi audit log | Candidate/System | Withdraw | Audit action `APPLICATION_WITHDRAWN` |
-| AUD-004 | P1 | DB | Admin action ghi audit log | Admin/System | Deactivate user | Audit ghi actor admin và target user |
+| AUD-004 | P1 | DB | Admin action ghi audit log | Admin/System | Suspend hoặc activate user | Audit ghi actor admin và target user |
 | ADMIN-001 | P0 | Security | Guest không gọi admin API | Guest | `GET /api/admin/users` | HTTP 401 |
 | ADMIN-002 | P0 | Security | Candidate không gọi admin API | Candidate | `GET /api/admin/users` | HTTP 403 |
-| ADMIN-003 | P0 | API | Admin xem users | Admin | `GET /api/admin/users` | HTTP 200, có pagination/filter nếu hỗ trợ |
-| ADMIN-004 | P0 | API | Admin deactivate user | Admin | `PATCH /api/admin/users/{userId}/deactivate` | User inactive, login bị chặn |
-| ADMIN-005 | P0 | API | Admin activate user | Admin | `PATCH /api/admin/users/{userId}/activate` | User active, login lại được |
-| ADMIN-006 | P1 | API | Admin xem audit logs | Admin | `GET /api/admin/audit-logs` | HTTP 200, logs mới nhất trước |
-| ADMIN-007 | P1 | API | Admin rebuild matching | Admin | `POST /api/admin/matching/rebuild` | Job async/rebuild chạy hoặc trả accepted |
-| ADMIN-008 | P1 | API | Admin system stats | Admin | `GET /api/admin/system/stats` | HTTP 200, trả số liệu hệ thống |
+| ADMIN-003 | P0 | API | Admin xem dashboard | Admin | `GET /api/admin/dashboard` | HTTP 200, trả metrics users/jobs/matching/email actions |
+| ADMIN-004 | P0 | API | Admin xem users | Admin | `GET /api/admin/users?page=0&size=10` | HTTP 200, có danh sách user và không lộ password hash |
+| ADMIN-005 | P0 | API | Admin filter/search users | Admin | `GET /api/admin/users?role=CANDIDATE&keyword=ca` | HTTP 200, chỉ trả user phù hợp filter nếu có dữ liệu |
+| ADMIN-006 | P0 | API | Admin suspend user | Admin | `POST /api/admin/users/{userId}/suspend` | User inactive, login mới bị chặn, JWT cũ bị chặn 403 ở request sau |
+| ADMIN-007 | P0 | API | Admin activate user | Admin | `POST /api/admin/users/{userId}/activate` | User active, login lại được |
+| ADMIN-008 | P1 | API | Admin xem jobs | Admin | `GET /api/admin/jobs?page=0&size=10` | HTTP 200, có danh sách job moderation |
+| ADMIN-009 | P1 | API | Admin hide job | Admin | `POST /api/admin/jobs/{jobId}/hide` | Job status thành `HIDDEN_BY_ADMIN`, không xuất hiện trong feed candidate active |
+| ADMIN-010 | P1 | API | Admin restore job | Admin | `POST /api/admin/jobs/{jobId}/restore` | Job status trở lại `ACTIVE` |
+| ADMIN-011 | P1 | API | Admin xem audit logs | Admin | `GET /api/admin/audit-logs?page=0&size=10` | HTTP 200, logs mới nhất trước |
+| ADMIN-012 | P1 | API | Audit log filter không lỗi PostgreSQL type | Admin | `GET /api/admin/audit-logs?actionType=USER_SUSPENDED&page=0&size=5` | HTTP 200, không lỗi `upper(bytea)` |
+| ADMIN-013 | P1 | API | Admin xem email actions | Admin | `GET /api/admin/email-actions?page=0&size=10` | HTTP 200, id/token hiển thị dạng redacted |
+| ADMIN-014 | P1 | API | Admin retry email action lỗi | Admin | `POST /api/admin/email-actions/{actionId}/retry` | Action lỗi được đưa về pending hoặc trả lỗi rõ nếu trạng thái không hợp lệ |
+| ADMIN-015 | P1 | API | Admin xem email tokens | Admin | `GET /api/admin/email-tokens?page=0&size=10` | HTTP 200, không leak raw token |
+| ADMIN-016 | P1 | API | Admin revoke email token | Admin | `POST /api/admin/email-tokens/{tokenId}/revoke` | Token bị revoke, magic-link tương ứng không dùng được |
+| ADMIN-017 | P1 | API | Admin rebuild matching | Admin | `POST /api/admin/matching/rebuild?cvId={cvId}` | Job async/rebuild chạy hoặc trả accepted |
+| ADMIN-018 | P1 | Runtime | Scheduler email action không rollback startup | System | Khởi động backend và xem log sau scheduler tick | Không có lỗi `f != java.lang.String`, `no Session`, `UnexpectedRollback` |
 
 ## 11. Frontend UI Và End-to-End
 
@@ -371,6 +449,14 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | UI-007 | P0 | Guard | Recruiter mở Recruiter home | Recruiter | Login `re`/`1`, mở `/recruiter` | Dashboard Recruiter render |
 | UI-008 | P0 | Guard | Candidate vào recruiter route | Candidate | Mở `/recruiter` | Redirect về `/candidate` |
 | UI-009 | P0 | Guard | Recruiter vào candidate route | Recruiter | Mở `/candidate` | Redirect về `/recruiter` |
+| UI-009A | P0 | Guard | Admin mở Admin home | Admin | Login `ad`/`1`, mở `/admin` | Admin Dashboard render, sidebar admin hiển thị |
+| UI-009B | P0 | Guard | Candidate vào admin route | Candidate | Mở `/admin` | Redirect về `/candidate` hoặc bị chặn theo role guard |
+| UI-009C | P0 | Guard | Recruiter vào admin route | Recruiter | Mở `/admin` | Redirect về `/recruiter` hoặc bị chặn theo role guard |
+| UI-009D | P1 | UI | Admin user management render | Admin | Mở `/admin/users` | Bảng user render, filter/search không crash |
+| UI-009E | P1 | UI | Admin job moderation render | Admin | Mở `/admin/jobs` | Bảng job moderation render, hide/restore action có trạng thái rõ |
+| UI-009F | P1 | UI | Admin audit log render | Admin | Mở `/admin/audit-logs` | Audit logs render, filter không làm treo loading |
+| UI-009G | P1 | UI | Admin email monitor render | Admin | Mở `/admin/email-monitor` | Email actions/tokens render, token/action id đã redact |
+| UI-009H | P1 | UI | Admin API lỗi hiển thị rõ | Admin | Tắt backend hoặc dùng token hết hạn rồi mở `/admin` | Hiển thị error panel, không loading vô hạn |
 | UI-010 | P1 | UI | Search input Enter | Guest/Candidate | Nhập keyword, bấm Enter | Chạy search, URL query cập nhật |
 | UI-011 | P1 | UI | Clear search keyword | Guest/Candidate | Bấm nút clear trong search | Input rỗng, kết quả reset |
 | UI-012 | P1 | UI | Filter modal mở/đóng | Guest/Candidate | Bấm Filter, đóng modal | Modal không làm mất state |
@@ -388,7 +474,7 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | UI-023 | P1 | UI | Automation confirm page | Guest | Mở `/automation/confirm` | Confirm/reject buttons render, result route hoạt động |
 | UI-024 | P1 | UI | Language switch | Guest/Candidate | Đổi ngôn ngữ nếu control có | Text đổi vi/en, state không mất |
 | UI-025 | P0 | Integration | Frontend không âm thầm dùng mock khi backend OK | Guest | Backend OK, mở Network `/api/jobs/search` | Request trả 200; UI hiển thị data từ backend |
-| UI-026 | P1 | Integration | Mock fallback khi backend tắt | Guest | Tắt backend, mở frontend | UI không crash, dữ liệu mock hiển thị, lỗi network không phá app |
+| UI-026 | P1 | Integration | Backend offline không bị mock che lỗi | Guest | Tắt backend, mở frontend | UI không crash, hiển thị loading/error/empty phù hợp và không hiển thị dữ liệu API giả |
 | UI-026A | P2 | UX | Job list skeleton loading | Guest/Candidate | Throttle network hoặc delay API job list | Khi chưa có data render, skeleton card xuất hiện và layout không nhảy mạnh |
 | UI-027 | P1 | Responsive | Mobile home | Guest | Viewport 390x844 | Không overlap text/buttons, nav usable |
 | UI-028 | P1 | Responsive | Mobile recruiter dashboard | Recruiter | Viewport mobile | Panels stack hợp lý, không tràn ngang |
@@ -405,13 +491,17 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | CONTRACT-001 | P0 | Contract | Login response map được sang account frontend | `POST /api/auth/login` | Có `accessToken`, `user.email`, `user.fullName`, `user.role` |
 | CONTRACT-002 | P0 | Contract | Public job list map được sang `Job` UI | `GET /api/jobs/search` | Mỗi job có `id`, `title`, `company`, optional salary/skills/status |
 | CONTRACT-003 | P0 | Contract | Job detail map được sang detail UI | `GET /api/jobs/{id}` | Có `originalText`, `niceToHaveSkills`, salary display |
-| CONTRACT-004 | P0 | Contract | Candidate job cards map được | `GET /api/matches/me/cards` | Có `id`, score/label/reasons hoặc fallback hợp lệ |
+| CONTRACT-004 | P0 | Contract | Candidate job cards map được | `GET /api/matches/me/cards` | Có `id`, score/label/reasons; field thiếu dùng giá trị rỗng an toàn, không lấy mock job |
 | CONTRACT-005 | P1 | Contract | Suggestions response đúng group | `GET /api/jobs/search/suggestions` | Body có `titles`, `companies`, `skills` |
 | CONTRACT-006 | P0 | Contract | Recruiter dashboard response đúng | `GET /api/recruiter/dashboard` | Có `activeJobs`, `pendingReview`, `totalApplicants`, `recentJobs` |
 | CONTRACT-007 | P0 | Contract | Recruiter jobs response đúng | `GET /api/recruiter/jobs` | Array job có `id`, `title`, `status`, applicant/match counts |
 | CONTRACT-008 | P1 | Contract | Error envelope nhất quán | Any failing API | Body có `success=false`, `error.code`, `error.message` |
 | CONTRACT-009 | P1 | Contract | Không trả HTML cho JSON API | Any `/api/*` JSON endpoint | `Content-Type: application/json`, trừ `/api/email-action/redeem` |
 | CONTRACT-010 | P1 | Contract | Date format parse được JS | Jobs/CV/Application | Date là ISO string hoặc format JS `Date` parse được |
+| CONTRACT-011 | P1 | Contract | List metadata cho candidate matches | `GET /api/matches/me/cards` hoặc `/api/matches/me` | `data.meta.generatedAt`, `resultState`, `message`, `suggestions` tồn tại hoặc null hợp lệ |
+| CONTRACT-012 | P1 | Contract | List metadata cho applications | `GET /api/applications/me` | `data.meta.resultState` là `READY`, `NO_MATCH` hoặc `NO_FILTERED_RESULTS` |
+| CONTRACT-013 | P1 | Contract | Recruiter discovery metadata | `GET /api/recruiter/jobs/{jobId}/candidates` | Có `resultState`, `message`, `generatedAt`, `lastUpdatedAt`, `suggestions` |
+| CONTRACT-014 | P1 | Contract | Recruiter ranking metadata | `GET /api/recruiter/jobs/{jobId}/ranking` | Có `data.meta`, tie metadata vẫn giữ trong candidate item |
 
 ## 13. Database Và Data Integrity
 
@@ -492,6 +582,16 @@ Lưu ý: "mọi tình huống" trong thực tế là không hữu hạn. Bộ te
 | E2E-010 | P1 | Automation policy | Candidate | Update threshold/digest, reload page | Policy giữ nguyên sau reload |
 | E2E-011 | P1 | Employer browsing | Guest | Mở featured employer, mở job của employer | Employer detail và job detail hoạt động |
 | E2E-012 | P1 | Login next intent | Guest/Candidate | Mở protected route, login đúng role | Quay lại intent ban đầu |
+| E2E-013 | P0 | Admin control panel | Admin | Login `ad`/`1`, mở `/admin`, `/admin/users`, `/admin/jobs`, `/admin/audit-logs`, `/admin/email-monitor` | Các trang render từ backend, không loading vô hạn |
+| E2E-014 | P0 | Admin role guard | Candidate/Recruiter | Dùng token candidate/recruiter gọi `/api/admin/dashboard` | HTTP 403, UI không cho vào `/admin` |
+| E2E-015 | P0 | Admin suspend user | Admin/Candidate | Admin suspend candidate, candidate dùng JWT cũ gọi `/api/auth/me`, admin activate lại | JWT cũ bị chặn 403 sau suspend; activate khôi phục |
+| E2E-016 | P1 | Admin job moderation | Admin/Candidate | Admin hide job rồi kiểm tra candidate active feed, sau đó restore | Job `HIDDEN_BY_ADMIN` không xuất hiện trong feed active; restore về `ACTIVE` |
+| E2E-017 | P1 | Validation suggestions | Candidate/Recruiter | Submit manual CV/JD/salary invalid | UI hiển thị field-level error/suggestion, backend trả envelope validation |
+| E2E-018 | P1 | Matching empty states | Candidate/Recruiter | Dùng filter hoặc data test tạo `NO_MATCH`, `LOW_MATCH_ONLY`, `NO_FILTERED_RESULTS` | UI hiển thị CTA/suggestion đúng, không crash |
+| E2E-019 | P1 | Ranking tie state | Recruiter | Chuẩn bị nhiều candidate score bằng nhau, mở ranking/discovery | UI hiển thị tie note, thứ tự ổn định |
+| E2E-020 | P1 | Email notification toggle | Candidate | Tắt email notification, thực hiện apply/withdraw/invite | Domain action vẫn chạy, email bị skip/log |
+| E2E-021 | P1 | Auto-Apply run-now | Candidate | Bật auto-apply threshold hợp lệ, gọi run-now | Tạo tối đa 3 application hoặc trả reason hợp lệ |
+| E2E-022 | P1 | Passwordless dev flow | Guest | Request passwordless, dùng dev token verify | Verify trả JWT, token used không dùng lại được |
 
 ## 17. Checklist Chạy Regression Nhanh Trước Demo
 
@@ -526,7 +626,26 @@ curl.exe -i "http://localhost:8080/api/jobs/search?page=0&size=20"
 curl.exe -i "http://localhost:8080/api/jobs/search/suggestions?keyword=React"
 ```
 
-5. Kiểm tra build:
+5. Kiểm tra login và role Admin:
+
+```powershell
+$adminLogin = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login -ContentType 'application/json' -Body (@{ email = 'ad'; password = '1' } | ConvertTo-Json)
+$adminHeaders = @{ Authorization = "Bearer $($adminLogin.data.accessToken)" }
+Invoke-RestMethod -Method Get -Uri http://localhost:8080/api/admin/dashboard -Headers $adminHeaders
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/admin/audit-logs?page=0&size=5" -Headers $adminHeaders
+```
+
+6. Kiểm tra candidate API chính:
+
+```powershell
+$candidateLogin = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login -ContentType 'application/json' -Body (@{ email = 'ca'; password = '1' } | ConvertTo-Json)
+$candidateHeaders = @{ Authorization = "Bearer $($candidateLogin.data.accessToken)" }
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/matches/me/cards?page=0&size=10" -Headers $candidateHeaders
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/applications/me?page=0&size=10" -Headers $candidateHeaders
+Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/automation/auto-apply/run-now" -Headers $candidateHeaders
+```
+
+7. Kiểm tra build:
 
 ```powershell
 cd Frontend
@@ -537,6 +656,20 @@ npm run build
 cd Backend\careerfit-backend
 mvn test
 ```
+
+8. Kiểm tra UI thủ công:
+
+- `/`
+- `/jobs`
+- `/candidate/jobs`
+- `/candidate/applications`
+- `/candidate/automation`
+- `/recruiter/jobs`
+- `/admin`
+- `/admin/users`
+- `/admin/jobs`
+- `/admin/audit-logs`
+- `/admin/email-monitor`
 
 ## 18. Gợi Ý Tự Động Hóa Test
 
@@ -558,6 +691,6 @@ mvn test
 | Advanced Analytics UI | drill-down cho `/candidate/advanced-analytics`, `/recruiter/advanced-analytics`, event tracking integration đầy đủ |
 | Email provider thật | SMTP failure, retry, bounce, unsubscribe thật |
 | Scheduler thật | hourly scan, daily digest, weekly summary, timezone/quiet hours |
-| Admin UI | CRUD user, audit viewer, token monitor, email queue monitor |
+| Admin nâng cao | Admin edit chi tiết user/job, export audit, phân quyền admin nhiều cấp, dashboard vận hành sâu |
 | Advanced recommendation | A/B ranking, personalization vector drift, cold start |
 | Production deploy | HTTPS, reverse proxy headers, DB cloud connection, storage S3/Supabase |

@@ -24,4 +24,7 @@ public interface EmailActionRepository extends JpaRepository<EmailAction, UUID> 
     @Modifying
     @Query("DELETE FROM EmailAction e WHERE e.expiresAt < :cutoff AND e.status = 'EXPIRED'")
     int deleteExpiredBefore(@Param("cutoff") Instant cutoff);
+
+    long countByStatus(EmailAction.ActionStatus status);
+    long countByCreatedAtAfter(Instant after);
 }

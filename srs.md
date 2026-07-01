@@ -280,6 +280,8 @@ Trách nhiệm:
 | UC-C15 | Xem chi tiết nhà tuyển dụng | Candidate mở trang hồ sơ công ty để xem giới thiệu, thông tin công ty và job đang mở. |
 | UC-C16 | Chọn CV mặc định | Candidate chọn một CV làm nguồn mặc định cho matching/recommendation. |
 | UC-C17 | Quản lý portfolio | Candidate thêm link cá nhân và dự án nổi bật phục vụ recruiter review. |
+| UC-C18 | Xử lý empty state matching | Candidate nhận hướng dẫn khi không có job phù hợp, toàn job điểm thấp hoặc nhiều job đồng điểm cao. |
+| UC-C19 | Bật/tắt thông báo email | Candidate bật/tắt email notification ở mọi khu vực có control phù hợp. |
 
 ### 4.2. Recruiter Use Cases
 
@@ -296,6 +298,8 @@ Trách nhiệm:
 | UC-R09 | Cấu hình AutoFit | Recruiter bật/tắt email digest, auto-invite, threshold. |
 | UC-R10 | Duyệt qua email | Recruiter bấm Invite/Reject/Mark Potential từ email. |
 | UC-R11 | Xem analytics | Recruiter xem xu hướng job, apply count, match count. |
+| UC-R12 | Lọc candidate theo High/Potential | Recruiter lọc candidate list theo nhãn High, Potential, Applied hoặc Not Applied. |
+| UC-R13 | Cập nhật trạng thái application | Recruiter approve, reject, invite, reschedule hoặc cancel theo lifecycle nội bộ. |
 
 ### 4.3. Admin Use Cases
 
@@ -306,6 +310,8 @@ Trách nhiệm:
 | UC-A03 | Giám sát token | Admin xem token expired/used/revoked ở mức vận hành. |
 | UC-A04 | Giám sát email queue | Admin xem email sent/failed/retry. |
 | UC-A05 | Cấu hình global policy | Admin cấu hình giới hạn chung của hệ thống. |
+| UC-A06 | Kiểm duyệt job | Admin ẩn job bằng `HIDDEN_BY_ADMIN` hoặc khôi phục về `ACTIVE`. |
+| UC-A07 | Rebuild matching | Admin kích hoạt rebuild matching cho CV khi cần xử lý lỗi vận hành. |
 
 ### 4.4. System Use Cases
 
@@ -324,6 +330,26 @@ Trách nhiệm:
 | UC-S11 | Scan job định kỳ | Hệ thống quét job mới theo tần suất trong AutoFit policy. |
 | UC-S12 | Xử lý skip | Hệ thống ghi nhận skip và quyết định có đề xuất job thay thế hay không. |
 | UC-S13 | Tổng hợp job market analytics | Hệ thống tổng hợp số lượng job đăng tuyển, xu hướng theo thời gian, phân bố theo nhóm IT và mức lương. |
+| UC-S14 | Chặn inactive user | Hệ thống chặn cả login mới và JWT cũ của user đã bị suspend. |
+
+### 4.5. Use Case Flow Tóm Tắt
+
+Các flow dưới đây là bản rút gọn để frontend/backend agent và tester hiểu cùng một luồng nghiệp vụ.
+
+| Mã flow | Actor chính | Tiền điều kiện | Luồng chính | Luồng thay thế / lỗi | Kết quả |
+|---|---|---|---|---|---|
+| FL-C01 | Guest | Backend và frontend đang chạy | Guest mở `/`, search job, mở job detail | Backend offline thì UI hiển thị fallback hoặc error thân thiện | Guest xem job public, chưa thấy score cá nhân |
+| FL-C02 | Candidate | Candidate login `ca / 1`, có CV mặc định | Mở `/candidate/jobs`, xem score %, label, reason, apply job | Không có match thì hiện empty state; toàn điểm thấp thì hiện warning cải thiện CV | Application được tạo hoặc hiển thị lý do không thể apply |
+| FL-C03 | Candidate | Candidate có file CV hợp lệ | Upload CV, backend validate, parse/OCR, score async, frontend polling | File sai định dạng hoặc text rỗng thì trả validation error/suggestion | CV có trạng thái xử lý rõ ràng và matching cards được cập nhật |
+| FL-C04 | Candidate | Candidate đang ở automation page | Bật Auto-Apply, set threshold 50-100, bấm `Run now` | Threshold ngoài range trả `AUTO_APPLY_THRESHOLD_RANGE`; không có job đủ điều kiện trả `NO_ELIGIBLE_MATCHES` | Tạo tối đa 3 application `AUTO_APPLIED` |
+| FL-C05 | Candidate | Candidate nhận email action còn hạn | Bấm Apply/Skip/Good Match, mở confirm page, xác nhận action | Token hết hạn/used/revoked trả thông báo không thực thi | Action được ghi nhận, token one-time, audit log được ghi |
+| FL-R01 | Recruiter | Recruiter login `re / 1`, có job active | Mở `/recruiter/jobs`, xem Applied CVs và AI Potential Matches | Không có candidate thì hiện `NO_CANDIDATE_MATCHES`; filter rỗng thì `NO_FILTERED_RESULTS` | Recruiter thấy candidate đúng job và đúng ownership |
+| FL-R02 | Recruiter | Có candidate chưa apply nhưng matching cao/Potential | Recruiter bấm Invite hoặc duyệt qua email | Candidate đã có application thì trả application hiện có, không tạo trùng | Application `INVITED`, lifecycle email/audit log được ghi |
+| FL-R03 | Recruiter | Có application thuộc job của recruiter | Recruiter update status `APPROVED`, `REJECTED`, `INTERVIEW_RESCHEDULED` hoặc `INTERVIEW_CANCELLED` | Recruiter không sở hữu job thì `403`; status không hợp lệ thì `400` | Status cập nhật và candidate nhận/log lifecycle email |
+| FL-A01 | Admin | Admin login `ad / 1` | Mở `/admin`, xem dashboard, users, jobs, audit logs, email monitor | Candidate/Recruiter vào `/api/admin/*` bị `403` | Admin control panel hoạt động đúng role |
+| FL-A02 | Admin | Có user active | Admin suspend user, thử request bằng JWT cũ của user, sau đó activate lại | Không cho admin tự suspend chính mình nếu rule được áp dụng | User inactive bị chặn, audit log ghi suspend/activate |
+| FL-A03 | Admin | Có job active | Admin hide job, kiểm tra candidate feed, restore job | Job không tồn tại trả `404` | Job `HIDDEN_BY_ADMIN` không xuất hiện trong feed active, restore về `ACTIVE` |
+| FL-S01 | System | Scheduler đang bật | Scan job mới, score candidate, kiểm tra policy, gửi immediate email hoặc digest | Quiet hours/cooldown/quota làm email bị skip/log | Notification không spam và vẫn ghi delivery/audit log |
 
 ---
 
@@ -698,6 +724,39 @@ Khi JD thay đổi, hệ thống phải đánh dấu các matching liên quan c�
 Recruiter phải có thể đóng JD.
 
 JD đã đóng không nên xuất hiện trong recommendation active.
+
+#### FR-JD-05: Lọc ứng viên theo trạng thái match
+
+Recruiter phải lọc được candidate trong workspace ranking/applicant theo:
+
+- `HIGH`,
+- `POTENTIAL`,
+- `HIGH_OR_POTENTIAL`,
+- `APPLIED`,
+- `NOT_APPLIED`.
+
+Frontend phải ưu tiên dữ liệu backend trả về:
+
+- `label`,
+- `isPotential`,
+- `applicationStatus`,
+- `normalizedScore`.
+
+Filter này là lớp lọc bổ sung, không thay thế hai tab `Applied CVs` và `AI Potential Matches`.
+
+Khi filter không có ứng viên phù hợp, UI phải hiện empty state riêng và CTA để xem toàn bộ ranking hoặc xóa tìm kiếm.
+
+#### FR-JD-06: Tie-break metadata cho ranking
+
+Khi nhiều candidate/job có cùng `normalizedScore`, hệ thống nên trả metadata giải thích thứ tự nếu có:
+
+- `tieBreakReason`,
+- `skillOverlapCount`,
+- `jobFreshness`,
+- `salaryFit`,
+- `locationFit`.
+
+Nếu backend chưa trả metadata, frontend vẫn phải sort ổn định theo score, label priority và tên để tránh cảm giác ranking ngẫu nhiên.
 
 ### 5.5. Matching Engine
 
@@ -1572,6 +1631,13 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - Hard error chặn xử lý.
 - Soft warning vẫn cho xử lý nếu dữ liệu đủ tối thiểu.
 - Hệ thống phải đề xuất cách sửa nếu phát hiện dữ liệu bất thường.
+- Validation signal nên phân biệt `ERROR`, `WARNING`, `QUALITY`.
+- Signal nên có `field`, `code`, `message`, `suggestion` và `blocking` để frontend hiển thị gần field liên quan.
+- Với warning/quality flag, frontend không được chặn submit nếu backend cho phép tiếp tục.
+- Ví dụ:
+  - `JD_TOO_SHORT`: gợi ý bổ sung trách nhiệm, kỹ năng và seniority.
+  - `SALARY_RANGE_INVALID`: highlight salary min/max.
+  - `CV_SUMMARY_TOO_SHORT`: gợi ý bổ sung domain, impact và scope.
 
 ---
 
@@ -1653,16 +1719,23 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 
 ### 10.7. Feedback
 
-- `POST /api/matchings/{matchingId}/feedback`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=RECRUITER`
 
 ### 10.8. Automation
 
-- `GET /api/automation/policies/me`
-- `PUT /api/automation/policies/me`
-- `GET /api/automation/actions/confirm?token=...`
-- `POST /api/automation/actions/confirm`
-- `POST /api/automation/actions/reject`
-- `POST /api/automation/actions/feedback`
+- `GET /api/automation/policy`
+- `PATCH /api/automation/policy`
+- `PATCH /api/automation/policy/email-notifications`
+- `POST /api/automation/auto-apply/run-now`
+- `POST /api/automation/pause?until=...`
+- `POST /api/automation/resume`
+- `GET /api/email-action/redeem?token=...`
 
 ### 10.8.1. Recommendation Interaction
 
@@ -1687,7 +1760,7 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - `GET /api/recruiter/analytics/jobs/{jobId}/funnel`
 - `GET /api/recruiter/analytics/jobs/{jobId}/skill-gap`
 - `GET /api/recruiter/analytics/trends`
-- `GET /api/audit-logs`
+- `GET /api/admin/audit-logs`
 
 ---
 
@@ -1795,6 +1868,45 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 6. Advanced Analytics UI nằm ở `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`.
 7. `/recruiter/analytics` vẫn là trang thống kê cơ bản, không bị thay thế bởi Advanced Analytics.
 
+### 11.10. Admin vận hành hệ thống
+
+1. Admin đăng nhập bằng `ad / 1` hoặc tài khoản role `ADMIN`.
+2. Frontend redirect về `/admin`.
+3. Dashboard gọi `GET /api/admin/dashboard`.
+4. Admin mở `/admin/users` để xem, search, filter user.
+5. Admin suspend hoặc activate user bằng `POST /api/admin/users/{userId}/suspend` hoặc `POST /api/admin/users/{userId}/activate`.
+6. Backend ghi audit log và `JwtAuthenticationFilter` chặn request tiếp theo của user inactive.
+7. Admin mở `/admin/jobs` để hide/restore job.
+8. Job bị hide chuyển sang `HIDDEN_BY_ADMIN` và không xuất hiện trong candidate active feed.
+9. Admin mở `/admin/audit-logs` để kiểm tra action vừa xảy ra.
+10. Admin mở `/admin/email-monitor` để xem email action/token đã redact và retry/revoke nếu cần.
+
+### 11.11. Validation và sanity suggestion
+
+1. Người dùng gửi CV/JD/form.
+2. Backend chạy hard validation trước.
+3. Nếu lỗi hard validation, backend trả `VALIDATION_ERROR` kèm field, reason, message và suggestion.
+4. Nếu chỉ có soft warning/quality signal, backend vẫn cho lưu/xử lý nhưng trả signal để UI hiển thị cảnh báo.
+5. Frontend map signal về đúng field thay vì chỉ toast lỗi tổng.
+6. Người dùng sửa dữ liệu và gửi lại.
+
+Ví dụ:
+
+- CV email sai format.
+- CV không có text hoặc PDF scan OCR fail.
+- JD quá ngắn.
+- Salary min lớn hơn salary max.
+- Auto-Apply threshold ngoài khoảng `50-100`.
+
+### 11.12. Matching empty state và tie state
+
+1. Backend trả list metadata gồm `resultState`, `message`, `suggestions`, `generatedAt`, `lastUpdatedAt`.
+2. Nếu không có match, `resultState=NO_MATCH`.
+3. Nếu chỉ có match thấp, `resultState=LOW_MATCH_ONLY`.
+4. Nếu nhiều kết quả top score bằng nhau, `resultState=HIGH_TIE` và item có tie metadata.
+5. Nếu filter làm danh sách rỗng, `resultState=NO_FILTERED_RESULTS`.
+6. Frontend không tự đoán trạng thái từ list rỗng, mà ưu tiên metadata backend.
+
 ---
 
 ## 12. Yêu Cầu Kiểm Thử
@@ -1831,7 +1943,12 @@ Cần test:
 - daily digest generation,
 - timezone/quiet hours behavior,
 - notification cooldown,
-- audit log.
+- audit log,
+- Admin dashboard/users/jobs/audit/email monitor,
+- Admin suspend/activate chặn cả JWT cũ,
+- Admin hide/restore job,
+- validation error envelope,
+- list metadata empty states.
 
 ### 12.3. UI Test
 
@@ -1851,10 +1968,15 @@ Cần test:
 - employer featured list and employer detail page,
 - recommendation list,
 - recruiter ranking,
+- recruiter discovery filter High/Potential/Applied/Not Applied,
+- ranking tie note,
 - job market dashboard for posted job counts,
 - automation settings,
 - email confirm page,
 - invalid/expired token page,
+- admin dashboard and admin pages,
+- validation field-level suggestions,
+- no-match/low-match/no-filtered-results empty states,
 - language switch.
 
 ---
@@ -1881,6 +2003,12 @@ Hệ thống được xem là đạt yêu cầu MVP khi:
 - quiet hours và cooldown hoạt động đúng,
 - magic-link confirm hoạt động đúng,
 - audit log ghi được action quan trọng,
+- admin đăng nhập được và các route `/api/admin/*` chỉ cho role `ADMIN`,
+- admin suspend/activate user được và user inactive bị chặn,
+- admin hide/restore job được bằng status `HIDDEN_BY_ADMIN`,
+- email action/token monitor không lộ raw token,
+- validation lỗi CV/JD/policy trả được thông tin field và suggestion,
+- các empty state `NO_MATCH`, `LOW_MATCH_ONLY`, `NO_FILTERED_RESULTS`, `HIGH_TIE` hiển thị rõ,
 - UI hỗ trợ tiếng Việt và tiếng Anh ở các màn hình chính.
 
 ---
@@ -1951,3 +2079,13 @@ Hệ thống đủ cơ sở để được mô tả là một nền tảng autom
 ```text
 Perception -> Decision -> Action -> Learning
 ```
+
+---
+
+## 17. Phụ Lục: Cập Nhật Vận Hành & Bảo Mật (Production)
+- **Kiểm thử tự động UAT**: Bổ sung bộ Playwright tests cho phép giả lập các luồng người dùng Guest, Candidate, Recruiter và Admin trên giao diện frontend.
+- **Bảo mật endpoints nội bộ**: Spring Boot Actuator được đưa vào mạng nội bộ (internal docker network) kết hợp chặn truy cập Nginx từ public internet.
+- **Chất lượng matching**: Tích hợp TextNormalizationService cho quy trình parse và score, kết hợp Rocchio evaluation báo cáo hiệu năng qua nDCG và precision (nDCG@5 > 0.90, P@5 > 85%).
+- **APIs Admin bổ sung**:
+
+  - `POST /api/admin/users/{userId}/suspend` (Suspend user tài khoản).

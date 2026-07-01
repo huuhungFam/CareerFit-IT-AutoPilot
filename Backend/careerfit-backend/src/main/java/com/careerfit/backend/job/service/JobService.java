@@ -2,6 +2,7 @@ package com.careerfit.backend.job.service;
 
 import com.careerfit.backend.auth.repository.UserAccountRepository;
 import com.careerfit.backend.auth.entity.UserAccount;
+import com.careerfit.backend.application.repository.ApplicationRepository;
 import com.careerfit.backend.common.dto.ValidationDtos;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.common.service.QualityValidationService;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class JobService {
@@ -43,6 +45,7 @@ public class JobService {
     private final MatchingService matchingService;
     private final ObjectMapper objectMapper;
     private final QualityValidationService qualityValidationService;
+    private final ApplicationRepository applicationRepo;
 
     public JobService(JobRepository jobRepo,
                       UserAccountRepository userRepo,
@@ -51,7 +54,8 @@ public class JobService {
                       TfIdfService tfidf,
                       MatchingService matchingService,
                       ObjectMapper objectMapper,
-                      QualityValidationService qualityValidationService) {
+                      QualityValidationService qualityValidationService,
+                      ApplicationRepository applicationRepo) {
         this.jobRepo = jobRepo;
         this.userRepo = userRepo;
         this.employerRepo = employerRepo;
@@ -60,6 +64,7 @@ public class JobService {
         this.matchingService = matchingService;
         this.objectMapper = objectMapper;
         this.qualityValidationService = qualityValidationService;
+        this.applicationRepo = applicationRepo;
     }
 
     // ── Create Job ────────────────────────────────────────────────────────
@@ -149,7 +154,7 @@ public class JobService {
 
         if (req.status() != null) {
             try {
-                job.setStatus(Job.JobStatus.valueOf(req.status().toUpperCase()));
+                job.setStatus(parseRecruiterStatus(req.status()));
             } catch (IllegalArgumentException e) {
                 throw AppException.badRequest("Invalid status: " + req.status());
             }
@@ -172,7 +177,7 @@ public class JobService {
     public JobDtos.JobStatusUpdateResponse updateStatus(UUID jobId, UUID userId, String newStatus) {
         Job job = findAndAuthorize(jobId, userId);
         try {
-            job.setStatus(Job.JobStatus.valueOf(newStatus.toUpperCase()));
+            job.setStatus(parseRecruiterStatus(newStatus));
         } catch (IllegalArgumentException e) {
             throw AppException.badRequest("Invalid status: " + newStatus);
         }
@@ -183,8 +188,32 @@ public class JobService {
     @Transactional
     public void deleteJob(UUID jobId, UUID userId) {
         Job job = findAndAuthorize(jobId, userId);
+        if (applicationRepo.countByJobId(jobId) > 0) {
+            throw AppException.conflict("A job with applications cannot be deleted; close it instead");
+        }
         jobRepo.delete(job);
         log.info("Job deleted: id={} by recruiter={}", jobId, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMyJobsCsv(UUID userId) {
+        UserAccount user = userRepo.findById(userId)
+                .orElseThrow(() -> AppException.notFound("User", userId));
+        if (user.getRole() != UserAccount.Role.RECRUITER) {
+            throw AppException.forbidden("Only recruiters can export jobs");
+        }
+        StringBuilder csv = new StringBuilder("id,title,company,status,location,seniority,applicants,createdAt\r\n");
+        jobRepo.findByRecruiterId(userId).stream()
+                .sorted(java.util.Comparator.comparing(Job::getCreatedAt).reversed())
+                .forEach(job -> csv.append(csv(job.getId())).append(',')
+                        .append(csv(job.getTitle())).append(',')
+                        .append(csv(job.getCompany())).append(',')
+                        .append(csv(job.getStatus())).append(',')
+                        .append(csv(job.getLocation())).append(',')
+                        .append(csv(job.getSeniorityLevel())).append(',')
+                        .append(applicationRepo.countByJobId(job.getId())).append(',')
+                        .append(csv(job.getCreatedAt())).append("\r\n"));
+        return ("\uFEFF" + csv).getBytes(StandardCharsets.UTF_8);
     }
 
     // ── Public Queries ────────────────────────────────────────────────────
@@ -296,6 +325,22 @@ public class JobService {
             throw AppException.forbidden("You do not own this job");
         }
         return job;
+    }
+
+    private Job.JobStatus parseRecruiterStatus(String status) {
+        try {
+            Job.JobStatus parsed = Job.JobStatus.valueOf(status.trim().toUpperCase());
+            if (parsed == Job.JobStatus.HIDDEN_BY_ADMIN) throw new IllegalArgumentException();
+            return parsed;
+        } catch (Exception e) {
+            throw AppException.badRequest("Invalid recruiter job status: " + status);
+        }
+    }
+
+    private String csv(Object value) {
+        if (value == null) return "";
+        String text = String.valueOf(value).replace("\"", "\"\"");
+        return "\"" + text + "\"";
     }
 
     private void applyRequiredFields(Job job, JobDtos.CreateJobRequest req) {

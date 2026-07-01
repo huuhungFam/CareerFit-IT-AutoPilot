@@ -29,17 +29,17 @@ public class CvController {
         this.management = management;
     }
 
-    // ── Upload PDF ────────────────────────────────────────────────────────
+    // ── Upload document ───────────────────────────────────────────────────
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Upload a PDF CV (text-based only). Processing is async.")
-    public ResponseEntity<ApiResponse<CvDtos.CvUploadResponse>> uploadPdf(
+    @Operation(summary = "Upload PDF, PNG, JPG or DOCX CV. Scanned documents and images use OCR.")
+    public ResponseEntity<ApiResponse<CvDtos.CvUploadResponse>> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "displayName", required = false) String displayName,
             @AuthenticationPrincipal String email,
             @RequestAttribute("userId") UUID userId) {
 
-        var result = ingestion.acceptPdfUpload(file, displayName, userId);
+        var result = ingestion.acceptDocumentUpload(file, displayName, userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(result));
     }
 

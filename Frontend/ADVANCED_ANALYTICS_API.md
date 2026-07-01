@@ -1,6 +1,6 @@
 # Advanced Analytics API Contract
 
-Status: backend đã implement các endpoint trong tài liệu này. Báo cáo tổng hợp backend nằm tại `../BACKEND_DOCUMENTATION.md`.
+Status: backend đã implement các endpoint trong tài liệu này. Tài liệu backend hiện nằm tại `../Backend/careerfit-backend/README.md` và `../Backend/careerfit-backend/BACKEND_CODE_GUIDE.md`.
 
 Frontend route hiện tại:
 

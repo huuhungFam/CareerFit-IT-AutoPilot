@@ -18,19 +18,27 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     Page<AuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    /** Admin multi-filter query: all filters are optional (null = skip). */
+    /** Admin multi-filter query: enum/date filters are optional; string filters use "" = skip. */
     @Query("""
         SELECT a FROM AuditLog a
         WHERE (:actorId IS NULL OR a.actorId = :actorId)
-          AND (:actionType IS NULL OR UPPER(a.actionType) LIKE UPPER(CONCAT('%', :actionType, '%')))
+          AND (:actorType IS NULL OR a.actorType = :actorType)
+          AND (:actionType = '' OR UPPER(a.actionType) LIKE CONCAT('%', UPPER(:actionType), '%'))
+          AND (:targetType = '' OR UPPER(a.targetType) LIKE CONCAT('%', UPPER(:targetType), '%'))
           AND (:channel IS NULL OR a.sourceChannel = :channel)
-          AND (:since IS NULL OR a.createdAt >= :since)
+          AND (:result IS NULL OR a.result = :result)
+          AND (CAST(:since AS timestamp) IS NULL OR a.createdAt >= :since)
+          AND (CAST(:until AS timestamp) IS NULL OR a.createdAt <= :until)
         ORDER BY a.createdAt DESC
         """)
     Page<AuditLog> findFiltered(
             @Param("actorId")    UUID actorId,
+            @Param("actorType")  AuditLog.ActorType actorType,
             @Param("actionType") String actionType,
+            @Param("targetType") String targetType,
             @Param("channel")    AuditLog.SourceChannel channel,
+            @Param("result")     AuditLog.Result result,
             @Param("since")      Instant since,
+            @Param("until")      Instant until,
             Pageable pageable);
 }

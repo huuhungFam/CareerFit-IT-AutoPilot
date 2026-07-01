@@ -1,5 +1,5 @@
 import { ArrowRight, Bookmark, BriefcaseBusiness, MapPin, Send, Sparkles, ThumbsDown } from 'lucide-react';
-import type { MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { Job } from '../types';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { MatchingBadge, PotentialBadge, ReasonChips } from './Badges';
@@ -10,10 +10,11 @@ interface JobCardProps {
   onOpen?: (job: Job) => void;
   onApply?: (job: Job) => void;
   showMatchMeta?: boolean;
+  feedbackSlot?: ReactNode;
 }
 
-export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: JobCardProps) {
-  const { t } = useLanguage();
+export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, feedbackSlot }: JobCardProps) {
+  const { language, t } = useLanguage();
   const companyMark = job.company
     .split(/\s+/)
     .filter(Boolean)
@@ -43,12 +44,12 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: 
         <div className="job-card-titleline">
           <span className="job-company-avatar">{companyMark || 'CF'}</span>
           <div>
-            <p className="eyebrow">{job.company} · {job.postedAt}</p>
+            <p className="eyebrow">{job.company} · {localizePostedAt(job.postedAt, language)}</p>
             <h3 className="job-title-link">{job.title}</h3>
             <p className="job-meta-line">
-              <span><MapPin size={14} />{job.location}</span>
-              <span><BriefcaseBusiness size={14} />{job.seniority}</span>
-              <span>{job.salary}</span>
+              <span><MapPin size={14} />{localizeJobMetadata(job.location, language)}</span>
+              <span><BriefcaseBusiness size={14} />{localizeJobMetadata(job.seniority, language)}</span>
+              <span>{localizeJobMetadata(job.salary, language)}</span>
             </p>
           </div>
         </div>
@@ -71,6 +72,8 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: 
         </span>
         <span>{job.requiredSkills.length + job.optionalSkills.length} {t('skills')}</span>
       </div>
+
+      {feedbackSlot}
 
       <div className="actions job-card-actions">
         <button
@@ -109,4 +112,30 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true }: 
       </div>
     </article>
   );
+}
+
+function localizePostedAt(value: string, language: 'vi' | 'en') {
+  if (language === 'en') return value;
+  return value
+    .replace(/^(\d+)h ago$/i, '$1 giờ trước')
+    .replace(/^(\d+)d ago$/i, '$1 ngày trước')
+    .replace(/^Today$/i, 'Hôm nay')
+    .replace(/^Yesterday$/i, 'Hôm qua');
+}
+
+function localizeJobMetadata(value: string, language: 'vi' | 'en') {
+  if (language === 'en') return value;
+  return value
+    .replace(/Ho Chi Minh City/gi, 'TP. Hồ Chí Minh')
+    .replace(/Ha Noi/gi, 'Hà Nội')
+    .replace(/Remote Vietnam/gi, 'Từ xa tại Việt Nam')
+    .replace(/\bHybrid\b/gi, 'Kết hợp')
+    .replace(/\bRemote\b/gi, 'Từ xa')
+    .replace(/\bOnsite\b/gi, 'Tại văn phòng')
+    .replace(/\bMid-Senior\b/gi, 'Trung - cao cấp')
+    .replace(/\bSenior\b/gi, 'Cao cấp')
+    .replace(/\bLead\b/gi, 'Trưởng nhóm')
+    .replace(/Unknown Location/gi, 'Chưa xác định địa điểm')
+    .replace(/^UNKNOWN$/gi, 'Chưa xác định')
+    .replace(/\bNegotiable\b/gi, 'Thỏa thuận');
 }

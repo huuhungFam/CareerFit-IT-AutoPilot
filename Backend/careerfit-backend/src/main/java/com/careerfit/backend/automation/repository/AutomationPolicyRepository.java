@@ -19,4 +19,8 @@ public interface AutomationPolicyRepository extends JpaRepository<AutomationPoli
     /** All policies with high-match notification enabled. */
     @Query("SELECT p FROM AutomationPolicy p WHERE p.highMatchEmailEnabled = true")
     List<AutomationPolicy> findByAutopilotEnabledTrue();
+
+    /** All policies with candidate auto-apply enabled. */
+    @Query("SELECT p FROM AutomationPolicy p WHERE p.autoApplyEnabled = true")
+    List<AutomationPolicy> findByAutoApplyEnabledTrue();
 }

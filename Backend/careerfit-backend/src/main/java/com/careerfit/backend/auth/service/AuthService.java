@@ -198,10 +198,14 @@ public class AuthService {
     public AuthDtos.AuthResponse verifyPasswordlessToken(String rawToken) {
         var emailToken = findValidPasswordlessToken(rawToken);
 
+        var user = emailToken.getUser();
+        if (!user.isActive()) {
+            throw AppException.unauthorized("Account has been suspended");
+        }
+
         emailToken.markUsed();
         tokenRepo.save(emailToken);
 
-        var user = emailToken.getUser();
         user.setEmailVerified(true);
         userRepo.save(user);
 

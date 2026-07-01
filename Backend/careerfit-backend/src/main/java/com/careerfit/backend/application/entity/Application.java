@@ -18,6 +18,7 @@ import java.util.UUID;
  *   PENDING → APPROVED | REJECTED | NOT_INTERESTED
  *   (or AUTO_APPLIED → APPROVED | REJECTED)
  *   INVITED (recruiter sent invitation) → PENDING → ...
+ *   INVITED → INTERVIEW_RESCHEDULED | INTERVIEW_CANCELLED
  */
 @Entity
 @Table(name = "application",
@@ -87,7 +88,9 @@ public class Application {
         APPROVED,
         REJECTED,
         INVITED,          // recruiter invited before candidate applied
-        NOT_INTERESTED    // candidate withdrew or declined
+        NOT_INTERESTED,   // candidate withdrew or declined
+        INTERVIEW_RESCHEDULED,
+        INTERVIEW_CANCELLED
     }
 
     // ── Constructors ──────────────────────────────────────────────────────

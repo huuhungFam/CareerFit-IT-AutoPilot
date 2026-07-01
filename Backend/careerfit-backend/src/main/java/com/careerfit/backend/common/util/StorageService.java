@@ -46,7 +46,7 @@ public class StorageService {
 
         String originalName = file.getOriginalFilename() != null
                 ? sanitize(file.getOriginalFilename())
-                : "cv.pdf";
+                : "cv-document";
 
         String filename = cvId.toString() + "_" + originalName;
         Path dest = basePath.resolve(filename);
@@ -60,15 +60,21 @@ public class StorageService {
         }
     }
 
-    /**
-     * Resolve a stored path back to a Java File for reading.
-     */
     public File resolve(String relativePath) {
-        File file = basePath.resolve(relativePath).toFile();
-        if (!file.exists()) {
-            throw new StorageException("File not found: " + relativePath);
+        try {
+            Path resolvedPath = basePath.resolve(relativePath).normalize();
+            if (!resolvedPath.startsWith(basePath)) {
+                throw new StorageException("Path traversal attempt detected: " + relativePath);
+            }
+            File file = resolvedPath.toFile();
+            if (!file.exists()) {
+                throw new StorageException("File not found: " + relativePath);
+            }
+            return file;
+        } catch (Exception e) {
+            if (e instanceof StorageException) throw e;
+            throw new StorageException("Failed to resolve file path", e);
         }
-        return file;
     }
 
     /**

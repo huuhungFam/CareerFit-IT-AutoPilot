@@ -1,5 +1,7 @@
 # Hướng Dẫn Đọc Hiểu Frontend CareerFit Cho Backend Developer
 
+> Trạng thái hiện hành 2026-06-21: các luồng API-driven không fallback sang mock khi request lỗi. Những đoạn ví dụ cũ trong tài liệu có tên `fallback`, `getMock...` hoặc `return jobs` chỉ mô tả kiến trúc trước đợt tích hợp này và không còn là source of truth. Source of truth là `src/lib/api.ts`, `src/App.tsx` và `src/pages/AdminPages.tsx` hiện tại.
+
 Tài liệu này viết cho hướng đi backend developer. Mục tiêu không phải biến bạn thành frontend developer chuyên sâu, mà giúp bạn đọc hiểu frontend đủ tốt để:
 
 - biết frontend đang gọi API nào của backend;
@@ -41,7 +43,7 @@ Nó phục vụ các luồng:
 - Candidate và recruiter đã có trang Advanced Analytics riêng theo role.
 - UI hiện có lớp UX polish: job card có company avatar/metadata icon/insight row, search suggestions và modal có animation, job list có skeleton loading, focus visible và reduced-motion support.
 - Gọi backend Spring API nếu backend đang chạy.
-- Fallback sang mock data nếu backend lỗi hoặc chưa chạy.
+- Hiển thị loading/error/empty state khi backend lỗi hoặc chưa chạy; không che lỗi bằng mock API data.
 
 Tech stack:
 
@@ -501,25 +503,54 @@ Trong `careerfitApi` hiện có:
 | `login(identifier, password)` | `POST /api/auth/login` |
 | `requestPasswordless(email)` | `POST /api/auth/passwordless/request` |
 | `verifyPasswordless(token)` | `POST /api/auth/passwordless/verify` |
+| `submitMatchFeedback(matchingId, type, role)` | `POST /api/matches/{matchingId}/feedback?type=...&channel=WEB&role=...` |
 | `searchJobs(keyword)` | `GET /api/jobs/search` |
 | `getJob(jobId)` | `GET /api/jobs/{jobId}` |
 | `getCandidateJobs()` | `GET /api/matches/me/cards?page=0&size=20` |
+| `submitApplication(jobId, coverLetter)` | `POST /api/applications` |
+| `getMyApplications()` | `GET /api/applications/me?page=0&size=50` |
+| `withdrawApplication(applicationId)` | `DELETE /api/applications/{applicationId}` |
 | `getSearchSuggestions(keyword)` | `GET /api/jobs/search/suggestions` |
 | `getRecruiterDashboard()` | `GET /api/recruiter/dashboard` |
 | `getRecruiterJobs()` | `GET /api/recruiter/jobs` |
+| `getRecruiterCandidates(jobId, options)` | `GET /api/recruiter/jobs/{jobId}/candidates?...` |
+| `inviteCandidate(jobId, candidateId)` | `POST /api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite` |
+| `updateApplicationStatus(applicationId, status)` | `PATCH /api/recruiter/applications/{applicationId}/status` |
+| `getAutomationPolicy()` | `GET /api/automation/policy` |
+| `updateAutomationPolicy(patch)` | `PATCH /api/automation/policy` |
+| `updateEmailNotifications(enabled)` | `PATCH /api/automation/policy/email-notifications` |
+| `runAutoApplyNow()` | `POST /api/automation/auto-apply/run-now` |
+| `getPortfolio()` | `GET /api/candidates/me/portfolio` |
+| `createPortfolioLink(payload)` | `POST /api/candidates/me/portfolio/links` |
+| `updatePortfolioLink(linkId, payload)` | `PATCH /api/candidates/me/portfolio/links/{linkId}` |
+| `deletePortfolioLink(linkId)` | `DELETE /api/candidates/me/portfolio/links/{linkId}` |
+| `createPortfolioProject(payload)` | `POST /api/candidates/me/portfolio/projects` |
+| `updatePortfolioProject(projectId, payload)` | `PATCH /api/candidates/me/portfolio/projects/{projectId}` |
+| `deletePortfolioProject(projectId)` | `DELETE /api/candidates/me/portfolio/projects/{projectId}` |
 
-Các phần UI còn chủ yếu mock/static:
+Các phần đã nối backend thật trong `api.ts`; request lỗi được giữ là lỗi để UI hiển thị đúng trạng thái:
 
-- Apply job.
-- Upload CV thật.
-- Manual CV submit.
-- Candidate profile update.
-- CV management.
-- Applications list.
-- Automation policy update.
-- Feedback good/bad/potential.
-- Recruiter ranking/applicants chi tiết.
-- Analytics thật.
+- Login bằng `POST /api/auth/login`; tài khoản test `ca` / `1`, `re` / `1`, `ad` / `1` phải là seed thật từ backend và không tạo mock session nếu backend không chạy.
+- Public job search/detail/suggestions.
+- Candidate job cards từ `/matches/me/cards`.
+- Candidate apply, applications list và withdraw.
+- Candidate/recruiter Rocchio feedback.
+- Recruiter dashboard/jobs.
+- Recruiter candidate discovery, invite candidate chưa apply và approve/reject application.
+- Automation policy, email notification toggle và Auto-Apply `run-now`.
+- Advanced Analytics theo role và market analytics.
+- Candidate Portfolio links/projects CRUD, gồm loading, empty, error và delete confirmation state.
+- Candidate upload PDF/ảnh/DOCX, OCR status polling và Manual CV.
+- Candidate/Recruiter Settings qua `GET/PATCH /api/settings/me`.
+- Recruiter create/edit/status/delete/export CSV cho JD.
+- Admin dashboard/users/jobs/audit/email monitor không còn dữ liệu fallback giả.
+
+Các phần UI còn chủ yếu static hoặc chưa có contract hoàn chỉnh:
+
+- Save job/bookmark.
+- View CV chi tiết từ recruiter candidate card.
+
+`src/data/mock.ts` vẫn còn được import cho một số biểu đồ/copy trình bày tĩnh, nhưng không được dùng trong `queryFn.catch`, mapper DTO, Admin API hoặc candidate/recruiter data fetch.
 
 ## 12. DTO Mapping: Backend Shape Sang UI Shape
 
@@ -545,14 +576,13 @@ type JobCardDto = {
 Sau đó map sang UI type `Job`:
 
 ```ts
-export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
-  const fallback = publicJobFallback(index);
+export function mapPublicJob(dto: JobCardDto | JobDetailDto): Job {
   return {
     id: dto.id,
     title: dto.title,
     company: dto.company,
-    location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || fallback.location,
-    seniority: dto.seniorityLevel ?? dto.employmentType ?? fallback.seniority,
+    location: [dto.location, dto.remoteType].filter(Boolean).join(', '),
+    seniority: dto.seniorityLevel ?? dto.employmentType ?? '',
     ...
   };
 }
@@ -578,25 +608,26 @@ frontend: salary string
 
 Backend developer nên đọc mapper để biết frontend thực sự cần field nào.
 
-## 13. Fallback Mock Trong Mapper
+## 13. Giá Trị An Toàn Trong Mapper
 
-Mapper dùng fallback:
+Mapper chỉ dùng giá trị rỗng hoặc mặc định nghiệp vụ an toàn:
 
 ```ts
-const fallback = publicJobFallback(index);
+requiredSkills: dto.requiredSkills ?? []
+normalizedScore: Number(dto.normalizedScore ?? 0)
 ```
 
 Ví dụ:
 
 ```ts
-requiredSkills: dto.requiredSkills?.length ? dto.requiredSkills : fallback.requiredSkills
+location: [dto.location, dto.remoteType].filter(Boolean).join(', ')
 ```
 
 Hệ quả:
 
-- UI vẫn đẹp khi backend thiếu field.
-- Nhưng lỗi backend thiếu field có thể bị che.
-- Khi test contract thật, phải xem Network response, không chỉ nhìn UI.
+- Field nullable không làm UI crash.
+- Frontend không lấy field từ một mock job khác để bù contract thiếu.
+- API lỗi vẫn đi qua error state của React Query.
 
 ## 14. Label Mapping
 
@@ -662,9 +693,9 @@ Nhiều backend DTO cuối cùng đều bị map về `Job` để UI render card
 Các type khác:
 
 - `MockAccount`: session frontend.
-- `Role`: `candidate | recruiter`.
+- `Role`: `guest` ở app shell, và account role `candidate | recruiter | admin`.
 - `AutomationPolicy`: shape panel AutoFit.
-- `Application`: application mock.
+- `Application`: UI type cho application thật hoặc fallback mock.
 - `RecruiterSummary`: stats recruiter.
 - `TrendPoint`: data chart.
 - `EmailAction`: mock email action confirm.
@@ -675,18 +706,13 @@ Trong `App.tsx`:
 
 ```tsx
 async function handleLogin(username: string, password: string) {
+  const normalizedUsername = username.trim();
   try {
-    const apiAccount = await careerfitApi.login(username, password);
+    const apiAccount = await careerfitApi.login(normalizedUsername, password);
     setAccount(apiAccount);
     return apiAccount;
   } catch {
-    const nextAccount = mockAccounts.find((item) => item.username === username.trim() && item.password === password);
-    if (!nextAccount) {
-      return null;
-    }
-
-    setAccount(nextAccount);
-    return nextAccount;
+    return null;
   }
 }
 ```
@@ -695,11 +721,12 @@ Flow:
 
 ```text
 1. User nhập username/password.
-2. Gọi careerfitApi.login.
-3. API client POST /auth/login.
-4. Nếu thành công, lưu JWT + account vào localStorage.
-5. setAccount để UI đổi role.
-6. Nếu backend lỗi, fallback mock ca/1 hoặc re/1.
+2. Frontend gửi nguyên identifier vào backend, ví dụ `ca`, `re`, hoặc `ad`.
+3. Backend seed test accounts dùng identifier ngắn `ca`, `re`, `ad`, nên đây là tài khoản thật phục vụ test nhanh.
+4. API client gọi `POST /auth/login`.
+5. Nếu thành công, lưu JWT + account vào localStorage.
+6. setAccount để UI đổi role.
+7. Nếu backend lỗi hoặc không có seed account tương ứng, login thất bại và UI giữ ở trang đăng nhập.
 ```
 
 Backend expected response:
@@ -737,7 +764,6 @@ Các hook cuối `App.tsx` là nơi gọi API.
 
 ```tsx
 function useSearchSuggestions(query: string) {
-  const fallback = useMemo(() => getMockSearchSuggestions(query), [query]);
   const { data } = useQuery({
     queryKey: ['job-search-suggestions', query],
     enabled: query.trim().length > 0,
@@ -746,7 +772,7 @@ function useSearchSuggestions(query: string) {
     retry: false,
   });
 
-  return data?.some((group) => group.items.length > 0) ? data : fallback;
+  return data ?? [];
 }
 ```
 
@@ -754,7 +780,7 @@ function useSearchSuggestions(query: string) {
 
 - Query rỗng thì không gọi API.
 - Gọi backend suggestions.
-- Nếu backend trả rỗng hoặc lỗi, dùng mock suggestions.
+- Backend trả rỗng thì UI không hiện suggestions; backend lỗi được React Query giữ là lỗi.
 
 ### 17.2 useJobs
 
@@ -762,14 +788,7 @@ function useSearchSuggestions(query: string) {
 function useJobs({ isPublic, keyword = '' }) {
   return useQuery({
     queryKey: [isPublic ? 'public-jobs' : 'candidate-jobs', keyword],
-    queryFn: async () => {
-      try {
-        return isPublic ? await careerfitApi.searchJobs(keyword) : await careerfitApi.getCandidateJobs();
-      } catch {
-        await delay(160);
-        return keyword ? getLocallyFilteredJobs(jobs, keyword) : jobs;
-      }
-    },
+    queryFn: () => isPublic ? careerfitApi.searchJobs(keyword) : careerfitApi.getCandidateJobs(),
     refetchInterval: 60_000,
   });
 }
@@ -968,7 +987,7 @@ UI:
 - `StickyApplyBar`
 - `LoginPromptModal` nếu public user bấm apply.
 
-Apply button hiện chưa submit backend application thật.
+Apply button của Candidate gọi `careerfitApi.applyToJob(jobId)` -> `POST /api/applications`, sau đó refetch danh sách ứng tuyển khi cần. Guest/public user vẫn mở `LoginPromptModal` thay vì submit application.
 
 ### 18.5 Recruiter Dashboard
 
@@ -1021,9 +1040,11 @@ Data hiện có:
 ```text
 useRecruiterJobs()
   -> GET /api/recruiter/jobs
+useQuery(['recruiter-candidates', selectedJob.id, candidateOptions])
+  -> GET /api/recruiter/jobs/{jobId}/candidates?label=...&isPotential=...&applicationStatus=...&minScore=...&sort=...
 ```
 
-Các route ranking/applicants/potential hiện chưa gọi endpoint riêng như:
+Frontend không gọi riêng 3 endpoint legacy sau cho từng subview:
 
 ```text
 GET /api/recruiter/jobs/{jobId}/ranking
@@ -1031,7 +1052,38 @@ GET /api/recruiter/jobs/{jobId}/applicants
 GET /api/recruiter/jobs/{jobId}/top-candidates
 ```
 
-Nếu cần nối thật, bắt đầu từ `api.ts` và `RecruiterJobsPage`.
+Thay vào đó, `RecruiterJobsPage` dùng một discovery endpoint chung `/api/recruiter/jobs/{jobId}/candidates` và đổi query theo tab/filter. Nếu backend vẫn giữ các endpoint legacy này, chúng nên được xem là backward-compatible/read-only, không phải contract chính của UI hiện tại.
+
+Recruiter candidate UI hiện có filter theo:
+
+```text
+match=HIGH
+match=POTENTIAL
+match=HIGH_OR_POTENTIAL
+match=APPLIED
+match=NOT_APPLIED
+```
+
+Frontend ưu tiên các field backend sau nếu endpoint ranking/applicant sau này trả về:
+
+```ts
+type RecruiterCandidateCardDto = {
+  matchingId: string;
+  name: string;
+  title: string;
+  normalizedScore: number;
+  label: 'HIGH' | 'MEDIUM' | 'LOW' | 'POTENTIAL';
+  isPotential: boolean;
+  applicationStatus: 'APPLIED' | 'NOT_APPLIED';
+  tieBreakReason?: string;
+  skillOverlapCount?: number;
+  jobFreshness?: string;
+  salaryFit?: string;
+  locationFit?: string;
+};
+```
+
+Nếu backend không trả tie-break metadata, frontend vẫn sort ổn định theo score, label priority, và tên. Nếu filter không có ứng viên phù hợp, UI hiện empty state riêng thay vì để bảng trống.
 
 ## 19. Mock Data Và Fallback
 
@@ -1043,7 +1095,6 @@ src/data/mock.ts
 
 Mock gồm:
 
-- `mockAccounts`
 - `candidate`
 - `preference`
 - `automationPolicy`
@@ -1058,6 +1109,8 @@ Mock được dùng khi:
 
 1. UI chưa nối backend thật.
 2. Backend chưa chạy hoặc request lỗi.
+
+Mock data không còn dùng để tạo phiên đăng nhập. Login luôn cần backend trả JWT thật.
 3. Backend response thiếu field, mapper fallback.
 
 Cách kiểm tra data thật:
@@ -1133,7 +1186,24 @@ Mở:
 src/components/AutomationPolicyPanel.tsx
 ```
 
-Hiển thị `AutomationPolicy`. Các input/range/time hiện dùng `defaultValue`, chưa submit backend.
+Hiển thị `AutomationPolicy` bằng controlled inputs. Component nhận:
+
+```ts
+{
+  policy: AutomationPolicy;
+  onUpdate?: (patch: Partial<AutomationPolicy>) => void;
+  isSaving?: boolean;
+}
+```
+
+Trang `AutomationPage` gọi:
+
+- `careerfitApi.getAutomationPolicy()`
+- `careerfitApi.updateAutomationPolicy(patch)`
+- `careerfitApi.updateEmailNotifications(enabled)` khi patch chỉ đổi `emailNotificationsEnabled`
+- `careerfitApi.runAutoApplyNow()` cho nút `Run now`
+
+Khi `emailNotificationsEnabled = false`, UI disable các control phụ thuộc email như high-match email, daily digest, email quota, cooldown, quiet hours và replacement-after-skip.
 
 ### 20.4 StatCard
 
@@ -1223,10 +1293,10 @@ Khi UI vỡ layout:
 ### 23.1 type và interface
 
 ```ts
-export type Role = 'candidate' | 'recruiter';
+export type Role = 'candidate' | 'recruiter' | 'admin';
 ```
 
-Chỉ cho phép hai giá trị.
+Chỉ cho phép ba giá trị role chính của UI.
 
 ```ts
 export interface Job { ... }
@@ -1378,6 +1448,121 @@ type PasswordlessRequestResponseDto = {
 ```
 
 Frontend should show a neutral success message after request. In dev it may use `data.token` for local testing; in prod the user receives the link by email and `token` is null.
+
+Test login đang dùng:
+
+- Candidate: `ca` / `1`
+- Recruiter: `re` / `1`
+- Admin: `ad` / `1`
+
+Ba account trên là data thật từ Flyway seed. Khi backend không chạy hoặc seed chưa có, frontend không tự tạo phiên mock cho login; cần khởi động backend và kiểm seed account trước khi test các route role-specific.
+
+### 25.1.1 Admin MVP Contract
+
+Frontend Admin nằm trong:
+
+- `src/pages/AdminPages.tsx`: Dashboard, User Management, Job Moderation, Audit Logs, Email Monitor.
+- `src/lib/adminApi.ts`: API client cho `/api/admin/*`, dùng chung hàm `request()` từ `src/lib/api.ts` để kế thừa auth header và error envelope.
+- `src/components/AppShell.tsx`: sidebar/nav riêng cho role `admin`.
+- `src/App.tsx`: route guard và redirect sau login cho `/admin/*`.
+
+Các route UI:
+
+```text
+/admin
+/admin/users
+/admin/jobs
+/admin/audit-logs
+/admin/email-monitor
+```
+
+Các endpoint backend đang dùng:
+
+```http
+GET  /api/admin/dashboard
+GET  /api/admin/users
+GET  /api/admin/users/{userId}
+POST /api/admin/users/{userId}/suspend
+POST /api/admin/users/{userId}/activate
+GET  /api/admin/jobs
+POST /api/admin/jobs/{jobId}/hide
+POST /api/admin/jobs/{jobId}/restore
+GET  /api/admin/audit-logs
+GET  /api/admin/email-actions
+POST /api/admin/email-actions/{actionId}/retry
+GET  /api/admin/email-tokens
+POST /api/admin/email-tokens/{tokenId}/revoke
+```
+
+Yêu cầu UI Admin:
+
+- Chỉ role `admin` được vào route `/admin/*`; candidate/recruiter phải bị redirect hoặc bị chặn.
+- Nếu Admin API lỗi, page phải hiện error panel rõ ràng, không để loading vô hạn.
+- Email action/token không được hiển thị raw token; chỉ hiển thị id/token đã redact từ backend.
+- Nút suspend/activate/hide/restore/retry/revoke phải refetch dữ liệu sau khi action thành công.
+
+### 25.2 Rocchio Feedback
+
+Feedback UI hiện đã được mô tả trực tiếp trong tài liệu này và trong `srs.md` / `TEST_CASES.md`; prompt triển khai riêng đã được dọn khỏi repo.
+
+Backend endpoint:
+
+```http
+POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE
+```
+
+Allowed `type`:
+
+```ts
+type FeedbackType = 'GOOD_MATCH' | 'POTENTIAL' | 'BAD_MATCH' | 'NOT_INTERESTED';
+```
+
+Allowed `role`:
+
+```ts
+type FeedbackRole = 'CANDIDATE' | 'RECRUITER';
+```
+
+Use candidate role for matched job cards/details. Use recruiter role for applicant/ranking cards. Public job cards without `matchingId` should not show Rocchio feedback controls.
+
+Rocchio feedback không thay thế application lifecycle. Recruiter feedback dạy matching model; các nút như `Invite`, `Review`, hoặc `Mark Potential` vẫn là action tuyển dụng riêng.
+
+### 25.2.1 Matching Edge Cases And Validation Signals
+
+Frontend hiện có UI cho các edge case matching:
+
+- no match: CTA reset filters, clear search, update profile, upload another CV;
+- low-match-only: warning nhẹ và CTA improve CV / relax preferences / show broader jobs;
+- tied score: tie-break note nếu có metadata.
+
+Backend có thể cải thiện UI bằng cách trả thêm:
+
+```ts
+type TieBreakMetadata = {
+  tieBreakReason?: string;
+  skillOverlapCount?: number;
+  jobFreshness?: string;
+  salaryFit?: string;
+  locationFit?: string;
+};
+```
+
+Validation signals nên phân biệt:
+
+```ts
+type ValidationSeverity = 'ERROR' | 'WARNING' | 'QUALITY';
+
+type ValidationSignal = {
+  code: string;
+  severity: ValidationSeverity;
+  field?: string;
+  message: string;
+  suggestion?: string;
+  blocking: boolean;
+};
+```
+
+Frontend đang có pattern field-level suggestion cho Candidate Manual CV Builder và Fixed Profile. Khi backend trả validation thật, mapper nên đưa signal về đúng field thay vì chỉ toast lỗi tổng.
 
 ### 25.2 Public Job List
 
@@ -1625,6 +1810,12 @@ Với vai trò backend dev, nên ưu tiên giữ API contract nhất quán và c
 - Search suggestions.
 - Recruiter dashboard.
 - Recruiter jobs list.
+- Candidate apply, applications page và withdraw.
+- Candidate/recruiter feedback good/potential/bad/not interested.
+- Automation policy update, email notification toggle và Auto-Apply run-now.
+- Recruiter candidate discovery, invite candidate chưa apply và approve/reject application.
+- Advanced Analytics market/candidate/recruiter endpoints.
+- Candidate Portfolio links/projects CRUD.
 
 Chưa nối đầy đủ backend:
 
@@ -1632,13 +1823,10 @@ Chưa nối đầy đủ backend:
 - Manual CV.
 - Candidate profile update.
 - CV management.
-- Apply job.
-- Applications page.
-- Automation policy update.
-- Feedback good/bad/potential.
-- Recruiter ranking/applicants chi tiết.
-- Analytics page.
 - Employer detail/top employers.
+- Save job/bookmark.
+- Recruiter Post Job/Edit/Delete job.
+- Recruiter View CV detail.
 
 Đây là roadmap thực tế nếu muốn tiếp tục nối frontend-backend.
 
@@ -1659,10 +1847,10 @@ Chạy npm run build sau khi sửa.
 Ví dụ:
 
 ```text
-Connect nút Apply trên JobDetailPage vào POST /api/applications.
-Request body: { jobId, cvId?, coverLetter? }.
-Response data: MyApplicationResponse.
-Sau khi success hiển thị trạng thái Applied.
+Connect nút Save/Bookmark trên JobCard vào endpoint lưu job khi backend bổ sung.
+Request body: { jobId }.
+Response data: SavedJobResponse.
+Sau khi success hiển thị trạng thái Saved và refetch danh sách saved jobs nếu có.
 Giữ fallback mock nếu backend lỗi.
 Sửa tối thiểu trong src/lib/api.ts và src/App.tsx.
 Chạy npm run build.
@@ -1739,10 +1927,12 @@ Vì vậy mismatch thường nằm ở mapper, không nằm ở component.
 4. Trong `api.ts`, đọc `mapCandidateJob`.
 5. Stop backend, reload frontend, xem fallback mock hoạt động ra sao.
 6. Login `re / 1`, mở `/recruiter`, xem request `/api/recruiter/dashboard`.
-7. Tìm một text trên UI trong `LanguageProvider.tsx`.
-8. Tìm một class trong JSX rồi sang `styles.css`.
-9. Chạy `npm run build` để thấy type-check hoạt động.
-10. Chọn một button chưa nối backend và lần ngược xem nó đang gọi handler nào.
+7. Login `ad / 1`, mở `/admin`, xem request `/api/admin/dashboard`.
+8. Mở `/admin/users`, `/admin/jobs`, `/admin/audit-logs`, `/admin/email-monitor` và kiểm tra các request `/api/admin/*`.
+9. Tìm một text trên UI trong `LanguageProvider.tsx`.
+10. Tìm một class trong JSX rồi sang `styles.css`.
+11. Chạy `npm run build` để thấy type-check hoạt động.
+12. Chọn một button chưa nối backend và lần ngược xem nó đang gọi handler nào.
 
 ## 33. Các Điểm Cần Cẩn Thận
 
@@ -1750,12 +1940,13 @@ Vì vậy mismatch thường nằm ở mapper, không nằm ở component.
 - `src/lib/api.ts` là source of truth cho contract hiện tại.
 - `App.tsx` lớn, khi sửa nên scoped theo route/hook cụ thể.
 - Protected route frontend chỉ là UX guard; backend security vẫn bắt buộc.
+- Role `admin` cần được normalize từ backend role `ADMIN`; nếu login được nhưng bị đẩy về sai route, kiểm tra mapper role trong `src/lib/api.ts`.
 - Token lưu localStorage, khi test role nên clear localStorage nếu thấy hành vi lạ.
 - React Query có cache/refetch, request có thể không gọi lại ngay nếu data còn fresh.
 - Một số button có UI nhưng chưa nối backend.
 - Analytics/market dashboard còn nhiều data hardcoded.
-- Label unknown đang fallback thành `High`.
-- Mapper fallback mock có thể che lỗi field null từ backend.
+- Label null/unknown mặc định thành `Low`, không được nâng sai thành `High`.
+- Mapper không dùng mock để che field null từ backend.
 
 ## 34. Tóm Tắt
 
@@ -1773,3 +1964,289 @@ Route
 ```
 
 Nắm được trục này là đủ để bạn debug API, review contract, và nhờ Agent sửa frontend một cách an toàn mà không cần tự trở thành frontend developer chuyên sâu.
+
+## 35. Backend Contract Bổ Sung 2026-06-05
+
+Implementation status: frontend đã nối các contract chính trong `src/lib/api.ts`, `AutomationPolicyPanel`, `RecruiterJobsPage`, Settings và Admin pages. Mock data không còn được dùng làm fallback cho request lỗi hoặc mock job id.
+
+### 35.1 Email Notification Toggle
+
+Frontend gửi boolean xuống Backend, nhưng Backend vẫn là nơi quyết định cuối cùng trước khi gửi email.
+
+```http
+PATCH /api/automation/policy/email-notifications
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{ "enabled": false }
+```
+
+Response là `AutomationPolicy.PolicySummary`, có thêm các field:
+
+```ts
+type AutomationPolicySummaryDto = {
+  autopilotEnabled: boolean;
+  autoApplyEnabled: boolean;
+  autoApplyThreshold: number;
+  emailNotificationsEnabled: boolean;
+  digestEnabled: boolean;
+  digestFrequency: string;
+  minScoreToNotify: number;
+  notifyOnHighOnly: boolean;
+  notifyPotential: boolean;
+  maxNotificationsPerDay: number;
+  notificationCooldownHours: number;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  replacementAfterSkipEnabled: boolean;
+  replacementDelayMinutes: number;
+  pausedUntil: string | null;
+  updatedAt: string;
+};
+```
+
+UI nên render toggle chính là `emailNotificationsEnabled`. Khi false, Backend sẽ skip lifecycle/action/digest email bằng no-spam guard; Frontend không cần tự suy đoán các flow nào có gửi mail.
+
+Auto-Apply dùng cùng policy endpoint:
+
+```http
+PATCH /api/automation/policy
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{
+  "autoApplyEnabled": true,
+  "autoApplyThreshold": 80
+}
+```
+
+Rule backend:
+
+- `autoApplyThreshold` hợp lệ trong khoảng `50-100`.
+- Auto-Apply chỉ tạo application nội bộ trong CareerFit, không submit sang website bên thứ ba.
+- Nếu muốn test ngay, UI có thể gọi endpoint chạy một lần:
+
+```http
+POST /api/automation/auto-apply/run-now
+Authorization: Bearer <jwt>
+```
+
+Response:
+
+```ts
+type AutoApplyRunNowResponse = {
+  created: number;
+  reason: "CREATED_APPLICATIONS" | "NO_ELIGIBLE_MATCHES" | "AUTO_APPLY_DISABLED";
+};
+```
+
+Frontend hiện gọi endpoint này từ nút `Run now` trong trang Automation để test/demo, còn scheduler backend vẫn chạy nền mỗi 2 giờ.
+
+Nếu `autoApplyThreshold` ngoài range `50-100`, backend trả structured validation field:
+
+```ts
+{
+  severity: "ERROR",
+  field: "autoApplyThreshold",
+  reason: "AUTO_APPLY_THRESHOLD_RANGE",
+  message: "Auto-Apply threshold must be between 50 and 100."
+}
+```
+
+### 35.2 List Metadata Contract
+
+Các list endpoint quan trọng có metadata để UI render empty/result state nhất quán:
+
+```ts
+type ListMetaDto = {
+  generatedAt?: string | null;
+  lastUpdatedAt?: string | null;
+  resultState?: "READY" | "NO_MATCH" | "LOW_MATCH_ONLY" | "HIGH_TIE" | "PROCESSING" | "FAILED" | "NO_FILTERED_RESULTS" | "NO_CANDIDATE_MATCHES" | string;
+  message?: string | null;
+  suggestions?: string[] | null;
+};
+```
+
+Áp dụng:
+
+- Candidate match endpoints: `data.meta`.
+- Candidate applications: `data.meta`.
+- Recruiter applicants: `data.meta`.
+- Recruiter ranking: `data.meta`.
+- Recruiter candidate discovery: `data.resultState`, `data.message`, `data.generatedAt`, `data.lastUpdatedAt`, `data.suggestions`.
+
+### 35.3 Candidate Application Flow
+
+Candidate apply thật:
+
+```http
+POST /api/applications
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{
+  "jobId": "<job-id>",
+  "coverLetter": "optional"
+}
+```
+
+Candidate xem lịch sử:
+
+```http
+GET /api/applications/me?page=0&size=50
+Authorization: Bearer <jwt>
+```
+
+Candidate withdraw:
+
+```http
+DELETE /api/applications/{applicationId}
+Authorization: Bearer <jwt>
+```
+
+Frontend hiện dùng:
+
+- `careerfitApi.submitApplication(job.id)` từ job card/detail.
+- `careerfitApi.getMyApplications()` cho `/candidate/applications`.
+- `careerfitApi.withdrawApplication(applicationId)` cho action withdraw/skip.
+
+`GET /api/applications/me` trả thêm:
+
+```ts
+type MyApplicationPageDto = {
+  applications: MyApplicationDto[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+  meta?: ListMetaDto | null;
+};
+```
+
+### 35.4 Recruiter Candidate Discovery
+
+Route mới cho trang recruiter job candidates/ranking filter:
+
+```http
+GET /api/recruiter/jobs/{jobId}/candidates?label=HIGH&isPotential=false&applicationStatus=NONE&minScore=70&sort=score_desc&page=0&size=20
+```
+
+Query hợp lệ:
+
+```text
+label=HIGH|MEDIUM|LOW|POTENTIAL
+isPotential=true|false
+applicationStatus=NONE|PENDING|AUTO_APPLIED|APPROVED|REJECTED|INVITED|NOT_INTERESTED|INTERVIEW_RESCHEDULED|INTERVIEW_CANCELLED
+sort=score_desc|updated_desc|experience_desc|status_asc
+```
+
+Response data:
+
+```ts
+type RecruiterCandidateDiscoveryPageDto = {
+  jobId: string;
+  jobTitle: string;
+  resultState: "READY" | "HIGH_TIE" | "NO_CANDIDATE_MATCHES" | "NO_FILTERED_RESULTS";
+  message: string;
+  candidates: RecruiterCandidateDiscoveryDto[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+  generatedAt?: string | null;
+  lastUpdatedAt?: string | null;
+  suggestions?: string[] | null;
+};
+
+type RecruiterCandidateDiscoveryDto = {
+  matchingId: string;
+  cvId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  desiredTitle?: string;
+  location?: string;
+  yearsOfExperience?: number;
+  topSkills: string[];
+  cvSummary?: string;
+  normalizedScore: number;
+  label: "HIGH" | "MEDIUM" | "LOW" | "POTENTIAL";
+  isPotential: boolean;
+  applicationId?: string | null;
+  applicationStatus: string;
+  hasApplied: boolean;
+  matchReasons: string[];
+  potentialReason?: string | null;
+  matchedAt: string;
+  tie: RankingTieMetaDto;
+};
+```
+
+Invite candidate chưa apply:
+
+```http
+POST /api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite
+```
+
+Frontend hiện gọi endpoint này từ nút `Invite`, sau đó refetch candidate discovery.
+
+Recruiter update lifecycle status:
+
+```http
+PATCH /api/recruiter/applications/{applicationId}/status
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{
+  "status": "APPROVED",
+  "recruiterNotes": "optional"
+}
+```
+
+Frontend hiện dùng endpoint này cho Approve/Reject trong recruiter candidate cards khi item có `applicationId`.
+
+### 35.5 Ranking Tie Metadata
+
+Endpoint cũ `/api/recruiter/jobs/{jobId}/ranking` vẫn dùng được, nhưng mỗi candidate có thêm:
+
+```ts
+type RankingTieMetaDto = {
+  rank: number;
+  tieRank: number;
+  tieGroupSize: number;
+  tied: boolean;
+  sortKey: string;
+  lastUpdatedAt: string;
+};
+```
+
+UI nên dùng `tied=true` và `tieGroupSize > 1` để hiển thị nhãn kiểu “Đồng hạng 1/3” hoặc tooltip giải thích thứ tự phụ. Không tự random hoặc tự sort lại nếu không cần.
+
+### 35.6 Validation Error Mapper
+
+Backend validation lỗi trả trong `error.fieldErrors.fields[]`:
+
+```ts
+type BackendValidationErrorDetails = {
+  code: "VALIDATION_FAILED";
+  message: string;
+  fields: Array<{
+    severity: "ERROR" | "WARNING" | "QUALITY_FLAG";
+    field: string;
+    reason: string;
+    message: string;
+    suggestion?: string | null;
+  }>;
+};
+```
+
+Frontend nên map `field` vào field-level error/warning. `ERROR` chặn submit; `WARNING` và `QUALITY_FLAG` nên hiển thị cảnh báo hoặc suggestion, không coi là lỗi hệ thống.

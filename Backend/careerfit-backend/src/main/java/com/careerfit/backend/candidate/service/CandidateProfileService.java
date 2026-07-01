@@ -19,7 +19,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -27,6 +33,8 @@ public class CandidateProfileService {
 
     private static final Logger log = LoggerFactory.getLogger(CandidateProfileService.class);
     private static final TypeReference<List<String>> LIST_TYPE = new TypeReference<>() {};
+    private static final Set<String> PORTFOLIO_LINK_TYPES = Set.of(
+            "GITHUB", "LINKEDIN", "PORTFOLIO", "BLOG", "OTHER");
 
     private final CandidateRepository candidateRepo;
     private final CandidatePortfolioLinkRepository linkRepo;
@@ -129,13 +137,10 @@ public class CandidateProfileService {
     public CandidateDtos.PortfolioLinkResponse addPortfolioLink(UUID userId,
             CandidateDtos.PortfolioLinkRequest req) {
         Candidate candidate = resolveCandidate(userId);
-        if (req.url() == null || req.url().isBlank()) {
-            throw AppException.badRequest("Portfolio link URL is required");
-        }
         CandidatePortfolioLink link = new CandidatePortfolioLink(
                 candidate,
-                req.type() != null ? req.type() : "OTHER",
-                req.url().trim());
+                normalizeLinkType(req.type()),
+                validateHttpUrl(req.url(), "Portfolio link URL", true));
         return toPortfolioLink(linkRepo.save(link));
     }
 
@@ -146,10 +151,9 @@ public class CandidateProfileService {
         CandidatePortfolioLink link = linkRepo.findById(linkId)
                 .orElseThrow(() -> AppException.notFound("Portfolio link", linkId));
         ensureOwnsLink(candidate, link);
-        if (req.type() != null) link.setType(req.type());
+        if (req.type() != null) link.setType(normalizeLinkType(req.type()));
         if (req.url() != null) {
-            if (req.url().isBlank()) throw AppException.badRequest("Portfolio link URL cannot be blank");
-            link.setUrl(req.url().trim());
+            link.setUrl(validateHttpUrl(req.url(), "Portfolio link URL", true));
         }
         return toPortfolioLink(linkRepo.save(link));
     }
@@ -281,11 +285,58 @@ public class CandidateProfileService {
             if (req.name().isBlank()) throw AppException.badRequest("Portfolio project name cannot be blank");
             project.setName(req.name().trim());
         }
-        if (req.role() != null) project.setRole(req.role());
-        if (req.summary() != null) project.setSummary(req.summary());
-        if (req.techStack() != null) project.setTechStackJson(toJson(req.techStack()));
-        if (req.projectUrl() != null) project.setProjectUrl(req.projectUrl());
-        if (req.impact() != null) project.setImpact(req.impact());
+        if (req.role() != null) project.setRole(trimToNull(req.role()));
+        if (req.summary() != null) project.setSummary(trimToNull(req.summary()));
+        if (req.techStack() != null) project.setTechStackJson(toJson(normalizeTechStack(req.techStack())));
+        if (req.projectUrl() != null) project.setProjectUrl(validateHttpUrl(req.projectUrl(), "Project URL", false));
+        if (req.impact() != null) project.setImpact(trimToNull(req.impact()));
+    }
+
+    private String normalizeLinkType(String type) {
+        String normalized = trimToNull(type);
+        if (normalized == null) return "OTHER";
+        normalized = normalized.toUpperCase(Locale.ROOT);
+        if (!PORTFOLIO_LINK_TYPES.contains(normalized)) {
+            throw AppException.badRequest("Unsupported portfolio link type: " + normalized);
+        }
+        return normalized;
+    }
+
+    private String validateHttpUrl(String value, String field, boolean required) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
+            if (required) throw AppException.badRequest(field + " is required");
+            return null;
+        }
+        try {
+            URI uri = new URI(normalized);
+            String scheme = uri.getScheme();
+            if (scheme == null
+                    || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
+                    || uri.getHost() == null
+                    || uri.getUserInfo() != null) {
+                throw AppException.badRequest(field + " must be a valid http or https URL");
+            }
+            return uri.toASCIIString();
+        } catch (URISyntaxException e) {
+            throw AppException.badRequest(field + " must be a valid http or https URL");
+        }
+    }
+
+    private List<String> normalizeTechStack(List<String> techStack) {
+        List<String> normalized = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (String item : techStack) {
+            String skill = trimToNull(item);
+            if (skill != null && seen.add(skill.toLowerCase(Locale.ROOT))) normalized.add(skill);
+        }
+        return normalized;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void ensureOwnsLink(Candidate candidate, CandidatePortfolioLink link) {

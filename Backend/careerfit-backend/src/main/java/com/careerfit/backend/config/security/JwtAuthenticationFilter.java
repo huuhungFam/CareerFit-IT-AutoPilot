@@ -31,11 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final SecurityErrorResponseWriter errorWriter;
+    private final com.careerfit.backend.auth.repository.UserAccountRepository userRepo;
 
     public JwtAuthenticationFilter(JwtService jwtService,
-                                   SecurityErrorResponseWriter errorWriter) {
+                                   SecurityErrorResponseWriter errorWriter,
+                                   com.careerfit.backend.auth.repository.UserAccountRepository userRepo) {
         this.jwtService = jwtService;
         this.errorWriter = errorWriter;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -69,6 +72,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             errorWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED,
                     "TOKEN_CLAIMS_INVALID", "Token claims are invalid");
+            return;
+        }
+
+        var user = userRepo.findByEmail(email).orElse(null);
+        if (user == null || !user.isActive()) {
+            SecurityContextHolder.clearContext();
+            errorWriter.write(response, HttpServletResponse.SC_FORBIDDEN,
+                    "ACCOUNT_DISABLED", "Account is disabled or not found");
             return;
         }
 

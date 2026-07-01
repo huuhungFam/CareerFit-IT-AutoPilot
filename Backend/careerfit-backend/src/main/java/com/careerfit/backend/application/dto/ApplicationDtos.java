@@ -36,7 +36,8 @@ public class ApplicationDtos {
         long total,
         int page,
         int size,
-        int totalPages
+        int totalPages,
+        ListMeta meta
     ) {}
 
     // ── Recruiter: view applicant ─────────────────────────────────────────
@@ -67,13 +68,22 @@ public class ApplicationDtos {
         long total,
         int page,
         int size,
-        int totalPages
+        int totalPages,
+        ListMeta meta
+    ) {}
+
+    public record ListMeta(
+        Instant generatedAt,
+        Instant lastUpdatedAt,
+        String resultState,
+        String message,
+        List<String> suggestions
     ) {}
 
     // ── Recruiter: update application status ─────────────────────────────
 
     public record UpdateApplicationStatusRequest(
-        String status,        // APPROVED | REJECTED | INVITED
+        String status,        // APPROVED | REJECTED | INVITED | INTERVIEW_RESCHEDULED | INTERVIEW_CANCELLED
         String recruiterNotes // optional
     ) {}
 

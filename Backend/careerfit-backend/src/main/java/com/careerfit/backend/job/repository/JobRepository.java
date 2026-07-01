@@ -66,6 +66,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
     List<Job> findByStatus(Job.JobStatus status);
 
+    Page<Job> findByStatus(Job.JobStatus status, Pageable pageable);
+
     Page<Job> findByStatusOrderByCreatedAtDesc(Job.JobStatus status, Pageable pageable);
 
     long countByStatus(Job.JobStatus status);

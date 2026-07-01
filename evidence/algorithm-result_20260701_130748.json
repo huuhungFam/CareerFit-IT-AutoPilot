@@ -1,0 +1,47 @@
+{
+  "schemaVersion" : "1.2",
+  "timestamp" : "Wed Jul 01 13:09:18 ICT 2026",
+  "dataset" : {
+    "holdoutPairs" : 300,
+    "jobs" : 50,
+    "hash" : "b57efd6ed2f110a1433cd88bb155b26f12ea2059b04007ed82bcf14ec6df7a4d",
+    "cvs" : 100,
+    "trainPairs" : 300
+  },
+  "rocchioParams" : {
+    "beta" : 0.75,
+    "gamma" : 0.15,
+    "alpha" : 1.0
+  },
+  "scoringThreshold" : "Similarity > 0.0 before feedback",
+  "limitations" : [ "Only evaluate tf-idf representation, not advanced semantic vectors yet.", "Simulated data lacks organic recruiter feedback randomness.", "This is a synthetic causal benchmark. It demonstrates mathematical correctness of the Rocchio algorithm, but does not claim real-world production superiority without UAT." ],
+  "baseline" : {
+    "avgPAt5" : 0.012000000000000002,
+    "avgRecallAt5" : 0.06,
+    "avgNdcgAt3" : 0.03,
+    "avgNdcgAt5" : 0.037737056144690834,
+    "avgNdcgAt10" : 0.05042432272463713,
+    "avgMrr" : 0.058755496969498146,
+    "avgHitRate5" : 0.06,
+    "coverage" : 1.0
+  },
+  "rocchio" : {
+    "avgPAt5" : 0.16800000000000004,
+    "avgRecallAt5" : 0.84,
+    "avgNdcgAt3" : 0.81,
+    "avgNdcgAt5" : 0.8177370561446908,
+    "avgNdcgAt10" : 0.8304243227246372,
+    "avgMrr" : 0.8236174915555721,
+    "avgHitRate5" : 0.84,
+    "coverage" : 1.0
+  },
+  "delta" : {
+    "avgPAt5" : 0.15600000000000003,
+    "avgNdcgAt3" : 0.78,
+    "avgNdcgAt5" : 0.78,
+    "avgNdcgAt10" : 0.78,
+    "avgRecallAt5" : 0.78,
+    "avgMrr" : 0.764861994586074,
+    "avgHitRate5" : 0.78
+  }
+}

@@ -108,6 +108,18 @@ public class Job {
     @Column(name = "domain", length = 100)
     private String domain;
 
+    @Column(name = "source_platform", length = 50)
+    private String sourcePlatform;
+
+    @Column(name = "source_url", length = 1000)
+    private String sourceUrl;
+
+    @Column(name = "scraped_at")
+    private Instant scrapedAt;
+
+    @Column(name = "external_hash", length = 64)
+    private String externalHash;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -124,7 +136,7 @@ public class Job {
 
     public enum SalaryMode { NEGOTIABLE, RANGE, UP_TO, FROM, HIDDEN }
 
-    public enum JobStatus { ACTIVE, CLOSED, DRAFT, PAUSED }
+    public enum JobStatus { ACTIVE, CLOSED, DRAFT, PAUSED, HIDDEN_BY_ADMIN }
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -185,6 +197,14 @@ public class Job {
     public void setStatus(JobStatus s)                   { this.status = s; }
     public String getDomain()                            { return domain; }
     public void setDomain(String d)                      { this.domain = d; }
+    public String getSourcePlatform()                    { return sourcePlatform; }
+    public void setSourcePlatform(String s)              { this.sourcePlatform = s; }
+    public String getSourceUrl()                         { return sourceUrl; }
+    public void setSourceUrl(String s)                   { this.sourceUrl = s; }
+    public Instant getScrapedAt()                        { return scrapedAt; }
+    public void setScrapedAt(Instant t)                  { this.scrapedAt = t; }
+    public String getExternalHash()                      { return externalHash; }
+    public void setExternalHash(String h)                { this.externalHash = h; }
     public Instant getCreatedAt()                        { return createdAt; }
     public Instant getUpdatedAt()                        { return updatedAt; }
     public long getVersion()                             { return version; }

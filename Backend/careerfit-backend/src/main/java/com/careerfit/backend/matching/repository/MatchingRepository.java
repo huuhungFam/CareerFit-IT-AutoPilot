@@ -25,11 +25,20 @@ public interface MatchingRepository extends JpaRepository<Matching, UUID> {
         """)
     Page<Matching> findRankingByJobId(@Param("jobId") UUID jobId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"cv", "cv.candidate", "cv.candidate.user", "job"})
+    @Query("""
+        SELECT m FROM Matching m
+        WHERE m.job.id = :jobId
+        ORDER BY m.normalizedScore DESC, m.isPotential DESC, m.cv.createdAt DESC, m.id ASC
+        """)
+    List<Matching> findRankingListByJobId(@Param("jobId") UUID jobId);
+
     /** Best job matches for a specific CV. */
     @EntityGraph(attributePaths = {"job", "job.recruiter"})
     @Query("""
         SELECT m FROM Matching m
         WHERE m.cv.id = :cvId
+          AND m.job.status = 'ACTIVE'
         ORDER BY m.normalizedScore DESC, m.isPotential DESC, m.job.createdAt DESC, m.job.id ASC
         """)
     List<Matching> findTopMatchesByCvId(@Param("cvId") UUID cvId, Pageable pageable);
@@ -116,4 +125,7 @@ public interface MatchingRepository extends JpaRepository<Matching, UUID> {
                                                    @Param("since") java.time.Instant since);
 
     void deleteByCvId(UUID cvId);
+
+    long countByLabel(Matching.MatchLabel label);
+    long countByIsPotentialTrue();
 }

@@ -29,6 +29,8 @@ public interface CVRepository extends JpaRepository<CV, UUID> {
 
     List<CV> findByCandidateIdAndStatus(UUID candidateId, CV.CvStatus status);
 
+    List<CV> findByStatus(CV.CvStatus status);
+
     boolean existsByCandidateIdAndIsDefaultTrue(UUID candidateId);
 
     long countByCandidateId(UUID candidateId);
