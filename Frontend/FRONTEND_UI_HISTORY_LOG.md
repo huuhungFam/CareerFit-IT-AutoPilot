@@ -289,6 +289,13 @@ This log records what was requested, what was implemented or reviewed, and which
 - Kiểm chứng browser: create/update/delete và cleanup link/project pass; viewport 390x844 không tràn ngang; console không có warning/error.
 - `npm run build` thành công.
 
+### 2026-07-18 12:20 +07:00 - Candidate Pagination, Automation Mapping, Recruiter Portfolio
+
+- Candidate Jobs chuyển sang page size 20; UI giữ các page đã tải và nút `Xem thêm 20 việc làm` tự ẩn khi hết `totalPages`.
+- `careerfitApi` map Automation Policy hai chiều để các control high-match email, threshold, quota/ngày và cooldown lưu đúng contract backend.
+- Recruiter review modal hiển thị portfolio candidate khi backend trả `portfolioVisible=true`; nếu candidate tắt `showPortfolioAfterApply`, UI không render link/project.
+- `npm run build` thành công sau thay đổi UI/API mapper.
+
 ## Verification Notes
 
 - `npm run build` was run successfully after the URL-state work.

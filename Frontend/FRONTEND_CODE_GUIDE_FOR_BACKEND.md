@@ -1211,7 +1211,29 @@ Trang `AutomationPage` gọi:
 
 Khi `emailNotificationsEnabled = false`, UI disable các control phụ thuộc email như high-match email, daily digest, email quota, cooldown, quiet hours và replacement-after-skip.
 
-### 20.4 StatCard
+`src/lib/api.ts` chuẩn hóa contract Automation trước khi trả về UI:
+
+- Backend `autopilotEnabled`/`notifyOnHighOnly` -> UI `highMatchEmailEnabled`.
+- Backend `minScoreToNotify` -> UI `highMatchThreshold`.
+- Backend `digestEnabled` -> UI `dailyDigestEnabled`.
+- Backend `maxNotificationsPerDay` -> UI `maxEmailsPerDay`.
+- UI patch cũng được map ngược trước khi gửi `PATCH /api/automation/policy`.
+
+### 20.4 Candidate Jobs Pagination
+
+Route `/candidate/jobs` gọi `careerfitApi.getCandidateJobsPage({ page, size: 20 })`. UI giữ các page đã tải trong state, render danh sách gộp, và nút `Xem thêm 20 việc làm` chỉ hiện khi `page + 1 < totalPages`.
+
+### 20.5 Recruiter Portfolio Review
+
+Recruiter candidate discovery dùng `GET /api/recruiter/jobs/{jobId}/candidates`. Mỗi candidate item có thể có:
+
+- `portfolioVisible`
+- `portfolio`
+- `portfolioHiddenReason`
+
+`CandidateReviewModal` chỉ render link/project portfolio khi `portfolioVisible=true`. Backend enforce quyền hiển thị theo setting `showPortfolioAfterApply` và trạng thái application; frontend không tự bypass bằng cách gọi Candidate Portfolio API.
+
+### 20.6 StatCard
 
 Component hiển thị label/value/detail. Không có logic backend.
 
