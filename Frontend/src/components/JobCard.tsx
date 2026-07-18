@@ -29,9 +29,9 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
 
   return (
     <article
-      className="job-card clickable-job-card"
-      role="button"
-      tabIndex={0}
+      className={`job-card${onOpen ? ' clickable-job-card' : ''}`}
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
       onClick={() => onOpen?.(job)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -78,6 +78,8 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
       <div className="actions job-card-actions">
         <button
           className="primary-action"
+          disabled={!onApply}
+          title={!onApply ? (language === 'vi' ? 'Hãy mở chi tiết công việc để ứng tuyển.' : 'Open the job detail to apply.') : undefined}
           onClick={(event) => {
             stopAction(event);
             onApply?.(job);
@@ -86,11 +88,13 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
           <Send size={16} />
           {t('apply')}
         </button>
-        <button onClick={stopAction}>
+        <button disabled title={language === 'vi' ? 'Backend chưa hỗ trợ lưu việc làm.' : 'Saving jobs is not supported by the backend yet.'} onClick={stopAction}>
           <Bookmark size={16} />
           {t('save')}
         </button>
         <button
+          disabled={!onSkip}
+          title={!onSkip ? (language === 'vi' ? 'Phản hồi này chỉ khả dụng trong danh sách gợi ý.' : 'This feedback is only available in recommendation lists.') : undefined}
           onClick={(event) => {
             stopAction(event);
             onSkip?.(job.id);
@@ -101,6 +105,7 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
         </button>
         <button
           className="text-action"
+          disabled={!onOpen}
           onClick={(event) => {
             stopAction(event);
             onOpen?.(job);

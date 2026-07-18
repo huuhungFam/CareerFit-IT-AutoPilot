@@ -143,7 +143,7 @@ class SecurityHardeningTest extends BaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\":\"fake_token\"}")
                         .with(remoteAddr(ip)))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isMethodNotAllowed())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(status().is(org.hamcrest.Matchers.not(429)));
     }
 }

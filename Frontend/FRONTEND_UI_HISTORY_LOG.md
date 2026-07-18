@@ -322,3 +322,15 @@ Keep reconstructed chat entries concise. Use this file as a human-readable histo
 - Bỏ fallback mock khỏi jobs, job detail, applications, recruiter dashboard/jobs/discovery, search suggestions, analytics và toàn bộ Admin pages.
 - Thêm trạng thái loading/API error/empty riêng cho recruiter candidate discovery; request lỗi không còn hiện `no candidates` sai.
 - Frontend `npm run build` pass; browser smoke đã xác nhận login recruiter và `/recruiter/jobs` render JD/count/status thật từ backend.
+
+### 2026-07-08 19:05 +07:00 - Full Frontend Functional Audit And Runtime Regression
+
+- Rà soát chức năng với PostgreSQL, Spring Boot và Vite chạy đồng thời; không đánh giá chỉ dựa trên giao diện.
+- Nối đăng ký, yêu cầu magic-link, Candidate/Recruiter Settings và trang Gợi ý với API thật; sửa body PATCH settings và endpoint cập nhật tên Candidate.
+- Chuyển dashboard Candidate sang số liệu match/application/automation thật; nút Apply tại dashboard thực hiện application flow thật.
+- Chuyển trang Thống kê recruiter cũ và danh sách job tại employer/upload result sang dữ liệu API hợp lệ thay vì job/trend mock có thể dẫn tới route 404.
+- Sửa upload status `FAILED`, audit-log null crash và Automation policy thiếu `nextScanAt`; các trường hợp này nay hiển thị lỗi/fallback rõ ràng thay vì trắng trang hoặc báo thành công sai.
+- Các action chưa có backend contract được disabled kèm tooltip: save job, follow company, similar/report job, notification inbox và delete account.
+- Bổ sung toast portal nổi bật và hoàn thiện bản dịch tiếng Việt cho Admin, Automation, Settings, filter và metadata phổ biến.
+- Mở rộng Playwright từ 4 lên 10 test: magic-link, settings persistence, recommendations và route-smoke Candidate/Recruiter/Admin.
+- Verification: `npm run build` pass; Chromium E2E `10 passed`; candidate apply/withdraw, recruiter create/cleanup JD và admin suspend/activate đều quan sát được request ghi dữ liệu thật.

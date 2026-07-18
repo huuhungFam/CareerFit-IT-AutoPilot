@@ -1,5 +1,4 @@
-import { jobs as mockJobs } from '../data/mock';
-import type { Job, MatchLabel, MockAccount, Role } from '../types';
+import type { AutomationPolicy, Job, MatchLabel, MockAccount, RecruiterCandidateItem, Role } from '../types';
 
 const API_BASE_URL = ((import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api').replace(/\/$/, '');
 const TOKEN_KEY = 'careerfit.accessToken';
@@ -79,6 +78,22 @@ type CandidateJobListDto = {
   page: number;
   size: number;
   totalPages: number;
+};
+
+export type CandidateJobPage = {
+  jobs: Job[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+};
+
+export type CandidateJobPageParams = {
+  page?: number;
+  size?: number;
+  label?: string;
+  potentialOnly?: boolean;
+  minScore?: number;
 };
 
 type SuggestionsDto = {
@@ -200,13 +215,13 @@ type AuthResponseDto = {
 export type SearchSuggestionGroup = Array<{ group: string; items: string[] }>;
 
 function getToken() {
-  return window.localStorage.getItem(TOKEN_KEY);
+  return window.sessionStorage.getItem(TOKEN_KEY);
 }
 
 function saveSession(account: MockAccount, token?: string) {
-  window.localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
+  window.sessionStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
   if (token) {
-    window.localStorage.setItem(TOKEN_KEY, token);
+    window.sessionStorage.setItem(TOKEN_KEY, token);
   }
 }
 
@@ -282,26 +297,149 @@ function mapStatus(status?: string | null): Job['status'] {
   return 'new';
 }
 
-function publicJobFallback(index = 0) {
-  return mockJobs[index % mockJobs.length] ?? mockJobs[0];
+function initialsFromName(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'CF';
+}
+
+function normalizeRecruiterLabel(label?: string | null): RecruiterCandidateItem['label'] {
+  const normalized = label?.toUpperCase();
+  if (normalized === 'MEDIUM') return 'MEDIUM';
+  if (normalized === 'LOW') return 'LOW';
+  if (normalized === 'POTENTIAL') return 'POTENTIAL';
+  return 'HIGH';
+}
+
+function mapRecruiterCandidate(dto: any): RecruiterCandidateItem {
+  const name = dto.name ?? dto.candidateName ?? 'Candidate';
+  const score = Math.round(Number(dto.score ?? dto.normalizedScore ?? 0));
+  const applicationStatus = dto.applicationStatus ?? 'NONE';
+  const label = normalizeRecruiterLabel(dto.label);
+
+  return {
+    initials: dto.initials ?? initialsFromName(name),
+    matchingId: dto.matchingId ?? '',
+    cvId: dto.cvId ?? undefined,
+    candidateId: dto.candidateId,
+    applicationId: dto.applicationId ?? null,
+    name,
+    email: dto.email ?? dto.candidateEmail ?? undefined,
+    title: dto.title ?? dto.desiredTitle ?? 'Candidate',
+    location: dto.location ?? undefined,
+    yearsOfExperience: dto.yearsOfExperience ?? undefined,
+    topSkills: dto.topSkills ?? [],
+    cvSummary: dto.cvSummary ?? dto.parsedSummary ?? undefined,
+    appliedAt: dto.appliedAt ? formatPostedAt(dto.appliedAt) : formatPostedAt(dto.matchedAt),
+    score,
+    label,
+    isPotential: Boolean(dto.isPotential),
+    applicationStatus,
+    hasApplied: Boolean(dto.hasApplied),
+    tone: score >= 85 ? 'primary' : 'secondary',
+    missingSignals: dto.missingSignals ?? undefined,
+    tie: dto.tie ?? null,
+    tieBreakReason: dto.tieBreakReason ?? undefined,
+    skillOverlapCount: dto.skillOverlapCount ?? undefined,
+    jobFreshness: dto.jobFreshness ?? undefined,
+    salaryFit: dto.salaryFit ?? undefined,
+    locationFit: dto.locationFit ?? undefined,
+    portfolioVisible: Boolean(dto.portfolioVisible),
+    portfolio: dto.portfolio ?? null,
+    portfolioHiddenReason: dto.portfolioHiddenReason ?? null,
+  };
+}
+
+function normalizeTime(value?: string | null) {
+  if (!value) return '08:00';
+  return value.length >= 5 ? value.slice(0, 5) : value;
+}
+
+function normalizeScanFrequency(value?: string | null): AutomationPolicy['scanFrequency'] {
+  const normalized = value?.toLowerCase() ?? '';
+  if (normalized.includes('daily') || normalized.includes('24')) return 'daily';
+  if (normalized.includes('6')) return '6 hours';
+  return '1 hour';
+}
+
+function mapAutomationPolicy(dto: any): AutomationPolicy {
+  const cooldownHours = Number(dto.notificationCooldownHours ?? 24);
+  return {
+    autoApplyEnabled: Boolean(dto.autoApplyEnabled),
+    autoApplyThreshold: Number(dto.autoApplyThreshold ?? 90),
+    emailNotificationsEnabled: dto.emailNotificationsEnabled !== false,
+    scanEnabled: Boolean(dto.scanEnabled ?? dto.autopilotEnabled ?? dto.highMatchEmailEnabled),
+    scanFrequency: normalizeScanFrequency(dto.scanFrequency ?? dto.digestFrequency),
+    highMatchEmailEnabled: Boolean(dto.highMatchEmailEnabled ?? dto.autopilotEnabled ?? dto.notifyOnHighOnly),
+    highMatchThreshold: Number(dto.highMatchThreshold ?? dto.minScoreToNotify ?? 90),
+    dailyDigestEnabled: dto.dailyDigestEnabled ?? dto.digestEnabled ?? true,
+    dailyDigestTime: normalizeTime(dto.dailyDigestTime ?? dto.digestTime),
+    timezone: dto.timezone ?? dto.userTimezone ?? 'Asia/Ho_Chi_Minh',
+    maxEmailsPerDay: Number(dto.maxEmailsPerDay ?? dto.maxEmailPerDay ?? dto.maxNotificationsPerDay ?? 5),
+    quietHoursEnabled: Boolean(dto.quietHoursEnabled),
+    quietHoursStart: normalizeTime(dto.quietHoursStart ?? '22:00'),
+    quietHoursEnd: normalizeTime(dto.quietHoursEnd ?? '07:00'),
+    cooldownMinutes: Number(dto.cooldownMinutes ?? cooldownHours * 60),
+    notificationCooldownHours: cooldownHours,
+    replacementAfterSkipEnabled: Boolean(dto.replacementAfterSkipEnabled),
+    replacementDelayMinutes: Number(dto.replacementDelayMinutes ?? 45),
+    nextScanAt: dto.nextScanAt ?? 'Backend scheduled',
+    updatedAt: dto.updatedAt ?? null,
+  };
+}
+
+function toAutomationPolicyPatch(payload: Partial<AutomationPolicy>) {
+  const patch: Record<string, unknown> = { ...payload };
+
+  if ('highMatchEmailEnabled' in payload) {
+    patch.autopilotEnabled = payload.highMatchEmailEnabled;
+    patch.notifyOnHighOnly = payload.highMatchEmailEnabled;
+    delete patch.highMatchEmailEnabled;
+  }
+  if ('highMatchThreshold' in payload) {
+    patch.minScoreToNotify = payload.highMatchThreshold;
+    delete patch.highMatchThreshold;
+  }
+  if ('dailyDigestEnabled' in payload) {
+    patch.digestEnabled = payload.dailyDigestEnabled;
+    delete patch.dailyDigestEnabled;
+  }
+  if ('maxEmailsPerDay' in payload) {
+    patch.maxNotificationsPerDay = payload.maxEmailsPerDay;
+    delete patch.maxEmailsPerDay;
+  }
+  if ('cooldownMinutes' in payload && !('notificationCooldownHours' in payload)) {
+    patch.notificationCooldownHours = Math.round(Number(payload.cooldownMinutes ?? 0) / 60);
+  }
+
+  delete patch.scanEnabled;
+  delete patch.scanFrequency;
+  delete patch.dailyDigestTime;
+  delete patch.timezone;
+  delete patch.cooldownMinutes;
+  delete patch.nextScanAt;
+  delete patch.updatedAt;
+  return patch;
 }
 
 export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
-  const fallback = publicJobFallback(index);
   const detail = dto as JobDetailDto;
   return {
     id: dto.id,
     title: dto.title,
     company: dto.company,
-    location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || fallback.location,
-    seniority: dto.seniorityLevel ?? dto.employmentType ?? fallback.seniority,
-    language: dto.language ?? fallback.language,
+    location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || 'Not specified',
+    seniority: dto.seniorityLevel ?? dto.employmentType ?? 'Not specified',
+    language: dto.language ?? 'Not specified',
     salary: formatSalary(dto.salary),
-    requiredSkills: dto.requiredSkills?.length ? dto.requiredSkills : fallback.requiredSkills,
-    optionalSkills: detail.niceToHaveSkills?.length ? detail.niceToHaveSkills : fallback.optionalSkills,
-    description: detail.originalText ?? fallback.description,
-    normalizedScore: fallback.normalizedScore,
-    label: fallback.label,
+    requiredSkills: dto.requiredSkills ?? [],
+    optionalSkills: detail.niceToHaveSkills ?? [],
+    description: detail.originalText ?? 'No description provided.',
+    normalizedScore: 0,
+    label: 'Low',
     isPotential: false,
     reasons: [],
     status: mapStatus(dto.status),
@@ -310,44 +448,42 @@ export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
 }
 
 export function mapCandidateJob(dto: CandidateJobCardDto, index = 0): Job {
-  const fallback = publicJobFallback(index);
   return {
     id: dto.id,
     title: dto.title,
     company: dto.company,
-    location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || fallback.location,
-    seniority: dto.seniorityLevel ?? dto.employmentType ?? fallback.seniority,
-    language: fallback.language,
+    location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || 'Not specified',
+    seniority: dto.seniorityLevel ?? dto.employmentType ?? 'Not specified',
+    language: 'Not specified',
     salary: formatSalary(null, dto.salaryDisplay),
-    requiredSkills: dto.requiredSkills?.length ? dto.requiredSkills : fallback.requiredSkills,
-    optionalSkills: dto.optionalSkills?.length ? dto.optionalSkills : fallback.optionalSkills,
-    description: dto.potentialReason ?? fallback.description,
-    normalizedScore: Number(dto.normalizedScore ?? fallback.normalizedScore),
+    requiredSkills: dto.requiredSkills ?? [],
+    optionalSkills: dto.optionalSkills ?? [],
+    description: dto.potentialReason ?? 'No description provided.',
+    normalizedScore: Number(dto.normalizedScore ?? 0),
     label: normalizeLabel(dto.label),
     isPotential: Boolean(dto.isPotential),
-    reasons: dto.reasons?.length ? dto.reasons : fallback.reasons,
+    reasons: dto.reasons ?? [],
     status: 'new',
     postedAt: formatPostedAt(dto.matchedAt),
   };
 }
 
 export function mapRecruiterJob(dto: RecruiterJobDto, index = 0): Job {
-  const fallback = publicJobFallback(index);
   return {
     id: dto.id,
     title: dto.title,
     company: dto.company,
-    location: dto.location ?? fallback.location,
-    seniority: dto.seniorityLevel ?? fallback.seniority,
-    language: fallback.language,
-    salary: fallback.salary,
-    requiredSkills: fallback.requiredSkills,
-    optionalSkills: fallback.optionalSkills,
-    description: fallback.description,
-    normalizedScore: fallback.normalizedScore,
-    label: fallback.label,
-    isPotential: fallback.isPotential,
-    reasons: fallback.reasons,
+    location: dto.location ?? 'Not specified',
+    seniority: dto.seniorityLevel ?? 'Not specified',
+    language: 'Not specified',
+    salary: 'Not specified',
+    requiredSkills: [],
+    optionalSkills: [],
+    description: 'Open the job workspace for details.',
+    normalizedScore: 0,
+    label: 'Low',
+    isPotential: false,
+    reasons: [],
     status: mapStatus(dto.status),
     postedAt: formatPostedAt(dto.createdAt),
   };
@@ -355,7 +491,7 @@ export function mapRecruiterJob(dto: RecruiterJobDto, index = 0): Job {
 
 export const careerfitApi = {
   restoreAccount() {
-    const raw = window.localStorage.getItem(ACCOUNT_KEY);
+    const raw = window.sessionStorage.getItem(ACCOUNT_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as MockAccount;
@@ -365,8 +501,8 @@ export const careerfitApi = {
   },
 
   clearSession() {
-    window.localStorage.removeItem(TOKEN_KEY);
-    window.localStorage.removeItem(ACCOUNT_KEY);
+    window.sessionStorage.removeItem(TOKEN_KEY);
+    window.sessionStorage.removeItem(ACCOUNT_KEY);
   },
 
   saveMockSession(account: MockAccount) {
@@ -383,6 +519,23 @@ export const careerfitApi = {
     return account;
   },
 
+  async register(email: string, password: string, fullName: string, role: 'CANDIDATE' | 'RECRUITER') {
+    const payload = await request<AuthResponseDto>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim(), password, fullName: fullName.trim(), role }),
+    });
+    const account = toAccount(payload);
+    saveSession(account, payload.accessToken);
+    return account;
+  },
+
+  async requestPasswordless(email: string) {
+    return request<{ message: string; token: string | null; expiresInMinutes: number }>('/auth/passwordless/request', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  },
+
   async searchJobs(keyword = '') {
     const params = new URLSearchParams({ page: '0', size: '20', sort: 'recent' });
     if (keyword.trim()) params.set('keyword', keyword.trim());
@@ -395,9 +548,28 @@ export const careerfitApi = {
     return mapPublicJob(payload);
   },
 
+  async getCandidateJobsPage(params: CandidateJobPageParams = {}): Promise<CandidateJobPage> {
+    const query = new URLSearchParams({
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 20),
+    });
+    if (params.label) query.set('label', params.label);
+    if (params.potentialOnly) query.set('potentialOnly', 'true');
+    if (params.minScore && params.minScore > 0) query.set('minScore', String(params.minScore));
+
+    const payload = await request<CandidateJobListDto>(`/matches/me/cards?${query}`);
+    return {
+      jobs: payload.jobs.map(mapCandidateJob),
+      total: payload.total,
+      page: payload.page,
+      size: payload.size,
+      totalPages: payload.totalPages,
+    };
+  },
+
   async getCandidateJobs() {
-    const payload = await request<CandidateJobListDto>('/matches/me/cards?page=0&size=20');
-    return payload.jobs.map(mapCandidateJob);
+    const payload = await careerfitApi.getCandidateJobsPage({ page: 0, size: 20 });
+    return payload.jobs;
   },
 
   async getSearchSuggestions(keyword: string): Promise<SearchSuggestionGroup> {
@@ -505,7 +677,7 @@ export const careerfitApi = {
   },
 
   async updateCandidateAccount(fullName: string) {
-    return request<any>('/auth/me', {
+    return request<any>('/candidates/me/account', {
       method: 'PATCH',
       body: JSON.stringify({ fullName }),
       headers: { 'Content-Type': 'application/json' },
@@ -521,8 +693,8 @@ export const careerfitApi = {
   },
 
   async setDefaultCv(cvId: string) {
-    return request<any>(`/candidates/me/cvs/${cvId}/default`, {
-      method: 'PATCH',
+    return request<any>(`/cv/${cvId}/set-default`, {
+      method: 'POST',
     });
   },
 
@@ -580,23 +752,26 @@ export const careerfitApi = {
   },
 
   async getAutomationPolicy() {
-    return request<any>('/automation/policy');
+    const payload = await request<any>('/automation/policy');
+    return mapAutomationPolicy(payload);
   },
 
   async updateEmailNotifications(enabled: boolean) {
-    return request<any>('/automation/policy/email-notifications', {
+    const payload = await request<any>('/automation/policy/email-notifications', {
       method: 'PATCH',
       body: JSON.stringify({ enabled }),
       headers: { 'Content-Type': 'application/json' },
     });
+    return mapAutomationPolicy(payload);
   },
 
-  async updateAutomationPolicy(payload: any) {
-    return request<any>('/automation/policy', {
+  async updateAutomationPolicy(payload: Partial<AutomationPolicy>) {
+    const updated = await request<any>('/automation/policy', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(toAutomationPolicyPatch(payload)),
       headers: { 'Content-Type': 'application/json' },
     });
+    return mapAutomationPolicy(updated);
   },
 
   async runAutoApplyNow() {
@@ -610,7 +785,7 @@ export const careerfitApi = {
   async updateSettings(payload: any) {
     return request<any>('/settings/me', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ values: payload }),
       headers: { 'Content-Type': 'application/json' },
     });
   },
@@ -632,10 +807,8 @@ export const careerfitApi = {
   },
 
   async updateJobStatus(id: string, status: string) {
-    return request<any>(`/jobs/${id}/status`, {
+    return request<any>(`/jobs/${id}/status?status=${encodeURIComponent(status)}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
-      headers: { 'Content-Type': 'application/json' },
     });
   },
 
@@ -645,7 +818,14 @@ export const careerfitApi = {
 
   async getRecruiterCandidates(jobId: string, options: any) {
     const params = new URLSearchParams(options).toString();
-    return request<any>(`/recruiter/jobs/${jobId}/candidates?${params}`);
+    const payload = await request<any>(`/recruiter/jobs/${jobId}/candidates?${params}`);
+    if (Array.isArray(payload)) {
+      return { candidates: payload.map(mapRecruiterCandidate) };
+    }
+    return {
+      ...payload,
+      candidates: (payload.candidates ?? []).map(mapRecruiterCandidate),
+    };
   },
 
   async inviteCandidate(jobId: string, candidateId: string) {

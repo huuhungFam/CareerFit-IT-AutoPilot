@@ -1,5 +1,7 @@
 package com.careerfit.backend.application.dto;
 
+import com.careerfit.backend.candidate.dto.CandidateDtos;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -58,7 +60,10 @@ public class ApplicationDtos {
         String applicationStatus,
         boolean autoApplied,
         String coverLetter,
-        Instant appliedAt
+        Instant appliedAt,
+        boolean portfolioVisible,
+        CandidateDtos.PortfolioResponse portfolio,
+        String portfolioHiddenReason
     ) {}
 
     public record ApplicantPageResponse(

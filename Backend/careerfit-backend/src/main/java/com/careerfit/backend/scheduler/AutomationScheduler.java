@@ -83,7 +83,7 @@ public class AutomationScheduler {
     // 1. Recompute stale matchings (every 30 minutes)
     // ─────────────────────────────────────────────────────────────────────
 
-    @Scheduled(fixedDelay = 30 * 60 * 1000)  // 30 min
+    @Scheduled(fixedDelayString = "${app.scheduler.recompute-delay-ms:1800000}")
     @Transactional
     public void recomputeStaleMatchings() {
         List<Matching> stale = matchingRepo.findByNeedsRecomputeTrue();
@@ -114,7 +114,7 @@ public class AutomationScheduler {
     // 2. Daily digest (every day at 8:00 AM ICT)
     // ─────────────────────────────────────────────────────────────────────
 
-    @Scheduled(cron = "0 0 8 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "${app.scheduler.daily-digest-cron:0 0 8 * * *}", zone = "${app.scheduler.zone:Asia/Ho_Chi_Minh}")
     @Transactional
     public void sendDailyDigest() {
         log.info("[SCHEDULER] Starting daily digest...");
@@ -174,7 +174,7 @@ public class AutomationScheduler {
     // 3. Token cleanup (every day at 3:00 AM ICT)
     // ─────────────────────────────────────────────────────────────────────
 
-    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "${app.scheduler.token-cleanup-cron:0 0 3 * * *}", zone = "${app.scheduler.zone:Asia/Ho_Chi_Minh}")
     @Transactional
     public void cleanupExpiredTokens() {
         log.info("[SCHEDULER] Cleaning up expired email action tokens...");
@@ -193,7 +193,7 @@ public class AutomationScheduler {
     //    Only notifies for HIGH matches above candidate's threshold
     // ─────────────────────────────────────────────────────────────────────
 
-    @Scheduled(fixedDelay = 4 * 60 * 60 * 1000)  // 4 hours
+    @Scheduled(fixedDelayString = "${app.scheduler.notification-delay-ms:14400000}")
     @Transactional
     public void notifyHighMatches() {
         log.info("[SCHEDULER] Scanning for high-value matches to notify...");
@@ -251,7 +251,7 @@ public class AutomationScheduler {
     //    Creates AUTO_APPLIED applications for candidate policies above threshold.
     // ─────────────────────────────────────────────────────────────────────
 
-    @Scheduled(fixedDelay = 2 * 60 * 60 * 1000)
+    @Scheduled(fixedDelayString = "${app.scheduler.auto-apply-delay-ms:7200000}")
     public void executeAutoApply() {
         log.info("[SCHEDULER] Scanning auto-apply policies...");
         List<AutomationPolicy> policies = policyRepo.findByAutoApplyEnabledTrue();

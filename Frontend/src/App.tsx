@@ -64,6 +64,7 @@ import {
   type AdvancedTrendPoint,
   type CandidateAnalyticsOverview,
   type CandidateCvDto,
+  type CandidateJobPage,
   type CandidateProfileDto,
   type CreateJobPayload,
   type ManualCvPayload,
@@ -74,13 +75,9 @@ import {
   type RecruiterAnalyticsOverview,
 } from './lib/api';
 import {
-  applications,
   automationPolicy,
   candidate,
-  emailAction,
-  jobs,
   preference,
-  trends,
 } from './data/mock';
 import type { AutomationPolicy, Job, MatchFeedback, MockAccount, RecruiterCandidateItem, Role } from './types';
 
@@ -350,6 +347,16 @@ export function App() {
     }
   }
 
+  async function handleRegister(email: string, password: string, fullName: string, role: 'CANDIDATE' | 'RECRUITER') {
+    try {
+      const apiAccount = await careerfitApi.register(email, password, fullName, role);
+      setAccount(apiAccount);
+      return apiAccount;
+    } catch {
+      return null;
+    }
+  }
+
   function handleLogout() {
     careerfitApi.clearSession();
     setAccount(null);
@@ -369,8 +376,8 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-      <Route path="/register" element={<LoginPage mode="register" onLogin={handleLogin} />} />
+      <Route path="/login" element={<LoginPage onLogin={handleLogin} onRegister={handleRegister} />} />
+      <Route path="/register" element={<LoginPage mode="register" onLogin={handleLogin} onRegister={handleRegister} />} />
       <Route path="/automation/confirm" element={<AutomationConfirmPage />} />
       <Route path="/automation/result" element={<AutomationResultPage />} />
       <Route element={<AppShell role={account?.role ?? 'guest'} />}>
@@ -389,7 +396,7 @@ export function App() {
         <Route path="/candidate/automation" element={protectedRoute('candidate', <AutomationPage />)} />
         <Route
           path="/candidate/settings"
-          element={protectedRoute('candidate', <CandidateSettingsPage onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
+          element={protectedRoute('candidate', <ConnectedSettingsPage role="candidate" onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
         />
         <Route path="/recruiter" element={protectedRoute('recruiter', <RecruiterHomePage />)} />
         <Route path="/recruiter/jobs" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
@@ -402,7 +409,7 @@ export function App() {
         <Route path="/recruiter/automation" element={protectedRoute('recruiter', <AutomationPage />)} />
         <Route
           path="/recruiter/settings"
-          element={protectedRoute('recruiter', <RecruiterSettingsPage onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
+          element={protectedRoute('recruiter', <ConnectedSettingsPage role="recruiter" onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
         />
         {/* Admin Routes */}
         <Route path="/admin" element={protectedRoute('admin', <AdminDashboardPage />)} />
@@ -418,16 +425,21 @@ export function App() {
 function LoginPage({
   mode = 'login',
   onLogin,
+  onRegister,
 }: {
   mode?: 'login' | 'register';
   onLogin: (username: string, password: string) => Promise<MockAccount | null>;
+  onRegister: (email: string, password: string, fullName: string, role: 'CANDIDATE' | 'RECRUITER') => Promise<MockAccount | null>;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { language, setLanguage, t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [registerRole, setRegisterRole] = useState<'CANDIDATE' | 'RECRUITER'>('CANDIDATE');
   const [error, setError] = useState('');
+  const [authMessage, setAuthMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const nextPath = searchParams.get('next');
 
@@ -436,13 +448,41 @@ function LoginPage({
     setIsSubmitting(true);
     setError('');
     try {
-      const account = await onLogin(username, password);
+      const account = mode === 'register'
+        ? await onRegister(username, password, fullName, registerRole)
+        : await onLogin(username, password);
       if (!account) {
-        setError(t('invalidLogin'));
+        setError(mode === 'register'
+          ? (language === 'vi' ? 'Không thể đăng ký. Hãy kiểm tra email, mật khẩu và tài khoản đã tồn tại.' : 'Could not register. Check the email, password, and whether the account already exists.')
+          : t('invalidLogin'));
         return;
       }
 
       navigate(resolvePostLoginPath(account, nextPath));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function requestMagicLink() {
+    setError('');
+    setAuthMessage(null);
+    if (!username.includes('@')) {
+      setError(language === 'vi' ? 'Hãy nhập một địa chỉ email hợp lệ để nhận liên kết đăng nhập.' : 'Enter a valid email address to receive a sign-in link.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await careerfitApi.requestPasswordless(username);
+      setAuthMessage({
+        tone: 'success',
+        text: language === 'vi' ? 'Yêu cầu đã được gửi. Hãy kiểm tra email để tiếp tục đăng nhập.' : 'Request sent. Check your email to continue signing in.',
+      });
+    } catch (requestError) {
+      setAuthMessage({
+        tone: 'error',
+        text: readableError(requestError, language === 'vi' ? 'Không thể gửi liên kết đăng nhập.' : 'Could not send the sign-in link.', language),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -465,28 +505,52 @@ function LoginPage({
         <p>{t('candidateHomeCopy')}</p>
       </section>
       <form className="auth-card" onSubmit={submitLogin}>
+        {mode === 'register' ? (
+          <label>
+            {t('fullName')}
+            <input autoComplete="name" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
+          </label>
+        ) : null}
         <label>
-          {t('username')}
-          <input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="ca / re / ad" />
+          {mode === 'register' ? t('emailAddress') : t('username')}
+          <input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder={mode === 'register' ? 'name@example.com' : 'ca / re / ad'} type={mode === 'register' ? 'email' : 'text'} required />
         </label>
         <label>
           {t('password')}
           <input
-            autoComplete="current-password"
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="1"
+            minLength={mode === 'register' ? 8 : undefined}
+            placeholder={mode === 'register' ? '••••••••' : '1'}
             type="password"
           />
         </label>
+        {mode === 'register' ? (
+          <label>
+            {t('role')}
+            <select value={registerRole} onChange={(event) => setRegisterRole(event.target.value as 'CANDIDATE' | 'RECRUITER')}>
+              <option value="CANDIDATE">{t('candidate')}</option>
+              <option value="RECRUITER">{t('recruiter')}</option>
+            </select>
+          </label>
+        ) : null}
         {error ? <p className="validation-error">{error}</p> : null}
+        {authMessage ? <ActionMessage {...authMessage} /> : null}
         <button className="primary-action full" disabled={isSubmitting} type="submit">
-          {t('signIn')}
+          {mode === 'register' ? t('register') : t('signIn')}
         </button>
-        <small>{t('testLoginHint')}</small>
-        <button className="full" type="button">
-          <MailCheck size={16} />
-          {t('passwordless')}
+        {mode === 'login' ? <small>{t('testLoginHint')}</small> : null}
+        {mode === 'login' ? (
+          <button className="full" type="button" disabled={isSubmitting} onClick={requestMagicLink}>
+            <MailCheck size={16} />
+            {t('passwordless')}
+          </button>
+        ) : null}
+        <button className="auth-mode-link" type="button" onClick={() => navigate(mode === 'login' ? '/register' : '/login')}>
+          {mode === 'login'
+            ? (language === 'vi' ? 'Chưa có tài khoản? Đăng ký' : 'New to CareerFit? Register')
+            : (language === 'vi' ? 'Đã có tài khoản? Đăng nhập' : 'Already have an account? Sign in')}
         </button>
       </form>
     </main>
@@ -526,14 +590,27 @@ function LoginRequiredPage({ nextPath }: { nextPath?: string }) {
 }
 
 function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const { data = [], isLoading: isJobsLoading } = useJobs({ isPublic });
+  const { data: applicationPage } = useQuery<any>({
+    queryKey: ['my-applications'],
+    enabled: !isPublic,
+    queryFn: () => careerfitApi.getMyApplications(),
+  });
+  const { data: currentPolicy } = useQuery<any>({
+    queryKey: ['automation-policy'],
+    enabled: !isPublic,
+    queryFn: () => careerfitApi.getAutomationPolicy(),
+  });
   const suggestions = useSearchSuggestions(query);
   const newJobs = data.slice(0, 3);
+  const applicationRows = applicationPage?.content || applicationPage?.applications || (Array.isArray(applicationPage) ? applicationPage : []);
 
   function runSearch() {
     const keyword = query.trim();
@@ -545,6 +622,24 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
     const basePath = isPublic ? '/jobs' : '/candidate/jobs';
     const params = writeJobSearchParams(nextKeyword, nextFilters);
     navigate({ pathname: basePath, search: params.toString() ? `?${params.toString()}` : '' });
+  }
+
+  async function applyToJob(job: Job) {
+    if (isPublic) {
+      setIsLoginPromptOpen(true);
+      return;
+    }
+    setActionMessage(null);
+    try {
+      await careerfitApi.submitApplication(job.id);
+      await queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      navigate('/candidate/applications');
+    } catch (error) {
+      setActionMessage({
+        tone: 'error',
+        text: readableError(error, language === 'vi' ? 'Không thể ứng tuyển công việc này.' : 'Could not submit this application.', language),
+      });
+    }
   }
 
   return (
@@ -567,9 +662,9 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
 
       {!isPublic ? (
         <section className="stats-grid feature-stats">
-          <StatCard label={t('recommendations')} value="12" detail={t('jobsAboveNinety')} />
-          <StatCard label={t('autoApply')} value="88%" detail={`${t('nextScan')}: ${automationPolicy.nextScanAt}`} />
-          <StatCard label={t('applications')} value={applications.length} detail={t('inviteThisWeek')} />
+          <StatCard label={t('recommendations')} value={data.length} detail={`${data.filter((job) => job.normalizedScore >= 90).length} ${t('jobsAboveNinety')}`} />
+          <StatCard label={t('autoApply')} value={currentPolicy?.autoApplyEnabled ? t('enabled') : t('disabled')} detail={`${t('score')} >= ${currentPolicy?.minScore ?? 85}%`} />
+          <StatCard label={t('applications')} value={applicationRows.length} detail={t('inviteThisWeek')} />
         </section>
       ) : null}
 
@@ -584,11 +679,12 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
           </button>
         </div>
         <TopEmployers />
+        {actionMessage ? <ActionMessage {...actionMessage} /> : null}
         <JobListWithPreview
           jobs={newJobs}
           isLoading={isJobsLoading}
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
-          onApply={isPublic ? () => setIsLoginPromptOpen(true) : undefined}
+          onApply={applyToJob}
           showMatchMeta={!isPublic}
         />
       </section>
@@ -624,7 +720,31 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const { data: sourceJobs = [], isLoading: isJobsLoading, isFetching: isJobsFetching } = useJobs({ isPublic, keyword: initialKeyword });
+  const [candidatePages, setCandidatePages] = useState<CandidateJobPage[]>([]);
+  const [isLoadingMoreJobs, setIsLoadingMoreJobs] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const { data: publicJobs = [], isLoading: isPublicJobsLoading, isFetching: isPublicJobsFetching } = useJobs({
+    isPublic,
+    keyword: initialKeyword,
+    enabled: isPublic,
+  });
+  const {
+    data: firstCandidatePage,
+    isLoading: isCandidateJobsLoading,
+    isFetching: isCandidateJobsFetching,
+  } = useQuery({
+    queryKey: ['candidate-jobs-page', 0],
+    enabled: !isPublic,
+    queryFn: () => careerfitApi.getCandidateJobsPage({ page: 0, size: 20 }),
+    refetchInterval: 60_000,
+  });
+  const sourceJobs = isPublic ? publicJobs : candidatePages.flatMap((page) => page.jobs);
+  const lastCandidatePage = candidatePages[candidatePages.length - 1];
+  const canLoadMoreCandidateJobs = !isPublic && Boolean(lastCandidatePage) && lastCandidatePage!.page + 1 < lastCandidatePage!.totalPages;
+  const loadedCandidateJobCount = candidatePages.reduce((sum, page) => sum + page.jobs.length, 0);
+  const totalCandidateJobCount = lastCandidatePage?.total ?? firstCandidatePage?.total ?? loadedCandidateJobCount;
+  const isJobsLoading = isPublic ? isPublicJobsLoading : isCandidateJobsLoading;
+  const isJobsFetching = isPublic ? isPublicJobsFetching : isCandidateJobsFetching;
   const keywordFilteredJobs = useFilteredJobs(
     sourceJobs.filter((job) => !hiddenJobIds.includes(job.id)),
     query,
@@ -650,6 +770,16 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   useEffect(() => {
     setHiddenJobIds([]);
   }, [searchParams.toString()]);
+
+  useEffect(() => {
+    if (!isPublic && firstCandidatePage) {
+      setCandidatePages((current) => {
+        if (current.length === 0) return [firstCandidatePage];
+        return [firstCandidatePage, ...current.filter((page) => page.page !== firstCandidatePage.page)];
+      });
+      setLoadMoreError(null);
+    }
+  }, [firstCandidatePage, isPublic]);
 
   function runSearch() {
     const keyword = query.trim();
@@ -712,6 +842,26 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
     }
   }
 
+  async function loadMoreCandidateJobs() {
+    if (!lastCandidatePage || !canLoadMoreCandidateJobs || isLoadingMoreJobs) return;
+    setIsLoadingMoreJobs(true);
+    setLoadMoreError(null);
+    try {
+      const nextPage = await careerfitApi.getCandidateJobsPage({
+        page: lastCandidatePage.page + 1,
+        size: 20,
+      });
+      setCandidatePages((current) => {
+        if (current.some((page) => page.page === nextPage.page)) return current;
+        return [...current, nextPage];
+      });
+    } catch (error) {
+      setLoadMoreError(readableError(error, language === 'vi' ? 'Không thể tải thêm việc làm.' : 'Could not load more jobs.', language));
+    } finally {
+      setIsLoadingMoreJobs(false);
+    }
+  }
+
   return (
     <div className="page-stack">
       <section className="result-search-hero">
@@ -756,8 +906,15 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
       <section className="search-results-page">
         <div className="result-heading">
           <h2>
-            {filteredJobs.length} <span>{query || 'IT'}</span> {t('jobsInVietnam')}
+            {isPublic ? filteredJobs.length : totalCandidateJobCount} <span>{query || 'IT'}</span> {t('jobsInVietnam')}
           </h2>
+          {!isPublic && totalCandidateJobCount > 0 ? (
+            <p className="result-subtitle">
+              {language === 'vi'
+                ? `Đang hiển thị ${Math.min(loadedCandidateJobCount, totalCandidateJobCount)} / ${totalCandidateJobCount} việc làm phù hợp`
+                : `Showing ${Math.min(loadedCandidateJobCount, totalCandidateJobCount)} / ${totalCandidateJobCount} matched jobs`}
+            </p>
+          ) : null}
         </div>
         <div className="top-filter-bar">
           <button className={filters.level !== 'all' ? 'active-filter' : ''} onClick={() => setIsFilterOpen(true)}>
@@ -816,6 +973,22 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
             </div>
           }
         />
+        {!isPublic && sourceJobs.length > 0 ? (
+          <div className="load-more-row">
+            {loadMoreError ? <p className="validation-error">{loadMoreError}</p> : null}
+            {canLoadMoreCandidateJobs ? (
+              <button className="primary-action" type="button" disabled={isLoadingMoreJobs} onClick={loadMoreCandidateJobs}>
+                {isLoadingMoreJobs
+                  ? (language === 'vi' ? 'Đang tải...' : 'Loading...')
+                  : (language === 'vi' ? 'Xem thêm 20 việc làm' : 'Load 20 more jobs')}
+              </button>
+            ) : (
+              <p className="validation-message">
+                {language === 'vi' ? 'Đã hiển thị toàn bộ việc làm phù hợp.' : 'All matched jobs are shown.'}
+              </p>
+            )}
+          </div>
+        ) : null}
       </section>
 
       {isFilterOpen ? (
@@ -1028,14 +1201,13 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
   const employer = topEmployers.find((item) => item.id === employerId) ?? topEmployers[0];
-  const employerJobs = jobs.slice(0, 3).map((job, index) => ({
-    ...job,
-    company: index === 0 ? employer.name : job.company,
-  }));
+  const { data: availableJobs = [], isLoading } = useJobs({ isPublic });
+  const matchingEmployerJobs = availableJobs.filter((job) => job.company.toLowerCase().includes(employer.name.toLowerCase()));
+  const employerJobs = (matchingEmployerJobs.length ? matchingEmployerJobs : availableJobs).slice(0, 3);
 
   return (
     <div className="employer-detail-route">
-      <button className="back-button" onClick={() => navigate('/candidate')}>
+      <button className="back-button" onClick={() => navigate(isPublic ? '/' : '/candidate')}>
         {t('backToEmployers')}
       </button>
 
@@ -1048,7 +1220,7 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
             <h1>{employer.name}</h1>
             <p>{employer.industry}</p>
           </div>
-          <button className="primary-action">{t('followCompany')}</button>
+          <button className="primary-action" disabled title={language === 'vi' ? 'Backend chưa hỗ trợ theo dõi công ty.' : 'Following companies is not supported by the backend yet.'}>{t('followCompany')}</button>
         </div>
       </section>
 
@@ -1070,8 +1242,10 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
 
           <h2>{t('openJobs')}</h2>
           <div className="employer-job-list">
+            {isLoading ? <p>{language === 'vi' ? 'Đang tải công việc...' : 'Loading jobs...'}</p> : null}
+            {!isLoading && employerJobs.length === 0 ? <p>{language === 'vi' ? 'Hiện chưa có công việc đang mở.' : 'No open jobs are available.'}</p> : null}
             {employerJobs.map((job) => (
-              <article className="employer-job-card" key={job.id} onClick={() => navigate(`/candidate/jobs/${job.id}`)}>
+              <article className="employer-job-card" key={job.id} onClick={() => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}/${job.id}`)}>
                 <div>
                   <p className="eyebrow">{job.company}</p>
                   <h3>{job.title}</h3>
@@ -1101,7 +1275,7 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
             <Globe size={18} />
             <span>{employer.website}</span>
           </div>
-          <button className="primary-action full">{t('viewAll')}</button>
+          <button className="primary-action full" onClick={() => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}?keyword=${encodeURIComponent(employer.name)}`)}>{t('viewAll')}</button>
         </aside>
       </section>
     </div>
@@ -1113,11 +1287,12 @@ function UploadPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [state, setState] = useState<'idle' | 'uploading' | 'processing' | 'scored'>('idle');
+  const [state, setState] = useState<'idle' | 'uploading' | 'processing' | 'scored' | 'failed'>('idle');
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [isSavingManualCv, setIsSavingManualCv] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: manualProfile } = useQuery<any>({ queryKey: ['candidate-profile'], queryFn: careerfitApi.getCandidateProfile });
+  const { data: matchedJobs = [] } = useJobs({ isPublic: false });
   const activeUploadTab: UploadTab = searchParams.get('tab') === 'manual' ? 'manual' : 'parser';
   const skillChips = ['React', 'TypeScript', 'Design System', 'Testing', 'Accessibility'];
 
@@ -1133,7 +1308,15 @@ function UploadPage() {
     setActionMessage(null);
     try {
       const result = await careerfitApi.uploadCv(file);
-      setState(result.status === 'SCORED' ? 'scored' : 'processing');
+      if (result.status === 'FAILED') {
+        setState('failed');
+        setActionMessage({
+          tone: 'error',
+          text: language === 'vi' ? 'CV đã tải lên nhưng không thể trích xuất nội dung. Hãy thử tệp PDF/DOCX rõ ràng hơn.' : 'The CV was uploaded but its content could not be extracted. Try a clearer PDF or DOCX file.',
+        });
+        return;
+      }
+      setState(result.status === 'SCORED' || result.status === 'SCORING_DONE' ? 'scored' : 'processing');
       await queryClient.invalidateQueries({ queryKey: ['candidate-cvs'] });
       setActionMessage({
         tone: 'success',
@@ -1230,7 +1413,7 @@ function UploadPage() {
             />
             <button className={`dropzone ${state}`} type="button" onClick={() => fileInputRef.current?.click()} disabled={state === 'uploading'}>
               <UploadCloud size={40} />
-              <h2>{state === 'idle' ? t('dropCvHere') : state === 'processing' ? t('processingFile') : t(state)}</h2>
+              <h2>{state === 'idle' ? t('dropCvHere') : state === 'processing' ? t('processingFile') : state === 'failed' ? t('uploadFailed') : t(state)}</h2>
               <p>{t('parserCopy')}</p>
               <strong>{t('browseFiles')}</strong>
             </button>
@@ -1324,17 +1507,12 @@ function UploadPage() {
               {skillChips.map((skill) => (
                 <span key={skill}>
                   {skill}
-                  <button type="button" aria-label={`${t('removeSkill')} ${skill}`}>×</button>
                 </span>
               ))}
             </div>
             <label>
               {t('skills')}
               <input name="skills" defaultValue={manualProfile?.desiredSkills?.join(', ') ?? skillChips.join(', ')} required />
-            </label>
-            <label className="skill-search-field">
-              <Search size={18} />
-              <input placeholder={t('typeToAddSkills')} />
             </label>
             <ValidationSuggestion
               severity="warning"
@@ -1349,10 +1527,6 @@ function UploadPage() {
                 <p className="eyebrow">{t('manualCreation')}</p>
                 <h3>{t('experience')}</h3>
               </div>
-              <button type="button">
-                <Plus size={17} />
-                {t('addExperience')}
-              </button>
             </div>
 
             <article className="experience-editor-card">
@@ -1367,9 +1541,6 @@ function UploadPage() {
                     <input defaultValue="Northstar HealthTech" />
                   </label>
                 </div>
-                  <button type="button" aria-label={t('removeExperience')}>
-                  <Trash2 size={18} />
-                </button>
               </div>
               <div className="experience-date-grid">
                 <label>
@@ -1419,8 +1590,8 @@ function UploadPage() {
             <h2>{t('rankingResults')}</h2>
           </div>
           <div className="job-list compact">
-            {jobs.slice(0, 3).map((job) => (
-              <JobCard key={job.id} job={job} />
+            {matchedJobs.slice(0, 3).map((job) => (
+              <JobCard key={job.id} job={job} onOpen={(selectedJob) => navigate(`/candidate/jobs/${selectedJob.id}`)} />
             ))}
           </div>
         </section>
@@ -1852,20 +2023,68 @@ function PortfolioProjectModal({ item, language, submitting, onClose, onSubmit }
 }
 
 function RecommendationsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const { data: candidateJobs = [], isLoading, isFetching } = useJobs({ isPublic: false });
+  const recommendedJobs = [...candidateJobs]
+    .filter((job) => !hiddenJobIds.includes(job.id))
+    .sort((left, right) => right.normalizedScore - left.normalizedScore)
+    .slice(0, 8);
+
+  async function applyToJob(job: Job) {
+    setActionMessage(null);
+    try {
+      await careerfitApi.submitApplication(job.id);
+      await queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      navigate('/candidate/applications');
+    } catch (error) {
+      setActionMessage({
+        tone: 'error',
+        text: readableError(error, language === 'vi' ? 'Không thể ứng tuyển công việc này.' : 'Could not submit this application.', language),
+      });
+    }
+  }
+
+  async function skipJob(id: string, options?: { feedbackSaved?: boolean }) {
+    const job = recommendedJobs.find((item) => item.id === id);
+    setActionMessage(null);
+    try {
+      if (!options?.feedbackSaved && job?.matchingId) {
+        await careerfitApi.submitMatchFeedback(job.matchingId, 'NOT_INTERESTED');
+      }
+      setHiddenJobIds((current) => [...current, id]);
+      setActionMessage({
+        tone: 'success',
+        text: language === 'vi' ? 'Đã ghi nhận phản hồi và ẩn công việc này.' : 'Feedback saved and job hidden.',
+      });
+    } catch (error) {
+      setActionMessage({
+        tone: 'error',
+        text: readableError(error, language === 'vi' ? 'Không thể ghi nhận phản hồi.' : 'Could not save feedback.', language),
+      });
+    }
+  }
+
   return (
     <div className="page-stack">
       <section className="section-heading">
         <p className="eyebrow">{t('recommendations')}</p>
         <h2>{t('recommendationsTitle')}</h2>
       </section>
-      <section className="job-list">
-        {jobs
-          .filter((job) => job.normalizedScore >= 85)
-          .map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-      </section>
+      {actionMessage ? <ActionMessage {...actionMessage} /> : null}
+      <JobListWithPreview
+        jobs={recommendedJobs}
+        isLoading={isLoading || isFetching}
+        onOpen={(job) => navigate(`/candidate/jobs/${job.id}`)}
+        onApply={applyToJob}
+        onSkip={skipJob}
+        emptyTitle={t('noMatchingJobs')}
+        emptyCopy={t('noMatchingJobsCopy')}
+        emptyActions={<button onClick={() => navigate('/candidate/jobs')}>{t('viewAll')}</button>}
+      />
     </div>
   );
 }
@@ -2271,7 +2490,7 @@ function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'can
     sideTitle={vi ? 'Trạng thái lưu trữ' : 'Persistence status'}
     sideItems={[[vi ? 'Vai trò' : 'Role', role], [vi ? 'Cập nhật gần nhất' : 'Last updated', (data as any)?.updatedAt ? new Date((data as any).updatedAt).toLocaleString() : '-']]}
     onSave={save} saving={saving}
-    accountActions={<AccountDangerActions onLogout={onLogout} onDeleteAccount={onDeleteAccount} />}
+    accountActions={<AccountDangerActions onLogout={onLogout} onDeleteAccount={onDeleteAccount} deleteDisabled />}
   >
     {message ? <ActionMessage {...message} /> : null}
     {isLoading ? <p>{vi ? 'Đang tải cài đặt...' : 'Loading settings...'}</p> : null}
@@ -2356,11 +2575,13 @@ function SettingsSurface({
 function AccountDangerActions({
   onLogout,
   onDeleteAccount,
+  deleteDisabled = false,
 }: {
   onLogout: () => void;
   onDeleteAccount: () => void;
+  deleteDisabled?: boolean;
 }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   return (
     <div className="account-danger-actions">
@@ -2368,7 +2589,12 @@ function AccountDangerActions({
         <LogOut size={17} />
         {t('logout')}
       </button>
-      <button className="danger-action" onClick={onDeleteAccount}>
+      <button
+        className="danger-action"
+        onClick={onDeleteAccount}
+        disabled={deleteDisabled}
+        title={deleteDisabled ? (language === 'vi' ? 'Backend chưa hỗ trợ xóa tài khoản.' : 'Account deletion is not supported by the backend yet.') : undefined}
+      >
         <Trash2 size={17} />
         {t('deleteAccount')}
       </button>
@@ -2402,6 +2628,8 @@ function SettingToggle({ title, detail, checked = false, onChange }: { title: st
 
 function RecruiterHomePage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [candidateQuery, setCandidateQuery] = useState('');
   const { data: summary } = useRecruiterSummary();
   return (
     <div className="page-stack">
@@ -2411,6 +2639,10 @@ function RecruiterHomePage() {
         copy={t('recruiterHomeCopy')}
         placeholder={t('searchPlaceholder')}
         actionLabel={t('searchCandidates')}
+        value={candidateQuery}
+        onChange={setCandidateQuery}
+        onSearch={() => navigate(`/recruiter/jobs${candidateQuery.trim() ? `?q=${encodeURIComponent(candidateQuery.trim())}` : ''}`)}
+        onFilter={() => navigate('/recruiter/jobs')}
         centered
       />
       <JobMarketDashboard />
@@ -2444,11 +2676,11 @@ function RecruiterOverviewPanel() {
       </div>
 
       <div className="top-filter-bar recruiter-filter-bar">
-        <button>{t('role')} ▾</button>
-        <button>{t('status')} ▾</button>
-        <button>{t('score')} ▾</button>
-        <button>{t('potential')} ▾</button>
-        <button className="filter-button">
+        <button onClick={() => navigate('/recruiter/jobs')}>{t('role')} ▾</button>
+        <button onClick={() => navigate('/recruiter/jobs?status=active')}>{t('status')} ▾</button>
+        <button onClick={() => navigate('/recruiter/jobs?match=HIGH')}>{t('score')} ▾</button>
+        <button onClick={() => navigate('/recruiter/jobs?match=POTENTIAL')}>{t('potential')} ▾</button>
+        <button className="filter-button" onClick={() => navigate('/recruiter/jobs')}>
           <SlidersHorizontal size={16} />
           {t('filter')}
         </button>
@@ -3007,7 +3239,12 @@ async function downloadRecruiterJobs() {
 }
 
 function AnalyticsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const market = useAdvancedMarketAnalytics(30);
+  const chartData = market.trends.map((item) => ({
+    ...item,
+    label: new Date(item.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: '2-digit', month: '2-digit' }),
+  }));
   return (
     <div className="page-stack">
       <section className="panel chart-panel">
@@ -3016,7 +3253,7 @@ function AnalyticsPage() {
           <h2>{t('jobTrend')}</h2>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={trends}>
+          <AreaChart data={chartData}>
             <defs>
               <linearGradient id="matches" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#006a62" stopOpacity={0.36} />
@@ -3024,7 +3261,7 @@ function AnalyticsPage() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.12)" />
-            <XAxis dataKey="day" />
+            <XAxis dataKey="label" />
             <YAxis />
             <Tooltip />
             <Area type="monotone" dataKey="matches" stroke="#006a62" fill="url(#matches)" />
@@ -3033,9 +3270,9 @@ function AnalyticsPage() {
       </section>
       <section className="panel chart-panel">
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={trends}>
+          <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.12)" />
-            <XAxis dataKey="day" />
+            <XAxis dataKey="label" />
             <YAxis />
             <Tooltip />
             <Bar dataKey="jobs" fill="#00446e" radius={[8, 8, 0, 0]} />
@@ -3320,8 +3557,8 @@ function TopEmployers() {
       <div className="inline-heading">
         <h3>{t('featuredEmployers')}</h3>
         <div className="employer-controls" aria-hidden="true">
-          <button>‹</button>
-          <button>›</button>
+          <span>‹</span>
+          <span>›</span>
         </div>
       </div>
       <div className="employer-strip">
@@ -3673,6 +3910,9 @@ function LoginPromptModal({ onClose }: { onClose: () => void }) {
 
 function CandidateReviewModal({ candidate, onClose }: { candidate: RecruiterCandidateItem; onClose: () => void }) {
   const { t, language } = useLanguage();
+  const portfolioLinks = candidate.portfolio?.links ?? [];
+  const portfolioProjects = candidate.portfolio?.projects ?? [];
+  const hasPortfolio = portfolioLinks.length > 0 || portfolioProjects.length > 0;
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${t('viewCv')} ${candidate.name}`} onClick={onClose}>
       <section className="candidate-review-modal" onClick={(event) => event.stopPropagation()}>
@@ -3697,6 +3937,38 @@ function CandidateReviewModal({ candidate, onClose }: { candidate: RecruiterCand
           <h3>{language === 'vi' ? 'Tóm tắt CV' : 'CV summary'}</h3>
           <p>{candidate.cvSummary ?? (language === 'vi' ? 'CV chưa có phần tóm tắt.' : 'No CV summary available.')}</p>
         </div>
+        {candidate.portfolioVisible ? (
+          <div className="recruiter-portfolio-section">
+            <h3>{language === 'vi' ? 'Portfolio ứng viên' : 'Candidate portfolio'}</h3>
+            {!hasPortfolio ? <p>{language === 'vi' ? 'Ứng viên chưa thêm link hoặc dự án portfolio.' : 'The candidate has not added portfolio links or projects yet.'}</p> : null}
+            {portfolioLinks.length > 0 ? (
+              <div className="recruiter-portfolio-links">
+                {portfolioLinks.map((link) => (
+                  <a key={link.id} href={link.url} target="_blank" rel="noreferrer">
+                    {link.type || (language === 'vi' ? 'Liên kết' : 'Link')}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+            {portfolioProjects.length > 0 ? (
+              <div className="recruiter-portfolio-projects">
+                {portfolioProjects.map((project) => (
+                  <article key={project.id}>
+                    <strong>{project.name}</strong>
+                    {project.role ? <span>{project.role}</span> : null}
+                    {project.summary ? <p>{project.summary}</p> : null}
+                    {project.techStack?.length ? <ReasonChips reasons={project.techStack.slice(0, 6)} /> : null}
+                    {project.projectUrl ? <a href={project.projectUrl} target="_blank" rel="noreferrer">{language === 'vi' ? 'Mở dự án' : 'Open project'}</a> : null}
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : candidate.hasApplied && candidate.portfolioHiddenReason ? (
+          <div className="recruiter-portfolio-hidden">
+            {language === 'vi' ? 'Ứng viên đang ẩn portfolio cho nhà tuyển dụng.' : 'The candidate has hidden portfolio details from recruiters.'}
+          </div>
+        ) : null}
       </section>
     </div>
   );
@@ -3877,21 +4149,22 @@ function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; sh
 }
 
 function StickyApplyBar({ onApply }: { onApply?: () => void }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const navigate = useNavigate();
   return (
     <div className="sticky-apply-bar">
-      <button className="bolt-action" aria-label="AutoFit">
+      <button className="bolt-action" aria-label="AutoFit" onClick={() => navigate('/candidate/automation')}>
         <Zap size={22} />
       </button>
-      <button>
+      <button disabled title={language === 'vi' ? 'Backend chưa hỗ trợ lưu việc làm.' : 'Saving jobs is not supported by the backend yet.'}>
         <Bookmark size={17} />
         {t('save')}
       </button>
-      <button>
+      <button disabled title={language === 'vi' ? 'Tính năng việc làm tương tự chưa được nối backend.' : 'Similar jobs are not connected to the backend yet.'}>
         <Mail size={17} />
         {t('similarJobs')}
       </button>
-      <button>
+      <button disabled title={language === 'vi' ? 'Backend chưa hỗ trợ báo cáo việc làm.' : 'Reporting jobs is not supported by the backend yet.'}>
         <Flag size={17} />
         {t('report')}
       </button>
@@ -3901,40 +4174,27 @@ function StickyApplyBar({ onApply }: { onApply?: () => void }) {
 }
 
 function AutomationConfirmPage() {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  const [decision, setDecision] = useState<'confirm' | 'reject' | null>(null);
+  const [searchParams] = useSearchParams();
+  const { language, t } = useLanguage();
+  const token = searchParams.get('token');
+
+  function continueToBackend() {
+    if (!token) return;
+    window.location.assign(`/api/email-action/redeem?token=${encodeURIComponent(token)}`);
+  }
 
   return (
     <main className="confirm-page">
       <section className="confirm-card">
         <p className="eyebrow">{t('confirmTitle')}</p>
-        <h1>{emailAction.target}</h1>
-        <MatchingBadge score={emailAction.score} label="High" />
-        <p>{emailAction.reason}</p>
-        <small>{t('validUntil')}: {emailAction.expiresAt}</small>
-        <div className="actions">
-          <button
-            className="primary-action"
-            onClick={() => {
-              setDecision('confirm');
-              navigate('/automation/result?status=confirmed');
-            }}
-          >
-            <CheckCircle2 size={16} />
-            {t('confirm')}
-          </button>
-          <button
-            onClick={() => {
-              setDecision('reject');
-              navigate('/automation/result?status=rejected');
-            }}
-          >
-            <XCircle size={16} />
-            {t('reject')}
-          </button>
-        </div>
-        {decision ? <p className="validation-message">{decision}</p> : null}
+        <h1>{token ? (language === 'vi' ? 'Tiếp tục xác nhận trên backend' : 'Continue to backend confirmation') : (language === 'vi' ? 'Thiếu token xác nhận' : 'Confirmation token is missing')}</h1>
+        <p>{token
+          ? (language === 'vi' ? 'Backend sẽ kiểm tra thời hạn và trạng thái token trước khi cho phép thực hiện hành động.' : 'The backend will validate token expiry and state before executing the action.')
+          : (language === 'vi' ? 'Liên kết không hợp lệ. Hãy mở lại liên kết đầy đủ từ email.' : 'This link is invalid. Open the complete link from the email.')}</p>
+        <button className="primary-action" disabled={!token} onClick={continueToBackend}>
+          <CheckCircle2 size={16} />
+          {t('confirm')}
+        </button>
       </section>
     </main>
   );
@@ -4179,44 +4439,6 @@ function MarketBarTooltip({
   );
 }
 
-function TrendPanel({ title, compact = false }: { title: string; compact?: boolean }) {
-  const { t } = useLanguage();
-  const gradientPrimary = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-primary`;
-  const gradientSecondary = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-secondary`;
-
-  return (
-    <section className={compact ? 'panel trend-panel compact' : 'panel trend-panel'}>
-      <div className="section-heading inline-heading">
-        <div>
-          <p className="eyebrow">{t('signalLayer')}</p>
-          <h2>{title}</h2>
-        </div>
-        <small>{t('fullReport')}</small>
-      </div>
-      <ResponsiveContainer width="100%" height={compact ? 210 : 300}>
-        <AreaChart data={trends}>
-          <defs>
-            <linearGradient id={gradientPrimary} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00446e" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#00446e" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id={gradientSecondary} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#006a62" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#006a62" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,68,110,.1)" />
-          <XAxis dataKey="day" />
-          <YAxis />
-          <Tooltip />
-          <Area type="monotone" dataKey="matches" stroke="#00446e" strokeWidth={3} fill={`url(#${gradientPrimary})`} />
-          <Area type="monotone" dataKey="jobs" stroke="#006a62" strokeWidth={3} fill={`url(#${gradientSecondary})`} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </section>
-  );
-}
-
 function useFilteredJobs(sourceJobs: Job[], query: string) {
   return useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -4325,9 +4547,10 @@ function useSearchSuggestions(query: string) {
   return data ?? [];
 }
 
-function useJobs({ isPublic, keyword = '' }: { isPublic: boolean; keyword?: string }) {
+function useJobs({ isPublic, keyword = '', enabled = true }: { isPublic: boolean; keyword?: string; enabled?: boolean }) {
   return useQuery({
     queryKey: [isPublic ? 'public-jobs' : 'candidate-jobs', keyword],
+    enabled,
     queryFn: () => isPublic ? careerfitApi.searchJobs(keyword) : careerfitApi.getCandidateJobs(),
     refetchInterval: 60_000,
   });

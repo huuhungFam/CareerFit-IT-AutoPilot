@@ -95,9 +95,14 @@ export function AppShell({ role }: { role: ShellRole }) {
             ) : (
               <>
                 <div className="role-switch single" aria-label={t('role')}>
-                  <button className="active">{role === 'admin' ? t('admin') : role === 'candidate' ? t('candidate') : t('recruiter')}</button>
+                  <span className="active">{role === 'admin' ? t('admin') : role === 'candidate' ? t('candidate') : t('recruiter')}</span>
                 </div>
-                <button className="icon-pill" aria-label={t('notifications')}>
+                <button
+                  className="icon-pill"
+                  aria-label={t('notifications')}
+                  title={t('notifications')}
+                  onClick={() => navigate(role === 'admin' ? '/admin/email-monitor' : role === 'candidate' ? '/candidate/settings' : '/recruiter/settings')}
+                >
                   <Bell size={18} />
                   <span className="pulse" />
                 </button>

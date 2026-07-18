@@ -10,6 +10,8 @@ Backend vẫn giữ các API cũ để tương thích với frontend hiện tạ
 - Validation nâng cao cho CV/JD/job quality signals.
 - Security exception handling nhất quán hơn cho JWT, user disabled/deleted và access denied.
 - Candidate profile portfolio API.
+- Recruiter applicant/discovery response có portfolio gated theo `showPortfolioAfterApply`.
+- High-match email được kích hoạt ngay sau CV scoring nếu đạt policy, không còn chỉ chờ scheduler.
 - Candidate job card DTO có score/potential/reasons.
 - Search suggestions thống nhất alias `/api/jobs/suggestions` và `/api/jobs/search/suggestions`, có nhóm skill.
 - Advanced Analytics API theo role candidate/recruiter và market public.
@@ -76,6 +78,19 @@ Response giữ format:
 ```
 
 ## Advanced Analytics
+
+## Notification Và Portfolio Visibility
+
+Sau khi CV upload được parse/vectorize xong, `MatchingService.scoreAllJobsForCv` chấm CV với toàn bộ JD `ACTIVE` tương thích ngôn ngữ. Nếu best match đạt `highMatchThreshold`, label là `HIGH`, và Candidate bật `emailNotificationsEnabled` + `highMatchEmailEnabled`, backend gọi `EmailActionService.sendMatchNotification` ngay trong flow scoring. `NotificationPolicyGuard` vẫn enforce quiet hours, quota/ngày và cooldown theo `MATCH_NOTIFICATION + matchingId`, nên scheduler chạy sau đó không spam trùng email.
+
+Nếu không có JD hoặc không score được JD nào, backend gửi/log email no-match. Nếu best score dưới 40%, backend gửi/log email low-match.
+
+Portfolio vẫn là dữ liệu bổ sung riêng của Candidate, không thay CV. Recruiter chỉ thấy portfolio trong applicant/discovery response khi:
+
+- Candidate đã apply thật hoặc application đã qua trạng thái không phải `INVITED`.
+- Candidate setting `showPortfolioAfterApply=true`.
+
+Nếu setting tắt hoặc Candidate chưa apply, response trả `portfolioVisible=false`, `portfolio=null` và `portfolioHiddenReason`.
 
 API cũ vẫn giữ:
 

@@ -280,16 +280,21 @@ small {
   grid-template-columns: 1fr;
 }
 
-.role-switch button {
+.role-switch button,
+.role-switch > span {
   min-height: 36px;
   padding: 0 16px;
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: none;
   background: transparent;
   font-weight: 800;
 }
 
-.role-switch button.active {
+.role-switch button.active,
+.role-switch > span.active {
   color: #ffffff;
   background: linear-gradient(135deg, var(--primary), #007c8c 58%, var(--secondary));
   box-shadow: 0 10px 24px rgba(0, 89, 131, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.28);
@@ -1061,6 +1066,19 @@ small {
   gap: 16px;
 }
 
+.result-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.load-more-row {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .job-list-skeleton {
   display: grid;
   gap: 16px;
@@ -1630,12 +1648,26 @@ small {
   gap: 6px;
 }
 
-.employer-controls button {
+.employer-controls span {
   width: 34px;
   min-height: 32px;
   padding: 0;
+  display: grid;
+  place-items: center;
   border-radius: 9px;
   background: #ffffff;
+}
+
+.auth-mode-link {
+  color: var(--primary);
+  background: transparent;
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.auth-mode-link:hover {
+  color: var(--secondary);
+  background: rgba(0, 106, 98, 0.06);
 }
 
 .employer-strip {
@@ -2085,6 +2117,55 @@ small {
   margin: 4px 0 0;
   overflow-wrap: anywhere;
   font-weight: 800;
+}
+
+.recruiter-portfolio-section {
+  display: grid;
+  gap: 12px;
+}
+
+.recruiter-portfolio-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recruiter-portfolio-links a,
+.recruiter-portfolio-projects a {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.recruiter-portfolio-projects {
+  display: grid;
+  gap: 10px;
+}
+
+.recruiter-portfolio-projects article {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-low);
+}
+
+.recruiter-portfolio-projects article > span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.recruiter-portfolio-projects p {
+  margin: 0;
+}
+
+.recruiter-portfolio-hidden {
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface-low);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .login-prompt-modal h2 {

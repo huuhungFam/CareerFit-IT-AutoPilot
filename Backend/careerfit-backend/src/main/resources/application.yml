@@ -105,10 +105,12 @@ app:
     score-label-high-max: 90.0
 
   scheduler:
-    job-scan-cron: "0 0 * * * *"         # every hour
+    zone: "Asia/Ho_Chi_Minh"
+    recompute-delay-ms: 1800000
+    notification-delay-ms: 14400000
+    auto-apply-delay-ms: 7200000
     daily-digest-cron: "0 0 8 * * *"     # 08:00 daily
-    token-cleanup-cron: "0 0 2 * * *"    # 02:00 daily
-    market-snapshot-cron: "0 30 1 * * *" # 01:30 daily
+    token-cleanup-cron: "0 0 3 * * *"    # 03:00 daily
 
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
@@ -131,6 +133,9 @@ springdoc:
   default-produces-media-type: application/json
 
 management:
+  health:
+    mail:
+      enabled: ${APP_MAIL_ENABLED:false}
   endpoints:
     web:
       exposure:

@@ -593,6 +593,9 @@ Quy tắc đọc kết quả:
 | E2E-020 | P1 | Email notification toggle | Candidate | Tắt email notification, thực hiện apply/withdraw/invite | Domain action vẫn chạy, email bị skip/log |
 | E2E-021 | P1 | Auto-Apply run-now | Candidate | Bật auto-apply threshold hợp lệ, gọi run-now | Tạo tối đa 3 application hoặc trả reason hợp lệ |
 | E2E-022 | P1 | Passwordless dev flow | Guest | Request passwordless, dùng dev token verify | Verify trả JWT, token used không dùng lại được |
+| E2E-023 | P0 | Settings persistence | Candidate | Đổi alert threshold, lưu, reload rồi khôi phục giá trị cũ | PATCH `/api/settings/me` trả 200 và giá trị vẫn đúng sau reload |
+| E2E-024 | P0 | Recommendations API | Candidate | Mở `/candidate/recommendations`, chọn job đầu tiên | Danh sách lấy từ `/api/matches/me/cards`, mở đúng `/candidate/jobs/{id}` |
+| E2E-025 | P0 | Role route smoke | Candidate/Recruiter/Admin | Duyệt toàn bộ route chính theo role và theo dõi `pageerror` | Mọi route render `main` không rỗng và không có runtime error |
 
 ## 17. Checklist Chạy Regression Nhanh Trước Demo
 

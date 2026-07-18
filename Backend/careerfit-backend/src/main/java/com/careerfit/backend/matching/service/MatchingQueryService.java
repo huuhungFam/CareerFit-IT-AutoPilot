@@ -4,6 +4,7 @@ import com.careerfit.backend.application.entity.Application;
 import com.careerfit.backend.application.repository.ApplicationRepository;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
+import com.careerfit.backend.candidate.service.CandidatePortfolioVisibilityService;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.config.AppProperties;
 import com.careerfit.backend.cv.entity.CV;
@@ -53,6 +54,7 @@ public class MatchingQueryService {
     private final EmployerProfileRepository employerRepo;
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
+    private final CandidatePortfolioVisibilityService portfolioVisibilityService;
 
     public MatchingQueryService(MatchingRepository matchingRepo,
                                 JobRepository jobRepo,
@@ -61,7 +63,8 @@ public class MatchingQueryService {
                                 ApplicationRepository applicationRepo,
                                 EmployerProfileRepository employerRepo,
                                 ObjectMapper objectMapper,
-                                AppProperties appProperties) {
+                                AppProperties appProperties,
+                                CandidatePortfolioVisibilityService portfolioVisibilityService) {
         this.matchingRepo = matchingRepo;
         this.jobRepo = jobRepo;
         this.candidateRepo = candidateRepo;
@@ -70,6 +73,7 @@ public class MatchingQueryService {
         this.employerRepo = employerRepo;
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
+        this.portfolioVisibilityService = portfolioVisibilityService;
     }
 
     // ── Recruiter: Top CVs per Job ────────────────────────────────────────
@@ -212,13 +216,15 @@ public class MatchingQueryService {
 
         Map<UUID, EmployerProfile> employersByRecruiter = loadEmployersByRecruiter(visible);
         Map<UUID, MatchingDtos.TieBreakMeta> tieMeta = buildTieMeta(visible);
+        long totalMatches = matchingRepo.countActiveMatchesByCvId(defaultCv.getId());
+        int responseTotalPages = totalPages((int) totalMatches, pageSize);
 
         List<MatchingDtos.MatchedJobResponse> responses = visible.stream()
                 .map(m -> toMatchedJob(m, employersByRecruiter, tieMeta.get(m.getId())))
                 .toList();
 
         return new MatchingDtos.MatchedJobPageResponse(
-                responses, responses.size(), page, pageSize, 1,
+                responses, totalMatches, page, pageSize, responseTotalPages,
                 buildMeta(defaultCv, filtered, visible, effectiveMinScore)
         );
     }
@@ -250,13 +256,15 @@ public class MatchingQueryService {
 
         Map<UUID, EmployerProfile> employersByRecruiter = loadEmployersByRecruiter(visible);
         Map<UUID, MatchingDtos.TieBreakMeta> tieMeta = buildTieMeta(visible);
+        long totalMatches = matchingRepo.countActiveMatchesByCvId(defaultCv.getId());
+        int responseTotalPages = totalPages((int) totalMatches, pageSize);
 
         List<MatchingDtos.CandidateJobCardResponse> jobs = visible.stream()
                 .map(m -> toCandidateJobCard(m, employersByRecruiter, tieMeta.get(m.getId())))
                 .toList();
 
         return new MatchingDtos.CandidateJobCardPageResponse(
-                jobs, jobs.size(), page, pageSize, 1,
+                jobs, totalMatches, page, pageSize, responseTotalPages,
                 buildMeta(defaultCv, filtered, visible, effectiveMinScore));
     }
 
@@ -353,6 +361,7 @@ public class MatchingQueryService {
         CV cv = m.getCv();
         Candidate candidate = cv.getCandidate();
         var user = candidate.getUser();
+        var portfolioVisibility = portfolioVisibilityService.buildForRecruiter(candidate, hasApplied(application));
         return new MatchingDtos.RecruiterCandidateDiscoveryResponse(
                 m.getId().toString(),
                 cv.getId().toString(),
@@ -374,7 +383,10 @@ public class MatchingQueryService {
                 m.getPotentialReasonJson() != null
                         ? m.getPotentialReasonJson().replace("\"", "") : null,
                 m.getCreatedAt(),
-                tie
+                tie,
+                portfolioVisibility.visible(),
+                portfolioVisibility.portfolio(),
+                portfolioVisibility.hiddenReason()
         );
     }
 

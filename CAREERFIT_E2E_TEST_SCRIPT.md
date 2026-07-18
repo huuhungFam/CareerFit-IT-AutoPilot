@@ -446,6 +446,8 @@ Kết quả mong đợi:
 - URL không phải HTTP(S), ví dụ `javascript:alert(1)`, trả `400 BAD_REQUEST`.
 - Recruiter/admin gọi endpoint candidate Portfolio trả `403`.
 - Candidate không thể sửa hoặc xóa link/project thuộc candidate khác.
+- Nếu Candidate đã apply và setting `showPortfolioAfterApply=true`, Recruiter mở modal review trong `/recruiter/jobs` sẽ thấy portfolio trong candidate card response.
+- Nếu Candidate tắt `showPortfolioAfterApply`, response recruiter trả `portfolioVisible=false` và UI không hiển thị link/project.
 
 ## 12. Admin MVP control panel
 

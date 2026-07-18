@@ -116,6 +116,34 @@ export interface RecruiterCandidateItem {
   jobFreshness?: string;
   salaryFit?: string;
   locationFit?: string;
+  portfolioVisible?: boolean;
+  portfolio?: CandidatePortfolio | null;
+  portfolioHiddenReason?: string | null;
+}
+
+export interface CandidatePortfolioLink {
+  id: string;
+  type: string;
+  url: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface CandidatePortfolioProject {
+  id: string;
+  name: string;
+  role?: string | null;
+  summary?: string | null;
+  techStack?: string[];
+  projectUrl?: string | null;
+  impact?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface CandidatePortfolio {
+  links: CandidatePortfolioLink[];
+  projects: CandidatePortfolioProject[];
 }
 
 export interface Application {

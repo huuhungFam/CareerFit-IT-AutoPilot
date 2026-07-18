@@ -1,9 +1,25 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 
 test.describe.configure({ mode: 'serial' });
 
 test.describe('P0 Flows', () => {
+
+  async function login(page: import('@playwright/test').Page, username: 'ca' | 're' | 'ad') {
+    await page.goto('/login');
+    let status = 0;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await page.getByPlaceholder('ca / re / ad').fill(username);
+      await page.locator('input[type="password"]').fill('1');
+      const loginPromise = page.waitForResponse(response => response.url().includes('/api/auth/login'));
+      await page.locator('button[type="submit"]').click();
+      status = (await loginPromise).status();
+      if (status === 200) break;
+      await page.waitForTimeout(500);
+    }
+    expect(status).toBe(200);
+    await expect(page.locator('nav')).toBeVisible({ timeout: 10000 });
+  }
 
   test('Guest search and job detail', async ({ page }) => {
     await page.goto('/jobs');
@@ -31,7 +47,7 @@ test.describe('P0 Flows', () => {
     await expect(applyBtn).toBeVisible({ timeout: 10000 });
   });
 
-  test('Candidate login, apply and withdraw', async ({ page }) => {
+  test('Candidate login, apply and withdraw', async ({ page, request }) => {
     page.on('response', response => {
       console.log(`[NETWORK] ${response.status()} ${response.url()}`);
     });
@@ -47,15 +63,33 @@ test.describe('P0 Flows', () => {
     
     await expect(page.locator('nav')).toBeVisible({ timeout: 10000 });
     
-    // Find a job to apply
+    const candidateToken = await page.evaluate(() => sessionStorage.getItem('careerfit.accessToken'));
+    if (!candidateToken) throw new Error('Candidate token was not returned');
+    const priorApplications = await request.get('http://localhost:8080/api/applications/me?page=0&size=100', {
+      headers: { Authorization: `Bearer ${candidateToken}` },
+    });
+    expect(priorApplications.status()).toBe(200);
+    const appliedTitles = new Set<string>(
+      ((await priorApplications.json())?.data?.applications ?? []).map((item: any) => item.jobTitle)
+    );
+
     await page.goto('/candidate/jobs');
-    
-    const firstJobCard = page.locator('.job-card:not(.skeleton-card)').first();
-    await expect(firstJobCard).toBeVisible({ timeout: 15000 });
-    const jobTitle = await firstJobCard.locator('h3').textContent();
-    if (!jobTitle) throw new Error("Job title not found");
-    
-    await firstJobCard.click();
+    const jobCards = page.locator('.job-card:not(.skeleton-card)');
+    await expect(jobCards.first()).toBeVisible({ timeout: 15000 });
+    const cardCount = await jobCards.count();
+    let selectedCard: Locator | null = null;
+    let jobTitle = '';
+    for (let index = 0; index < cardCount; index += 1) {
+      const card = jobCards.nth(index);
+      const title = (await card.locator('h3').textContent())?.trim() ?? '';
+      if (title && !appliedTitles.has(title)) {
+        selectedCard = card;
+        jobTitle = title;
+        break;
+      }
+    }
+    if (!selectedCard || !jobTitle) throw new Error('No unapplied Job was available for the Candidate E2E flow');
+    await selectedCard.click();
     await page.waitForURL(/\/candidate\/jobs\/.+/);
 
     const applyBtn = page.locator('.jd-detail-page button.primary-action').filter({ hasText: /apply|ứng tuyển/i }).first();
@@ -64,7 +98,6 @@ test.describe('P0 Flows', () => {
     const applyPromise = page.waitForResponse(response => response.url().includes('/api/applications') && response.status() === 201);
     await applyBtn.click();
     await applyPromise;
-    
     await expect(page).toHaveURL(/\/candidate\/applications/, { timeout: 15000 });
     
     // Withdraw the specific application
@@ -80,9 +113,69 @@ test.describe('P0 Flows', () => {
     await withdrawPromise;
     
     await expect(applicationItem.locator('text=/withdrawn|đã rút|not_interested/i').first()).toBeVisible({ timeout: 10000 });
+
   });
 
-  test('Recruiter create JD and verify', async ({ page }) => {
+  test('Passwordless login request reaches backend', async ({ page }) => {
+    await page.goto('/login');
+    const usernameInput = page.getByPlaceholder('ca / re / ad');
+    await usernameInput.fill(`e2e-${Date.now()}@example.com`);
+
+    const requestPromise = page.waitForResponse(response =>
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/auth/passwordless/request') &&
+      response.status() === 200
+    );
+    await page.getByRole('button', { name: /liên kết đăng nhập|sign-in link|magic/i }).click();
+    await requestPromise;
+    await expect(page.locator('.action-message')).toContainText(/đã được gửi|request sent/i);
+  });
+
+  test('Candidate settings persist after reload', async ({ page }) => {
+    await login(page, 'ca');
+    await page.goto('/candidate/settings');
+
+    const threshold = page.getByLabel(/ngưỡng cảnh báo|alert threshold/i);
+    await expect(threshold).toBeVisible({ timeout: 10000 });
+    const originalValue = await threshold.inputValue();
+    const changedValue = originalValue === '89' ? '90' : '89';
+
+    await threshold.fill(changedValue);
+    const savePromise = page.waitForResponse(response =>
+      response.request().method() === 'PATCH' &&
+      response.url().includes('/api/settings/me') &&
+      response.status() === 200
+    );
+    await page.getByRole('button', { name: /lưu cài đặt|save settings/i }).click();
+    await savePromise;
+    await expect(page.locator('.action-message')).toContainText(/đã lưu|settings saved/i);
+
+    await page.reload();
+    await expect(threshold).toHaveValue(changedValue, { timeout: 10000 });
+
+    await threshold.fill(originalValue);
+    const restorePromise = page.waitForResponse(response =>
+      response.request().method() === 'PATCH' &&
+      response.url().includes('/api/settings/me') &&
+      response.status() === 200
+    );
+    await page.getByRole('button', { name: /lưu cài đặt|save settings/i }).click();
+    await restorePromise;
+  });
+
+  test('Candidate recommendations use API jobs and open detail', async ({ page }) => {
+    await login(page, 'ca');
+    const jobsPromise = page.waitForResponse(response => response.url().includes('/api/matches/me/cards') && response.status() === 200);
+    await page.goto('/candidate/recommendations');
+    await jobsPromise;
+
+    const firstJobCard = page.locator('.job-card:not(.skeleton-card)').first();
+    await expect(firstJobCard).toBeVisible({ timeout: 10000 });
+    await firstJobCard.click();
+    await expect(page).toHaveURL(/\/candidate\/jobs\/.+/, { timeout: 10000 });
+  });
+
+  test('Recruiter create JD and verify', async ({ page, request }) => {
     await page.goto('/login');
     
     const usernameInput = page.getByPlaceholder('ca / re / ad');
@@ -109,11 +202,25 @@ test.describe('P0 Flows', () => {
     await modal.locator('input[name="salaryMin"]').first().fill('15000000');
     await modal.locator('input[name="salaryMax"]').first().fill('25000000');
     
-    const createPromise = page.waitForResponse(response => response.url().includes('/api/recruiter/jobs') && response.status() === 200);
+    const createPromise = page.waitForResponse(response =>
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/jobs') &&
+      response.status() === 201
+    );
     await modal.locator('button.primary-action').first().click();
-    await createPromise;
+    const createResponse = await createPromise;
+    const createdPayload = await createResponse.json();
+    const createdJobId = createdPayload?.data?.id;
+    if (!createdJobId) throw new Error('Created Job ID was not returned');
     
     await expect(page.locator("text=" + uniqueTitle).first()).toBeVisible({ timeout: 10000 });
+
+    const token = await page.evaluate(() => sessionStorage.getItem('careerfit.accessToken'));
+    if (!token) throw new Error('Recruiter token was not available for cleanup');
+    const deleteResponse = await request.delete(`http://localhost:8080/api/jobs/${createdJobId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(deleteResponse.status()).toBe(200);
   });
 
   test('Admin suspend and activate user', async ({ page }) => {
@@ -149,5 +256,48 @@ test.describe('P0 Flows', () => {
     await activatePromise;
     
     await expect(suspendBtn).toBeVisible({ timeout: 10000 });
+  });
+
+  test('Candidate routes render without runtime errors', async ({ page }) => {
+    const runtimeErrors: string[] = [];
+    page.on('pageerror', error => runtimeErrors.push(error.message));
+    await login(page, 'ca');
+    for (const route of [
+      '/candidate', '/candidate/jobs', '/candidate/upload', '/candidate/profile',
+      '/candidate/recommendations', '/candidate/advanced-analytics',
+      '/candidate/applications', '/candidate/automation', '/candidate/settings',
+    ]) {
+      await page.goto(route);
+      await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('main')).not.toBeEmpty();
+    }
+    expect(runtimeErrors).toEqual([]);
+  });
+
+  test('Recruiter routes render without runtime errors', async ({ page }) => {
+    const runtimeErrors: string[] = [];
+    page.on('pageerror', error => runtimeErrors.push(error.message));
+    await login(page, 're');
+    for (const route of [
+      '/recruiter', '/recruiter/jobs', '/recruiter/analytics',
+      '/recruiter/advanced-analytics', '/recruiter/automation', '/recruiter/settings',
+    ]) {
+      await page.goto(route);
+      await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('main')).not.toBeEmpty();
+    }
+    expect(runtimeErrors).toEqual([]);
+  });
+
+  test('Admin routes render without runtime errors', async ({ page }) => {
+    const runtimeErrors: string[] = [];
+    page.on('pageerror', error => runtimeErrors.push(error.message));
+    await login(page, 'ad');
+    for (const route of ['/admin', '/admin/users', '/admin/jobs', '/admin/audit-logs', '/admin/email-monitor']) {
+      await page.goto(route);
+      await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('main')).not.toBeEmpty();
+    }
+    expect(runtimeErrors).toEqual([]);
   });
 });

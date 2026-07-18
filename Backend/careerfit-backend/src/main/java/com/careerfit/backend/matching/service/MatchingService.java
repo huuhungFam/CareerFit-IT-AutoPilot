@@ -2,12 +2,14 @@ package com.careerfit.backend.matching.service;
 
 import com.careerfit.backend.audit.entity.AuditLog;
 import com.careerfit.backend.audit.repository.AuditLogRepository;
+import com.careerfit.backend.automation.service.AutomationPolicyService;
 import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.job.entity.Job;
 import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
+import com.careerfit.backend.notification.service.EmailActionService;
 import com.careerfit.backend.notification.service.NotificationEmailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,6 +39,8 @@ public class MatchingService {
     private final ObjectMapper objectMapper;
     private final NotificationEmailService notificationEmailService;
     private final CVRepository cvRepo;
+    private final AutomationPolicyService automationPolicyService;
+    private final EmailActionService emailActionService;
 
     public MatchingService(JobRepository jobRepo,
                            MatchingRepository matchingRepo,
@@ -44,7 +48,9 @@ public class MatchingService {
                            AuditLogRepository auditRepo,
                            ObjectMapper objectMapper,
                            NotificationEmailService notificationEmailService,
-                           CVRepository cvRepo) {
+                           CVRepository cvRepo,
+                           AutomationPolicyService automationPolicyService,
+                           EmailActionService emailActionService) {
         this.jobRepo = jobRepo;
         this.matchingRepo = matchingRepo;
         this.scoringService = scoringService;
@@ -52,6 +58,8 @@ public class MatchingService {
         this.objectMapper = objectMapper;
         this.notificationEmailService = notificationEmailService;
         this.cvRepo = cvRepo;
+        this.automationPolicyService = automationPolicyService;
+        this.emailActionService = emailActionService;
     }
 
     /**
@@ -83,7 +91,7 @@ public class MatchingService {
         }
 
         log.info("Batch matching done for CV={}. Scored={}, Skipped={}", cv.getId(), scored, skipped);
-        notifyCandidateWhenNoUsefulMatches(cv, activeJobs.size(), scored);
+        notifyCandidateAfterScoring(cv, activeJobs.size(), scored);
 
         auditRepo.save(new AuditLog(AuditLog.ActorType.SYSTEM, null, "CV_BATCH_MATCH_DONE")
                 .withTarget("CV", cv.getId())
@@ -169,7 +177,7 @@ public class MatchingService {
         return cvLang.equals(jobLang) || "en".equals(jobLang); // English jobs accept all CVs
     }
 
-    private void notifyCandidateWhenNoUsefulMatches(CV cv, int activeJobCount, int scored) {
+    private void notifyCandidateAfterScoring(CV cv, int activeJobCount, int scored) {
         var user = cv.getCandidate().getUser();
         if (activeJobCount == 0 || scored == 0) {
             notificationEmailService.sendNoMatches(user, cv.getDisplayName());
@@ -185,6 +193,14 @@ public class MatchingService {
             return;
         }
         double bestScore = best.getNormalizedScore().doubleValue();
+        var policy = automationPolicyService.getOrCreate(user.getId());
+        if (policy.isEmailNotificationsEnabled()
+                && policy.isHighMatchEmailEnabled()
+                && bestScore >= policy.getMinScoreToNotify()
+                && best.getLabel() == Matching.MatchLabel.HIGH) {
+            emailActionService.sendMatchNotification(user, best);
+            return;
+        }
         if (bestScore < 40.0) {
             notificationEmailService.sendLowMatches(user, bestScore);
         }

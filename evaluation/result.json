@@ -1,11 +1,11 @@
 {
   "schemaVersion" : "1.2",
-  "timestamp" : "Wed Jul 01 13:19:23 ICT 2026",
+  "timestamp" : "Sat Jul 04 11:09:38 ICT 2026",
   "dataset" : {
     "holdoutPairs" : 300,
     "trainPairs" : 300,
     "cvs" : 100,
-    "hash" : "b57efd6ed2f110a1433cd88bb155b26f12ea2059b04007ed82bcf14ec6df7a4d",
+    "hash" : "6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2",
     "jobs" : 50
   },
   "rocchioParams" : {
@@ -26,22 +26,22 @@
     "coverage" : 1.0
   },
   "rocchio" : {
-    "avgPAt5" : 0.16800000000000004,
-    "avgRecallAt5" : 0.84,
-    "avgNdcgAt3" : 0.81,
-    "avgNdcgAt5" : 0.8177370561446908,
-    "avgNdcgAt10" : 0.8304243227246372,
-    "avgMrr" : 0.8236174915555721,
-    "avgHitRate5" : 0.84,
+    "avgPAt5" : 0.17200000000000004,
+    "avgRecallAt5" : 0.86,
+    "avgNdcgAt3" : 0.83,
+    "avgNdcgAt5" : 0.8377370561446909,
+    "avgNdcgAt10" : 0.8504243227246371,
+    "avgMrr" : 0.842665110603191,
+    "avgHitRate5" : 0.86,
     "coverage" : 1.0
   },
   "delta" : {
-    "avgPAt5" : 0.15600000000000003,
-    "avgNdcgAt3" : 0.78,
-    "avgNdcgAt5" : 0.78,
-    "avgNdcgAt10" : 0.78,
-    "avgRecallAt5" : 0.78,
-    "avgMrr" : 0.764861994586074,
-    "avgHitRate5" : 0.78
+    "avgPAt5" : 0.16000000000000003,
+    "avgNdcgAt3" : 0.7999999999999999,
+    "avgNdcgAt5" : 0.8,
+    "avgNdcgAt10" : 0.7999999999999999,
+    "avgRecallAt5" : 0.8,
+    "avgMrr" : 0.7839096136336929,
+    "avgHitRate5" : 0.8
   }
 }

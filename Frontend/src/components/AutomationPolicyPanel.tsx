@@ -200,7 +200,8 @@ function RangeSetting({
   );
 }
 
-function localizeNextScan(value: string, language: 'vi' | 'en') {
+function localizeNextScan(value: string | null | undefined, language: 'vi' | 'en') {
+  if (!value) return language === 'vi' ? 'Theo lịch của backend' : 'Backend scheduled';
   if (language === 'en') return value;
   return value
     .replace(/Backend scheduled/gi, 'Theo lịch của backend')

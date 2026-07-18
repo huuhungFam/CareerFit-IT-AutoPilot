@@ -17,6 +17,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * Builds and sends email action tokens.
@@ -140,9 +142,19 @@ public class EmailActionService {
     private String createToken(UserAccount recipient, Matching matching, EmailAction.ActionType type) {
         String token = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
         Instant expires = Instant.now().plus(TOKEN_VALIDITY_HOURS, ChronoUnit.HOURS);
-        var action = new EmailAction(token, recipient, matching, type, expires);
+        var action = new EmailAction(hashToken(token), recipient, matching, type, expires);
         emailActionRepo.save(action);
         return token;
+    }
+
+    private String hashToken(String token) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to hash email action token", e);
+        }
     }
 
     // ── HTML Builders ─────────────────────────────────────────────────────

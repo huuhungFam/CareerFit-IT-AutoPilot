@@ -43,6 +43,13 @@ public interface MatchingRepository extends JpaRepository<Matching, UUID> {
         """)
     List<Matching> findTopMatchesByCvId(@Param("cvId") UUID cvId, Pageable pageable);
 
+    @Query("""
+        SELECT COUNT(m) FROM Matching m
+        WHERE m.cv.id = :cvId
+          AND m.job.status = 'ACTIVE'
+        """)
+    long countActiveMatchesByCvId(@Param("cvId") UUID cvId);
+
     /** Rows flagged for recompute (after Rocchio update). */
     List<Matching> findByNeedsRecomputeTrue();
 

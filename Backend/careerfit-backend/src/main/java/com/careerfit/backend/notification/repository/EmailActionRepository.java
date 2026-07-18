@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public interface EmailActionRepository extends JpaRepository<EmailAction, UUID> {
 
-    Optional<EmailAction> findByToken(String token);
+    Optional<EmailAction> findByTokenHash(String tokenHash);
 
     List<EmailAction> findByMatchingId(UUID matchingId);
 

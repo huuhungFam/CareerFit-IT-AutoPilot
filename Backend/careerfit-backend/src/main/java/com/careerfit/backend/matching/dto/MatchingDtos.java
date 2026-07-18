@@ -1,5 +1,7 @@
 package com.careerfit.backend.matching.dto;
 
+import com.careerfit.backend.candidate.dto.CandidateDtos;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -150,7 +152,10 @@ public class MatchingDtos {
         List<String> matchReasons,
         String potentialReason,
         Instant matchedAt,
-        TieBreakMeta tie
+        TieBreakMeta tie,
+        boolean portfolioVisible,
+        CandidateDtos.PortfolioResponse portfolio,
+        String portfolioHiddenReason
     ) {}
 
     public record RecruiterCandidateDiscoveryPageResponse(

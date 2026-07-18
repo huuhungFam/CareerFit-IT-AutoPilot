@@ -531,6 +531,7 @@ Trong `careerfitApi` hiện có:
 Các phần đã nối backend thật trong `api.ts`; request lỗi được giữ là lỗi để UI hiển thị đúng trạng thái:
 
 - Login bằng `POST /api/auth/login`; tài khoản test `ca` / `1`, `re` / `1`, `ad` / `1` phải là seed thật từ backend và không tạo mock session nếu backend không chạy.
+- Đăng ký bằng `POST /api/auth/register` và yêu cầu magic-link bằng `POST /api/auth/passwordless/request`.
 - Public job search/detail/suggestions.
 - Candidate job cards từ `/matches/me/cards`.
 - Candidate apply, applications list và withdraw.
@@ -542,15 +543,19 @@ Các phần đã nối backend thật trong `api.ts`; request lỗi được gi�
 - Candidate Portfolio links/projects CRUD, gồm loading, empty, error và delete confirmation state.
 - Candidate upload PDF/ảnh/DOCX, OCR status polling và Manual CV.
 - Candidate/Recruiter Settings qua `GET/PATCH /api/settings/me`.
+- Candidate fixed-profile account name qua `PATCH /api/candidates/me/account`.
+- Candidate recommendations, dashboard counters và dashboard Apply dùng dữ liệu/mutation thật.
 - Recruiter create/edit/status/delete/export CSV cho JD.
 - Admin dashboard/users/jobs/audit/email monitor không còn dữ liệu fallback giả.
 
 Các phần UI còn chủ yếu static hoặc chưa có contract hoàn chỉnh:
 
 - Save job/bookmark.
-- View CV chi tiết từ recruiter candidate card.
+- Follow company, similar jobs và report job.
+- Notification inbox/list.
+- Delete account.
 
-`src/data/mock.ts` vẫn còn được import cho một số biểu đồ/copy trình bày tĩnh, nhưng không được dùng trong `queryFn.catch`, mapper DTO, Admin API hoặc candidate/recruiter data fetch.
+`src/data/mock.ts` chỉ còn được dùng cho copy/default trình bày cục bộ và policy khởi tạo trước khi query hoàn tất; không được dùng trong `queryFn.catch`, mapper DTO, Admin API hoặc candidate/recruiter data fetch.
 
 ## 12. DTO Mapping: Backend Shape Sang UI Shape
 
@@ -882,8 +887,9 @@ Backend connected:
 
 Static/mock:
 
-- market dashboard numbers;
 - top employers list.
+
+Market dashboard và recruiter analytics đọc `/api/analytics/market/*`; job trong employer detail luôn lấy ID thật từ job API để link chi tiết không dẫn tới 404 giả.
 
 ### 18.2 Public Jobs Search
 

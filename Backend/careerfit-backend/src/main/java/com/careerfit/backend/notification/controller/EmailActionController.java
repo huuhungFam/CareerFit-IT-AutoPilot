@@ -15,11 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * Handles one-click email action token redemption.
@@ -54,7 +57,19 @@ public class EmailActionController {
     }
 
     @GetMapping(value = "/redeem", produces = MediaType.TEXT_HTML_VALUE)
-    @Operation(summary = "Redeem a one-click email action token (public, no JWT)")
+    @Operation(summary = "Display confirmation for an email action token (public, no state change)")
+    public void confirm(@RequestParam String token, HttpServletResponse response) throws IOException {
+        response.setContentType("text/html; charset=UTF-8");
+        PrintWriter out = response.getWriter();
+        EmailAction action = emailActionRepo.findByTokenHash(hashToken(token)).orElse(null);
+        if (action == null) { out.write(errorPage("Token không hợp lệ", "Liên kết này không tồn tại hoặc đã bị thu hồi.")); return; }
+        if (!action.isPending()) { out.write(infoPage("Đã xử lý", "Hành động này đã được thực hiện trước đó.")); return; }
+        if (action.isExpired()) { out.write(errorPage("Token hết hạn", "Liên kết này đã hết hạn.")); return; }
+        out.write(confirmPage(token, action.getActionType().name()));
+    }
+
+    @PostMapping(value = "/redeem", produces = MediaType.TEXT_HTML_VALUE)
+    @Operation(summary = "Execute a confirmed email action token (public, no JWT)")
     @Transactional
     public void redeem(@RequestParam String token,
                        HttpServletResponse response) throws IOException {
@@ -62,7 +77,7 @@ public class EmailActionController {
         response.setContentType("text/html; charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        EmailAction action = emailActionRepo.findByToken(token).orElse(null);
+        EmailAction action = emailActionRepo.findByTokenHash(hashToken(token)).orElse(null);
 
         // ── Validation ────────────────────────────────────────────────────
         if (action == null) {
@@ -143,6 +158,30 @@ public class EmailActionController {
 
     private String infoPage(String title, String detail) {
         return page("ℹ️ " + title, detail, "#6366f1");
+    }
+
+    private String confirmPage(String token, String actionType) {
+        return """
+            <!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Xác nhận hành động — CareerFit</title></head>
+            <body style="font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+              <div style="max-width:480px;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:36px;text-align:center">
+                <h2 style="color:#93c5fd">Xác nhận hành động</h2><p>Hành động: <strong>%s</strong></p>
+                <p style="color:#94a3b8">Bấm xác nhận để thực thi. Việc mở liên kết chưa thay đổi dữ liệu.</p>
+                <form method="post" action="/api/email-action/redeem"><input type="hidden" name="token" value="%s">
+                  <button type="submit" style="border:0;border-radius:8px;padding:12px 28px;background:#4f46e5;color:white;font-weight:700">Xác nhận</button>
+                </form>
+              </div></body></html>
+            """.formatted(actionType, token);
+    }
+
+    private String hashToken(String token) {
+        try {
+            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to hash email action token", e);
+        }
     }
 
     private String page(String title, String body, String accent) {

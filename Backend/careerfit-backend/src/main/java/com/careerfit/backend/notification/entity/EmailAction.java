@@ -20,7 +20,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "email_action_token",
         indexes = {
-            @Index(name = "idx_email_action_token_token",   columnList = "token"),
+            @Index(name = "idx_email_action_token_hash",    columnList = "token_hash"),
             @Index(name = "idx_email_action_token_expires", columnList = "expires_at"),
             @Index(name = "idx_email_action_token_recip",   columnList = "recipient_id")
         })
@@ -30,8 +30,8 @@ public class EmailAction {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "token", nullable = false, unique = true, length = 64)
-    private String token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    private String tokenHash;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
@@ -76,9 +76,9 @@ public class EmailAction {
 
     protected EmailAction() {}
 
-    public EmailAction(String token, UserAccount recipient, Matching matching,
+    public EmailAction(String tokenHash, UserAccount recipient, Matching matching,
                        ActionType actionType, Instant expiresAt) {
-        this.token = token;
+        this.tokenHash = tokenHash;
         this.recipient = recipient;
         this.matching = matching;
         this.actionType = actionType;
@@ -98,7 +98,7 @@ public class EmailAction {
     // ── Getters / Setters ─────────────────────────────────────────────────
 
     public UUID getId()                     { return id; }
-    public String getToken()                { return token; }
+    public String getTokenHash()            { return tokenHash; }
     public UserAccount getRecipient()       { return recipient; }
     public Matching getMatching()           { return matching; }
     public ActionType getActionType()       { return actionType; }

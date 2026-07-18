@@ -187,6 +187,9 @@ Hiện tại UI candidate có các luồng chính:
 - Trang Thống kê cũ của recruiter vẫn giữ tại `/recruiter/analytics`.
 - Advanced Analytics UI đã có route riêng `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`, sử dụng market analytics public kết hợp analytics theo role. Backend contract cho UI nằm tại `Frontend/ADVANCED_ANALYTICS_API.md`.
 - Candidate application flow đã nối API thật: Apply từ job card/detail gọi `POST /api/applications`, trang `/candidate/applications` đọc `GET /api/applications/me` và withdraw gọi `DELETE /api/applications/{id}`.
+- Dashboard Candidate lấy số gợi ý, số đơn ứng tuyển và trạng thái Auto-Apply từ API thật; nút Apply trên job mới thực hiện `POST /api/applications` thay vì chỉ đổi giao diện.
+- Trang Gợi ý đọc `/api/matches/me/cards`, xếp các kết quả tốt nhất hiện có và nối xem chi tiết, ứng tuyển, bỏ qua/phản hồi. Trang không còn phụ thuộc ngưỡng cứng khiến tài khoản có match thấp bị rỗng giả.
+- Candidate/Recruiter Settings đọc và lưu `/api/settings/me`; giá trị giữ nguyên sau reload. Đăng ký và yêu cầu magic-link cũng gọi backend thật.
 - AutoFit/Automation page đã nối policy backend, có toggle `emailNotificationsEnabled`/no-spam, Auto-Apply threshold, high-match email, daily digest, quiet hours, cooldown và nút `Run now` để gọi `POST /api/automation/auto-apply/run-now` khi cần test ngay.
 - Recruiter job page đã nối discovery/invite/status flow: `GET /api/recruiter/jobs/{jobId}/candidates`, `POST /api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite`, `PATCH /api/recruiter/applications/{id}/status`.
 - UX hiện tại đã được polish: job card có avatar công ty, metadata có icon, insight row, hover/detail action rõ hơn; search suggestions và modal có animation; job list có skeleton loading khi API đang fetch; các interactive surfaces có focus visible, hover lift và reduced-motion support.
@@ -202,10 +205,20 @@ npm run build
 
 Build output sẽ nằm trong `Frontend/dist`.
 
+Chạy regression E2E Chromium khi PostgreSQL và backend đang hoạt động:
+
+```powershell
+cd Frontend
+npm run test:e2e -- --project=chromium --reporter=line
+```
+
+Bộ test hiện kiểm tra guest search/detail, magic-link request, candidate apply/withdraw, settings persistence, recommendations, recruiter create/cleanup JD, admin suspend/activate và smoke toàn bộ route của ba role.
+
 ### Ghi chú hiện tại
 
 - Frontend da co API client that cho auth, public/candidate jobs, suggestions va recruiter dashboard/jobs.
 - Các route API-driven không còn fallback sang dữ liệu mock khi backend lỗi. UI phải hiển thị đúng loading, error hoặc empty state; dữ liệu trong `src/data/mock.ts` chỉ còn phục vụ các phần trình bày tĩnh chưa có contract riêng.
+- Các tính năng chưa có backend contract gồm lưu việc làm, theo dõi công ty, báo cáo/việc làm tương tự, hộp thư thông báo và xóa tài khoản. Nút tương ứng được disabled kèm lý do, không mô phỏng thành công giả.
 
 ### Trạng thái dữ liệu và matching 2026-06-21
 

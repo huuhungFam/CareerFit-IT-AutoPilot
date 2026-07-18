@@ -453,6 +453,7 @@ const vi: Dictionary = {
   uploading: 'Đang tải lên',
   processingFile: 'Đang xử lý',
   scored: 'Đã chấm điểm',
+  uploadFailed: 'Xử lý CV thất bại',
 };
 
 const en: Dictionary = {
@@ -904,6 +905,7 @@ const en: Dictionary = {
   uploading: 'Uploading',
   processingFile: 'Processing',
   scored: 'Scored',
+  uploadFailed: 'CV processing failed',
 };
 
 interface LanguageContextValue {

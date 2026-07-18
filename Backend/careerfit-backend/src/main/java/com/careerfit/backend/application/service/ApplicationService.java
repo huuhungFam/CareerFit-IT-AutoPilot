@@ -7,6 +7,7 @@ import com.careerfit.backend.audit.entity.AuditLog;
 import com.careerfit.backend.audit.repository.AuditLogRepository;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
+import com.careerfit.backend.candidate.service.CandidatePortfolioVisibilityService;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.cv.entity.CV;
 import com.careerfit.backend.cv.repository.CVRepository;
@@ -43,6 +44,7 @@ public class ApplicationService {
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
     private final NotificationEmailService notificationEmailService;
+    private final CandidatePortfolioVisibilityService portfolioVisibilityService;
 
     public ApplicationService(ApplicationRepository appRepo,
                                CandidateRepository candidateRepo,
@@ -51,7 +53,8 @@ public class ApplicationService {
                                MatchingRepository matchingRepo,
                                AuditLogRepository auditRepo,
                                ObjectMapper objectMapper,
-                               NotificationEmailService notificationEmailService) {
+                               NotificationEmailService notificationEmailService,
+                               CandidatePortfolioVisibilityService portfolioVisibilityService) {
         this.appRepo = appRepo;
         this.candidateRepo = candidateRepo;
         this.jobRepo = jobRepo;
@@ -60,6 +63,7 @@ public class ApplicationService {
         this.auditRepo = auditRepo;
         this.objectMapper = objectMapper;
         this.notificationEmailService = notificationEmailService;
+        this.portfolioVisibilityService = portfolioVisibilityService;
     }
 
     // ── Candidate: Submit application ─────────────────────────────────────
@@ -285,6 +289,7 @@ public class ApplicationService {
         var user = candidate.getUser();
         CV cv = app.getCv();
         Matching matching = app.getMatching();
+        var portfolioVisibility = portfolioVisibilityService.buildForRecruiter(candidate, hasApplied(app));
 
         return new ApplicationDtos.ApplicantResponse(
                 app.getId(),
@@ -302,7 +307,10 @@ public class ApplicationService {
                 app.getStatus().name(),
                 app.isAutoApplied(),
                 app.getCoverLetter(),
-                app.getAppliedAt()
+                app.getAppliedAt(),
+                portfolioVisibility.visible(),
+                portfolioVisibility.portfolio(),
+                portfolioVisibility.hiddenReason()
         );
     }
 
@@ -336,6 +344,10 @@ public class ApplicationService {
         if (row instanceof ApplicationDtos.MyApplicationResponse app) return app.updatedAt();
         if (row instanceof ApplicationDtos.ApplicantResponse app) return app.appliedAt();
         return null;
+    }
+
+    private boolean hasApplied(Application app) {
+        return app.getStatus() != Application.ApplicationStatus.INVITED;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

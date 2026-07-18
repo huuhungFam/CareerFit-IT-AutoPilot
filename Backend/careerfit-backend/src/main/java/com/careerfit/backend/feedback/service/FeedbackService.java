@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
 
@@ -90,7 +92,16 @@ public class FeedbackService {
         // Trigger Rocchio update (async) if this is a learning signal
         if (feedbackType != Feedback.FeedbackType.NOT_INTERESTED) {
             UUID jobId = matching.getJob().getId();
-            rocchioService.updateJobVector(jobId);
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        rocchioService.updateJobVector(jobId);
+                    }
+                });
+            } else {
+                rocchioService.updateJobVector(jobId);
+            }
         }
     }
 

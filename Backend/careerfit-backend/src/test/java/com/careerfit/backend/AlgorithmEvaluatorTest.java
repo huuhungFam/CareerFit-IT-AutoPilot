@@ -28,11 +28,16 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.security.MessageDigest;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class AlgorithmEvaluatorTest extends BaseIntegrationTest {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     private CVRepository cvRepo;
@@ -178,6 +183,10 @@ class AlgorithmEvaluatorTest extends BaseIntegrationTest {
         // With TestAsyncConfig, Rocchio updates run synchronously!
         // No wait loop needed.
 
+        // Rebuild from the learned job vectors without retaining stale versioned Matching entities
+        // from the baseline phase in the same test persistence context.
+        matchingRepo.deleteAllInBatch();
+        entityManager.clear();
         matchingBatchService.rebuild(0, 10000);
 
         EvaluationResult rocchioResult = evaluateMetrics(jobIdMap, holdoutGroundTruth, cvsData.size());
