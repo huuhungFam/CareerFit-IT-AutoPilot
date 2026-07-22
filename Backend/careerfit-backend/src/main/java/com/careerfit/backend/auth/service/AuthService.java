@@ -76,6 +76,9 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             throw AppException.badRequest("Invalid role: " + req.role() + ". Must be CANDIDATE or RECRUITER");
         }
+        if (role != UserAccount.Role.CANDIDATE && role != UserAccount.Role.RECRUITER) {
+            throw AppException.badRequest("Invalid role: " + req.role() + ". Must be CANDIDATE or RECRUITER");
+        }
 
         var user = new UserAccount(
                 email,

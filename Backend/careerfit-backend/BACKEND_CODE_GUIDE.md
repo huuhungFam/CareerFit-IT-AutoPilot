@@ -1,5 +1,7 @@
 # Hướng Dẫn Đọc Hiểu Backend CareerFit
 
+> Cập nhật theo mã nguồn ngày 18/07/2026. Khi tài liệu và code khác nhau, controller, DTO, service, entity và migration trong `src/main` là nguồn sự thật cuối cùng.
+
 Tài liệu này giúp bạn đọc hiểu backend CareerFit theo từng cụm code, đồng thời học các khái niệm Java Spring Boot ngay trên chính project. Mục tiêu không chỉ là biết file nào làm gì, mà còn hiểu được luồng request, luồng dữ liệu, cách Spring quản lý controller/service/repository/entity, và những điểm cần chú ý khi debug hoặc nhờ Agent sửa code.
 
 Backend nằm tại:
@@ -23,6 +25,7 @@ src/main/java/com/careerfit/backend/candidate
 src/main/java/com/careerfit/backend/cv
 src/main/java/com/careerfit/backend/job
 src/main/java/com/careerfit/backend/matching
+src/main/java/com/careerfit/backend/settings
 ```
 
 ## 1. Backend Này Là Gì?
@@ -114,6 +117,7 @@ Các package chính:
 | `automation` | Chính sách AutoPilot, token |
 | `notification` | Email, email action token |
 | `scheduler` | Tác vụ chạy nền |
+| `settings` | Cấu hình riêng của Candidate/Recruiter, lưu dưới dạng JSONB |
 | `analytics` | Thống kê thị trường/job |
 | `audit` | Audit log domain và repository |
 | `common` | Response, exception, utility |
@@ -189,10 +193,13 @@ Các dependency quan trọng:
 | `spring-boot-starter-security` | Security, filter chain, role |
 | `spring-boot-starter-validation` | Validate DTO bằng annotation |
 | `spring-boot-starter-mail` | Gửi email |
+| `spring-boot-starter-thymeleaf` | Render trang HTML xác nhận/kết quả email action |
+| `spring-boot-starter-actuator` + `micrometer-registry-prometheus` | Health check và metrics |
 | `postgresql` | JDBC driver cho PostgreSQL |
 | `flyway-core` | Chạy migration SQL |
 | `jjwt-*` | JWT |
 | `pdfbox` | Đọc PDF |
+| `poi-ooxml` | Đọc CV DOCX |
 | `springdoc-openapi` | Swagger UI |
 | `testcontainers` | Test với container PostgreSQL |
 
@@ -221,7 +228,9 @@ src/main/java/com/careerfit/backend/config/AppProperties.java
 - `app.storage`: nơi lưu file CV.
 - `app.ocr`: bật/tắt OCR fallback, Tesseract command, language data, DPI, số trang và timeout.
 - `app.matching`: ngưỡng label matching.
+- `app.scheduler`: lịch recompute, email, Auto-Apply và cleanup token theo múi giờ `Asia/Ho_Chi_Minh`.
 - `app.cors`: frontend origins được phép gọi API.
+- `management`: chỉ expose Actuator health và Prometheus.
 
 `AppProperties` dùng `@Value` để bind config:
 
@@ -230,7 +239,12 @@ src/main/java/com/careerfit/backend/config/AppProperties.java
 private String jwtSecret;
 ```
 
-Khi thấy service cần config như JWT secret, storage path, threshold, nó sẽ inject `AppProperties`.
+Khi thấy service cần config như JWT secret, storage path, threshold, nó sẽ inject `AppProperties`. `getEmailActionBaseUrl()` ưu tiên `EMAIL_ACTION_BASE_URL`; nếu biến này rỗng, URL được suy ra từ `APP_BASE_URL` cộng `/api/email-action/redeem`.
+
+Khác biệt profile:
+
+- `dev`: có thể bật SQL/security debug và mặc định dùng `NoOpMailService`.
+- `prod`: tắt Swagger, ẩn chi tiết lỗi, chỉ log mức vận hành và bắt buộc cấu hình production hợp lệ.
 
 ## 7. Database Và Flyway
 
@@ -248,6 +262,10 @@ V2__phase4_additions.sql
 V3__phase5_and_6_additions.sql
 ...
 V11__scraped_job_source_metadata.sql
+V12__allow_hidden_by_admin_job_status.sql
+V13__demo_admin_account.sql
+V14__user_settings.sql
+V15__secure_email_action_tokens.sql
 ```
 
 Các table chính:
@@ -268,6 +286,7 @@ Các table chính:
 | `audit_log` | `AuditLog` | Lịch sử hành động |
 | `job_market_snapshot` | `JobMarketSnapshot` | Snapshot thống kê |
 | `analytics_event` | `AnalyticsEvent` | Event tracking cho Advanced Analytics |
+| `user_settings` | `UserSettings` | Settings theo user, lưu JSONB |
 
 `V11__scraped_job_source_metadata.sql` thêm các field metadata cho job crawl:
 
@@ -280,6 +299,13 @@ external_hash
 
 `external_hash` có unique index để script import có thể upsert dữ liệu crawl nhiều lần mà không tạo trùng.
 
+Các migration mới hơn:
+
+- `V12`: thêm trạng thái job `HIDDEN_BY_ADMIN` để admin ẩn job mà không xóa dữ liệu.
+- `V13`: seed tài khoản demo Admin `ad / 1` dùng cho môi trường học/demo.
+- `V14`: tạo bảng `user_settings`, mỗi user tối đa một row.
+- `V15`: đổi `email_action_token.token` thành `token_hash`; raw token chỉ xuất hiện trong link gửi cho người dùng, database chỉ giữ SHA-256 hash.
+
 Quan hệ chính:
 
 ```text
@@ -291,6 +317,7 @@ CV n-n Job thông qua Matching
 Candidate n-n Job thông qua Application
 Matching 1-n Feedback
 UserAccount 1-1 AutomationPolicy
+UserAccount 1-1 UserSettings
 ```
 
 JPA annotation cần hiểu:
@@ -381,6 +408,9 @@ src/main/java/com/careerfit/backend/config/security/SecurityConfig.java
 src/main/java/com/careerfit/backend/config/security/JwtService.java
 src/main/java/com/careerfit/backend/config/security/JwtAuthenticationFilter.java
 src/main/java/com/careerfit/backend/config/security/UserIdResolutionFilter.java
+src/main/java/com/careerfit/backend/config/security/RateLimitFilter.java
+src/main/java/com/careerfit/backend/config/security/ProductionConfigValidator.java
+src/main/java/com/careerfit/backend/config/security/DemoAccountGuard.java
 src/main/java/com/careerfit/backend/auth/service/AuthService.java
 ```
 
@@ -399,8 +429,8 @@ Phân quyền chính:
 | Route | Quyền |
 | --- | --- |
 | `/api/auth/register`, `/api/auth/login` | Public |
-| `GET /api/jobs/**` | Public |
-| `GET /api/employers/**` | Public |
+| Các route đọc job public được liệt kê trong `SecurityConfig` | Public |
+| Featured/detail/jobs theo employer slug | Public; `/api/employers/me` là Recruiter |
 | `GET /api/analytics/**` | Public với market/analytics read-only |
 | `/api/cv/**` | Candidate |
 | `/api/candidates/**` | Candidate |
@@ -410,6 +440,7 @@ Phân quyền chính:
 | `POST/PATCH/DELETE /api/jobs/**` | Recruiter |
 | `/api/admin/**` | Admin |
 | `/api/automation/**` | Authenticated |
+| `/api/settings/me` | Authenticated; Candidate/Recruiter có whitelist key, Admin không có key cập nhật |
 
 Spring Security note:
 
@@ -464,6 +495,18 @@ Nhờ vậy controller có thể nhận:
 
 Đây là cách project tránh việc controller/service phải tự parse token nhiều lần.
 
+### 9.5 Bảo Vệ Abuse Và Cấu Hình Production
+
+`RateLimitFilter` dùng token bucket theo IP, lưu trong cache LRU có giới hạn:
+
+- Auth `POST` (`login`, `register`, passwordless): tối đa 10 request/phút/IP.
+- Redeem email action `POST`: tối đa 20 request/phút/IP.
+- Vượt giới hạn trả `429 TOO_MANY_REQUESTS` và header `Retry-After: 60`.
+
+Đây là rate limit in-memory nên phù hợp một instance. Khi chạy nhiều instance production, cần giải pháp dùng chung như Redis hoặc API gateway.
+
+`ProductionConfigValidator` chỉ chạy với profile `prod` và fail fast nếu JWT secret, database credential, HTTPS base URL, CORS hoặc SMTP vẫn là giá trị dev/placeholder. `DemoAccountGuard` tự vô hiệu hóa `ca`, `re`, `ad` ở production, trừ khi chủ động bật `DEMO_MODE=true`.
+
 ## 10. Auth Domain
 
 Mở:
@@ -491,7 +534,7 @@ Register flow:
 
 ```text
 1. Check email đã tồn tại chưa.
-2. Parse role CANDIDATE / RECRUITER.
+2. Parse và chỉ cho phép role CANDIDATE / RECRUITER; client không thể tự đăng ký ADMIN.
 3. Hash password bằng BCrypt.
 4. Save UserAccount.
 5. Nếu role là CANDIDATE, tạo Candidate profile rỗng.
@@ -616,7 +659,7 @@ Upload document flow:
 5. Lưu file vào disk qua StorageService.
 6. Nếu chưa có default CV, set CV này làm default.
 7. Save AuditLog CV_UPLOAD.
-8. Gọi processDocumentAsync.
+8. Đăng ký tác vụ `processDocument(cvId)` qua `AfterCommitExecutor`.
 9. Worker chọn parser theo extension: PDFBox cho PDF, Apache POI cho DOCX, ImageIO cho ảnh.
 10. PDF scan/image-only và ảnh chạy Tesseract OCR `vie+eng` trong Docker.
 11. Detect language.
@@ -624,7 +667,7 @@ Upload document flow:
 13. Build TF-IDF vector.
 14. Lưu top skills, extracted terms, summary.
 15. Set status SCORING_DONE.
-16. Gọi MatchingService.scoreAllJobsForCv.
+16. Gọi `MatchingService.scoreAllJobsForCv(cvId)`.
 ```
 
 Sau khi import nhiều JD, chạy `node scripts\rebuild-matchings.mjs`. Batch dùng sort tổng thứ tự `createdAt DESC, id ASC`; không được phân trang chỉ theo `createdAt` vì dữ liệu scrape có nhiều timestamp bằng nhau.
@@ -638,10 +681,12 @@ Manual CV flow:
 4. Vectorize và score giống PDF, nhưng không cần đọc file.
 ```
 
-Lưu ý Spring:
+Lưu ý Spring hiện tại:
 
-- `@Async` cần Spring proxy để chạy khác thread.
-- Nếu method `@Async` được gọi trực tiếp từ chính class đó, proxy có thể không được kích hoạt. Khi cần chắc chắn async, thường tách worker sang bean riêng.
+- CV/job matching không còn dựa vào việc gọi nội bộ một method `@Async` trong cùng class.
+- `AfterCommitExecutor` đăng ký `TransactionSynchronization.afterCommit()`, rồi đẩy `Runnable` sang `taskExecutor` sau khi transaction lưu CV/job đã commit.
+- Tác vụ nền chỉ nhận `UUID`, sau đó query lại entity từ repository trong worker. Cách này tránh worker đọc entity chưa commit hoặc truyền entity JPA có thể đã detached qua thread khác.
+- Nếu không có transaction đang hoạt động, executor vẫn submit tác vụ ngay.
 
 ## 13. Text Normalization Và TF-IDF
 
@@ -717,6 +762,8 @@ Routes:
 | `PATCH` | `/api/jobs/{id}` | Recruiter owner | Sửa job |
 | `PATCH` | `/api/jobs/{id}/status` | Recruiter owner | Đổi status |
 | `DELETE` | `/api/jobs/{id}` | Recruiter owner | Xóa job |
+
+Public list/search/detail chỉ trả job `ACTIVE`. Job `DRAFT`, `PAUSED`, `CLOSED` hoặc `HIDDEN_BY_ADMIN` không được lộ qua `GET /api/jobs/{id}`; recruiter/admin quản lý chúng qua endpoint role-scoped tương ứng.
 
 Create job flow:
 
@@ -832,7 +879,7 @@ Field quan trọng:
 8. Trả ScoringResult.
 ```
 
-`MatchingService.scoreAllJobsForCv(cv)`:
+`MatchingService.scoreAllJobsForCv(cvId)`:
 
 ```text
 1. Lấy tất cả job ACTIVE.
@@ -841,6 +888,10 @@ Field quan trọng:
 4. Upsert row matching.
 5. Save audit log.
 ```
+
+Chiều ngược lại, `scoreJobAgainstAllCvs(jobId)` query tất cả CV có trạng thái `SCORING_DONE`, tính điểm từng cặp và upsert matching. Khi tạo job hoặc sửa nội dung ảnh hưởng vector, `JobService` chỉ kích hoạt bước này sau khi transaction job commit thành công.
+
+`ScoringService` ưu tiên `job.learnedProfileVectorJson` nếu Rocchio đã tạo vector học được; nếu chưa có thì fallback về `job.tfidfVectorJson`. Vì vậy feedback hợp lệ hiện có ảnh hưởng đến lần recompute score tiếp theo.
 
 `MatchingQueryService` phục vụ hai hướng:
 
@@ -950,8 +1001,8 @@ src/main/java/com/careerfit/backend/feedback/entity/Feedback.java
 Route:
 
 ```text
-POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE
-POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER
+POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB
+POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB
 ```
 
 Feedback types:
@@ -988,7 +1039,7 @@ gamma = 0.15
 
 Sau khi cập nhật vector job, các matching của job được đánh dấu `needsRecompute = true`.
 
-Điểm cần chú ý: `RocchioService` lưu `learnedProfileVectorJson`, nhưng `ScoringService` hiện đang đọc `job.getTfidfVectorJson()`. Nếu muốn Rocchio ảnh hưởng trực tiếp đến score, cần sửa logic scoring để ưu tiên learned vector.
+`FeedbackService` thực hiện upsert theo cặp `(matchingId, actorId)`: feedback gửi lại sẽ cập nhật role/type/channel thay vì tạo row trùng. Endpoint web hiện chỉ cho Candidate, kiểm tra matching thuộc CV của Candidate trước khi lưu. Sau khi transaction commit, `RocchioService` cập nhật learned vector và đánh dấu các matching liên quan cần recompute.
 
 ## 20. Automation, Notification Và Scheduler
 
@@ -1059,18 +1110,20 @@ Dev profile dùng `NoOpMailService`, chỉ log email, không gửi thật.
 
 ```text
 GET /api/email-action/redeem?token=<token>
+POST /api/email-action/redeem
 ```
 
 Flow:
 
 ```text
 1. User click link trong email.
-2. Backend tìm EmailAction theo token.
-3. Check pending/expired.
-4. Nếu action là feedback, gọi FeedbackService.
-5. Mark token REDEEMED.
-6. Trả HTML success/error page.
+2. `GET` hash raw token để inspect trạng thái và render trang HTML xác nhận, chưa thực thi action.
+3. Form xác nhận gửi `POST`; backend hash token lần nữa, khóa row và kiểm tra pending/expired.
+4. Thực hiện action tương ứng, ví dụ apply/skip/invite/feedback.
+5. Mark token `REDEEMED` và trả HTML kết quả.
 ```
+
+Raw email-action token không được lưu database. `V15` đổi cột thành `token_hash`; service dùng SHA-256 để tra cứu. Đây là cùng nguyên tắc với passwordless token: database bị lộ cũng không làm lộ link dùng một lần còn nguyên dạng.
 
 Scheduler:
 
@@ -1116,6 +1169,44 @@ NO_FILTERED_RESULTS
 NO_CANDIDATE_MATCHES
 ```
 
+## 20.2 Settings Domain
+
+Mở:
+
+```text
+src/main/java/com/careerfit/backend/settings/controller/SettingsController.java
+src/main/java/com/careerfit/backend/settings/service/SettingsService.java
+src/main/java/com/careerfit/backend/settings/entity/UserSettings.java
+src/main/java/com/careerfit/backend/settings/dto/SettingsDtos.java
+src/main/java/com/careerfit/backend/settings/repository/UserSettingsRepository.java
+```
+
+Routes:
+
+| Method | Path | Ý nghĩa |
+| --- | --- | --- |
+| `GET` | `/api/settings/me` | Trộn default theo role với settings đã lưu |
+| `PATCH` | `/api/settings/me` | Cập nhật một phần settings của user hiện tại |
+
+Request PATCH có dạng:
+
+```json
+{
+  "values": {
+    "highMatchEmail": true,
+    "alertThreshold": 90
+  }
+}
+```
+
+Điểm cần hiểu:
+
+- Candidate và Recruiter có whitelist key riêng; Admin không có settings UI/domain này.
+- Service không tin key/value tùy ý từ frontend. Key sai role trả `400`; number, boolean, `HH:mm` và giới hạn range đều được validate.
+- Entity lưu toàn bộ map trong cột PostgreSQL `JSONB`, nhưng response vẫn là DTO có `role`, `values`, `updatedAt`.
+- PATCH merge payload vào default + dữ liệu đang lưu, nên field không gửi vẫn được giữ nguyên.
+- Settings này khác `AutomationPolicy`: settings là tùy chọn UI/quyền riêng tư/nghiệp vụ theo role; automation policy điều khiển AutoPilot, email và scheduler.
+
 ## 21. Analytics, Recruiter Dashboard, Admin
 
 `AnalyticsService`:
@@ -1157,7 +1248,7 @@ Admin MVP controllers:
 - `AdminJobController`: `GET /api/admin/jobs`, `POST /api/admin/jobs/{jobId}/hide`, `POST /api/admin/jobs/{jobId}/restore`
 - `AdminAuditLogController`: `GET /api/admin/audit-logs`
 - `AdminEmailMonitorController`: `GET /api/admin/email-actions`, `POST /api/admin/email-actions/{actionId}/retry`, `GET /api/admin/email-tokens`, `POST /api/admin/email-tokens/{tokenId}/revoke`
-- `AdminSystemController`: `POST /api/admin/matching/rebuild?cvId=...`
+- `AdminSystemController`: `POST /api/admin/matching/rebuild?cvId=...`, `POST /api/admin/matching/rebuild-batch?page=...&size=...`
 
 Admin control panel chỉ phục vụ vận hành hệ thống ở mức MVP: giám sát, khóa/mở user, ẩn/khôi phục job, xem audit log và monitor email/magic-link. Không đặt business logic candidate/recruiter vào package admin.
 
@@ -1234,13 +1325,15 @@ POST /api/applications
 ### 22.6 Feedback
 
 ```text
-POST /api/matches/{matchingId}/feedback?type=...&channel=WEB&role=...
+POST /api/matches/{matchingId}/feedback?type=...&channel=WEB
   -> FeedbackService.submitFeedback
   -> FeedbackRepository.save
   -> RocchioService.updateJobVector
   -> mark matchings needsRecompute
   -> AutomationScheduler.recomputeStaleMatchings
 ```
+
+Web feedback endpoint hiện Candidate-only: security yêu cầu JWT Candidate và service xác minh matching thuộc CV của Candidate đó. Query `role` mặc định `CANDIDATE`; giá trị khác trả `400`, token Recruiter trả `403`. Recruiter lifecycle actions dùng `/api/recruiter/**` và `/api/recruiter/applications/**`.
 
 ## 23. DTO Pattern
 
@@ -1312,6 +1405,14 @@ Quy tắc đọc:
 - Controller không nên tự mở transaction.
 - Business write logic nên ở service.
 - Repository chỉ truy vấn/lưu DB.
+
+Với công việc nền phụ thuộc dữ liệu vừa ghi, project dùng:
+
+```java
+afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(jobId));
+```
+
+Không chạy matching trước commit, vì worker có thể query không thấy CV/job vừa tạo. Cũng không truyền nguyên entity sang thread khác; truyền ID rồi load lại từ repository giúp vòng đời JPA rõ ràng hơn.
 
 ## 26. Kiến Thức Java/Spring Cần Học Song Song
 
@@ -1429,10 +1530,10 @@ Field nào auto timestamp?
 
 ## 29. Điểm Cần Cẩn Thận Trong Code Hiện Tại
 
-- `@Async` gọi nội bộ trong cùng class có thể không async thật do Spring proxy.
-- `RocchioService` cập nhật `learnedProfileVectorJson`, nhưng `ScoringService` hiện vẫn đọc `tfidfVectorJson`.
-- `MatchingService.scoreJobAgainstAllCvs(job)` hiện chưa thực sự tạo matching mới cho toàn bộ CV đã xử lý; nó chủ yếu mark existing matching.
-- `FeedbackService` comment là upsert nhưng khi feedback đã tồn tại, code hiện chưa update lại `feedbackType`.
+- CV/job matching đã chuyển sang `AfterCommitExecutor`; khi thêm flow nền mới, giữ nguyên pattern truyền ID và chạy sau commit.
+- `RocchioService` vẫn dùng `@Async`; cần nhớ exception trong async worker không tự rollback transaction đã nhận feedback và phải theo dõi qua log/test.
+- `RateLimitFilter` lưu bucket trong memory; nhiều backend instance sẽ không dùng chung hạn mức.
+- `SettingsService` lưu map động trong JSONB, vì vậy đổi tên key cần migration/compatibility plan dù Java compiler không bắt được.
 - JSONB đang map thành `String`, nên parse/serialize lặp lại nhiều nơi.
 - Một số dashboard controller dùng repository trực tiếp, chưa qua service.
 
@@ -1450,5 +1551,18 @@ Field nào auto timestamp?
 8. Gửi feedback cho một matching.
 9. Đọc migration và so sánh với entity.
 10. Viết test nhỏ cho `TextNormalizationService.normalize`.
+
+Các lệnh kiểm tra chính:
+
+```powershell
+mvn test
+mvn -DskipTests package
+```
+
+Test hiện có ba nhóm nên đọc:
+
+- Unit/service test: scoring, TF-IDF, Rocchio, validation, settings, auth và after-commit behavior.
+- Integration/contract test: Spring context, security hardening và `ApiContractIntegrationTest`.
+- Testcontainers: dùng PostgreSQL thật để bắt lỗi khác biệt giữa H2/in-memory DB và PostgreSQL/Flyway.
 
 Nếu làm được các bài này, bạn đã nắm được phần lõi backend Spring Boot của project.

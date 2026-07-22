@@ -165,7 +165,7 @@ test.describe('P0 Flows', () => {
 
   test('Candidate recommendations use API jobs and open detail', async ({ page }) => {
     await login(page, 'ca');
-    const jobsPromise = page.waitForResponse(response => response.url().includes('/api/matches/me/cards') && response.status() === 200);
+    const jobsPromise = page.waitForResponse(response => response.url().includes('/api/recommendations/jobs?limit=20') && response.status() === 200);
     await page.goto('/candidate/recommendations');
     await jobsPromise;
 

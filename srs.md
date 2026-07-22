@@ -294,9 +294,9 @@ Trách nhiệm:
 | UC-R05 | Xem CV đã apply | Recruiter xem danh sách candidate đã ứng tuyển. |
 | UC-R06 | Xem candidate tiềm năng | Recruiter xem candidate chưa apply nhưng matching cao hoặc Potential. |
 | UC-R07 | Mời candidate | Recruiter gửi invite candidate. |
-| UC-R08 | Feedback match | Recruiter đánh dấu Good/Bad/Potential để hệ thống học. |
+| UC-R08 | Feedback match | Recruiter gửi Good/Potential/Bad/Not Interested từ ranking/discovery UI qua feedback API với role `RECRUITER`. |
 | UC-R09 | Cấu hình AutoFit | Recruiter bật/tắt email digest, auto-invite, threshold. |
-| UC-R10 | Duyệt qua email | Recruiter bấm Invite/Reject/Mark Potential từ email. |
+| UC-R10 | Duyệt qua email | Recruiter xử lý Invite/Reject; Mark Potential được hoãn tới khi có Recruiter feedback contract riêng. |
 | UC-R11 | Xem analytics | Recruiter xem xu hướng job, apply count, match count. |
 | UC-R12 | Lọc candidate theo High/Potential | Recruiter lọc candidate list theo nhãn High, Potential, Applied hoặc Not Applied. |
 | UC-R13 | Cập nhật trạng thái application | Recruiter approve, reject, invite, reschedule hoặc cancel theo lifecycle nội bộ. |
@@ -864,11 +864,11 @@ Hệ thống phải cho phép feedback:
 
 #### FR-FB-02: Feedback qua web
 
-Recruiter và candidate phải có thể feedback từ web.
+Phiên bản hiện tại cho phép cả Candidate và Recruiter feedback từ web; backend kiểm tra actor role và quyền truy cập matching trước khi ghi nhận.
 
 #### FR-FB-03: Feedback qua email
 
-Người dùng phải có thể feedback từ actionable email.
+Candidate có thể feedback từ actionable email có token hợp lệ.
 
 #### FR-FB-04: Rocchio update
 
@@ -1076,8 +1076,9 @@ Ví dụ candidate:
 Ví dụ recruiter:
 
 - `Invite`,
-- `Reject`,
-- `Mark Potential`.
+- `Reject`.
+
+`Mark Potential` cho Recruiter là backlog, không dùng Candidate feedback endpoint.
 
 #### FR-EMAIL-03: Token cho email action
 
@@ -1651,7 +1652,7 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 - `GET /api/auth/passwordless/verify?token=...`
 - `POST /api/auth/passwordless/verify`
 - `GET /api/auth/me`
-- Frontend hiện ưu tiên gọi `POST /api/auth/login`, lưu token/account summary trong `localStorage` và vẫn hỗ trợ redirect `next` sau login. Mock login `ca` / `1` cho Candidate và `re` / `1` cho Recruiter chỉ là fallback development khi backend chưa chạy.
+- Frontend gọi `POST /api/auth/login`, lưu token/account summary trong `sessionStorage` và hỗ trợ redirect `next` sau login. `ca` / `1`, `re` / `1`, `ad` / `1` là account seed thật; không có mock-login fallback khi backend chưa chạy.
 
 ### 10.2. Candidate
 
@@ -1697,8 +1698,8 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 ### 10.4.1. Employer
 
 - `GET /api/employers/featured`
-- `GET /api/employers/{id}`
-- `GET /api/employers/{id}/jobs`
+- `GET /api/employers/{slug}`
+- `GET /api/employers/{slug}/jobs`
 
 ### 10.5. Matching Và Recommendation
 
@@ -1719,13 +1720,12 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 
 ### 10.7. Feedback
 
-- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=RECRUITER`
-- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER`
-- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB`
+
+Endpoint feedback web yêu cầu JWT Candidate và Candidate phải sở hữu CV của matching. Recruiter không gọi endpoint này; các action Recruiter dùng application/invite contract riêng.
 
 ### 10.8. Automation
 
@@ -1805,8 +1805,8 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 3. Backend vector hóa JD.
 4. Backend score JD với các CV phù hợp.
 5. Recruiter xem ranking.
-6. Recruiter invite/reject/mark potential.
-7. Feedback được dùng để update vector bằng Rocchio.
+6. Recruiter invite, review, approve hoặc reject theo trạng thái application.
+7. Candidate feedback trên recommendation feed được dùng để update vector bằng Rocchio.
 
 ### 11.4. Email Action
 
@@ -1861,7 +1861,7 @@ Khi nhiều điều kiện cùng xảy ra, hệ thống phải xử lý theo th�
 ### 11.9. Job market dashboard
 
 1. Backend tổng hợp snapshot thị trường việc làm theo lịch.
-2. Frontend candidate/recruiter dashboard gọi analytics market APIs và role-scoped Advanced Analytics APIs.
+2. Advanced Analytics pages gọi market APIs và role-scoped APIs. Homepage candidate/recruiter phải gọi analytics cơ bản; checkpoint 2026-07-18 vẫn đang dùng số liệu tĩnh và được theo dõi như P0 trong `Frontend/BACKEND_UI_COVERAGE.md`.
 3. Biểu đồ line hiển thị tổng job đăng tuyển theo thời gian.
 4. Biểu đồ bar hiển thị phân bố theo nhóm IT hoặc mức lương.
 5. Tooltip chỉ xuất hiện khi hover và dùng đơn vị job/việc làm.
@@ -1958,7 +1958,7 @@ Cần test:
 - guest không thấy score/potential trên job list và job detail,
 - guest bấm Apply sẽ mở login modal có nút đăng nhập và hủy,
 - login redirect bằng `next` quay lại intent ban đầu nếu role phù hợp,
-- frontend API client gọi được auth, public jobs, candidate job cards, suggestions và recruiter dashboard/jobs; mock chỉ dùng làm fallback khi backend không sẵn sàng,
+- frontend API client gọi được auth, public jobs, candidate job cards, suggestions và recruiter dashboard/jobs; API lỗi phải hiển thị loading/error/empty state đúng nguyên nhân, không fallback dữ liệu mock,
 - upload flow,
 - job search/filter,
 - search suggestions,
@@ -1978,6 +1978,12 @@ Cần test:
 - validation field-level suggestions,
 - no-match/low-match/no-filtered-results empty states,
 - language switch.
+
+### 12.4. Trạng thái coverage frontend/backend
+
+Checkpoint 2026-07-18: danh sách trên là phạm vi kiểm thử/acceptance đích, không phải tuyên bố frontend đã phủ toàn bộ endpoint backend. Ma trận hiện trạng và backlog P0/P1/P2 được quản lý tại `Frontend/BACKEND_UI_COVERAGE.md`.
+
+Các workflow Candidate ảnh hưởng trực tiếp tới acceptance đã được hoàn tất: passwordless verify trên React, restore session bằng `/api/auth/me`, CV async polling/detail/delete, recommendation feed riêng và Job Market Dashboard dùng analytics API thật. Khoảng trống còn lại gồm recruiter analytics funnel/skill-gap drill-down, employer self-service, automation pause/resume, telemetry và một số Admin operations; các hạng mục này được hoãn khỏi đợt hiện tại.
 
 ---
 

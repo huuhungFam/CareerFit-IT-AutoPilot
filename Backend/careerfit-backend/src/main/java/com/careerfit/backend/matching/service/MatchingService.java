@@ -16,12 +16,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Orchestrates matching of a single CV against all eligible ACTIVE jobs.
@@ -66,9 +66,13 @@ public class MatchingService {
      * Score a CV against all active jobs.
      * Runs in background thread (called after CV vectorization completes).
      */
-    @Async
     @Transactional
-    public void scoreAllJobsForCv(CV cv) {
+    public void scoreAllJobsForCv(UUID cvId) {
+        CV cv = cvRepo.findById(cvId).orElse(null);
+        if (cv == null) {
+            log.warn("Skipping matching because CV no longer exists: {}", cvId);
+            return;
+        }
         log.info("Starting batch matching for CV id={}", cv.getId());
 
         List<Job> activeJobs = jobRepo.findByStatus(Job.JobStatus.ACTIVE);
@@ -109,9 +113,13 @@ public class MatchingService {
     /**
      * Score a single job against all CVs that belong to candidate (used when new job is created/updated).
      */
-    @Async
     @Transactional
-    public void scoreJobAgainstAllCvs(Job job) {
+    public void scoreJobAgainstAllCvs(UUID jobId) {
+        Job job = jobRepo.findById(jobId).orElse(null);
+        if (job == null) {
+            log.warn("Skipping matching because job no longer exists: {}", jobId);
+            return;
+        }
         log.info("Scoring job id={} against all CVs...", job.getId());
         List<CV> cvs = cvRepo.findByStatus(CV.CvStatus.SCORING_DONE);
         int scored = 0;

@@ -59,14 +59,13 @@ import { AdminDashboardPage, AdminUsersPage, AdminJobsPage, AdminAuditLogsPage, 
 import {
   careerfitApi,
   type AdvancedMarketOverview,
-  type AdvancedSalaryBucket,
-  type AdvancedSkillDemandItem,
   type AdvancedTrendPoint,
   type CandidateAnalyticsOverview,
   type CandidateCvDto,
   type CandidateJobPage,
   type CandidateProfileDto,
   type CreateJobPayload,
+  type EmployerDetailDto,
   type ManualCvPayload,
   type PortfolioLinkDto,
   type PortfolioLinkPayload,
@@ -80,82 +79,6 @@ import {
   preference,
 } from './data/mock';
 import type { AutomationPolicy, Job, MatchFeedback, MockAccount, RecruiterCandidateItem, Role } from './types';
-
-const topEmployers = [
-  {
-    id: 'nexlab-solutions',
-    name: 'Nexlab Solutions',
-    mark: 'Nexlab',
-    tone: 'blue',
-    industry: 'Software Outsourcing & Product Engineering',
-    location: 'Ho Chi Minh City',
-    size: '150-300 employees',
-    website: 'nexlab.example.com',
-    summary:
-      'Nexlab Solutions builds enterprise web platforms, hiring automation tools, and cloud-native systems for fast-growing technology teams.',
-    benefits: ['Hybrid working', 'Product ownership', 'Technical mentoring', 'Quarterly learning budget'],
-  },
-  {
-    id: 'seatos',
-    name: 'Seatos',
-    mark: 'SE',
-    tone: 'steel',
-    industry: 'Data Platforms',
-    location: 'Da Nang',
-    size: '80-150 employees',
-    website: 'seatos.example.com',
-    summary: 'Seatos focuses on data-heavy products, analytics dashboards, and reliable operations tooling for distributed teams.',
-    benefits: ['Remote-friendly', 'Cloud projects', 'Clear promotion ladder', 'Private healthcare'],
-  },
-  {
-    id: 'orbital-talent',
-    name: 'Orbital Talent',
-    mark: 'OT',
-    tone: 'teal',
-    industry: 'Recruitment AI',
-    location: 'Remote Vietnam',
-    size: '50-120 employees',
-    website: 'orbital.example.com',
-    summary: 'Orbital Talent designs candidate-facing matching products, recruiter workflows, and recommendation experiences.',
-    benefits: ['Flexible schedule', 'AI product work', 'English environment', 'Annual offsite'],
-  },
-  {
-    id: 'mobifone-it',
-    name: 'Mobifone IT',
-    mark: 'mobifone it',
-    tone: 'blue',
-    industry: 'Telecom Technology',
-    location: 'Ha Noi',
-    size: '500+ employees',
-    website: 'mobifoneit.example.com',
-    summary: 'Mobifone IT develops internal platforms, customer operations products, and large-scale service infrastructure.',
-    benefits: ['Stable enterprise projects', 'Bonus package', 'Training programs', 'Large-scale systems'],
-  },
-  {
-    id: 'azapa-engineering',
-    name: 'Azapa Engineering',
-    mark: 'AZAPA',
-    tone: 'ink',
-    industry: 'Engineering Services',
-    location: 'Ho Chi Minh City',
-    size: '200-500 employees',
-    website: 'azapa.example.com',
-    summary: 'Azapa Engineering combines product design, UI platform work, and delivery engineering for regional clients.',
-    benefits: ['Japanese client projects', 'UI platform work', 'Language support', 'Performance bonus'],
-  },
-  {
-    id: 'daoukiwoom-innovation',
-    name: 'Daoukiwoom Innovation',
-    mark: 'DAOUKIWOOM',
-    tone: 'blue',
-    industry: 'Fintech & Enterprise SaaS',
-    location: 'Ho Chi Minh City',
-    size: '300-600 employees',
-    website: 'daoukiwoom.example.com',
-    summary: 'Daoukiwoom Innovation builds fintech, CRM, and operational SaaS products with strong engineering governance.',
-    benefits: ['Fintech domain', 'Modern stack', 'Cross-border teams', 'Career framework'],
-  },
-];
 
 const jobFilterOptions = {
   city: [
@@ -336,6 +259,16 @@ export function App() {
   const [account, setAccount] = useState<MockAccount | null>(() => careerfitApi.restoreAccount());
   const location = useLocation();
 
+  useEffect(() => {
+    let active = true;
+    void careerfitApi.restoreSession().then((restoredAccount) => {
+      if (active) setAccount(restoredAccount);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   async function handleLogin(username: string, password: string) {
     const normalizedUsername = username.trim();
     try {
@@ -378,6 +311,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginPage onLogin={handleLogin} onRegister={handleRegister} />} />
       <Route path="/register" element={<LoginPage mode="register" onLogin={handleLogin} onRegister={handleRegister} />} />
+      <Route path="/auth/magic-link/verify" element={<MagicLinkPage onAuthenticated={setAccount} />} />
       <Route path="/automation/confirm" element={<AutomationConfirmPage />} />
       <Route path="/automation/result" element={<AutomationResultPage />} />
       <Route element={<AppShell role={account?.role ?? 'guest'} />}>
@@ -565,6 +499,75 @@ function resolvePostLoginPath(account: MockAccount, nextPath: string | null) {
   return getRoleHomePath(account.role);
 }
 
+function MagicLinkPage({ onAuthenticated }: { onAuthenticated: (account: MockAccount) => void }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { language, setLanguage, t } = useLanguage();
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const token = searchParams.get('token')?.trim() ?? '';
+  const inspection = useQuery({
+    queryKey: ['magic-link-inspection', token],
+    queryFn: () => careerfitApi.inspectPasswordlessToken(token),
+    enabled: Boolean(token),
+    retry: false,
+  });
+
+  async function completeLogin() {
+    if (!token) return;
+    setIsVerifying(true);
+    setVerifyError('');
+    try {
+      const account = await careerfitApi.verifyPasswordlessToken(token);
+      onAuthenticated(account);
+      navigate(getRoleHomePath(account.role), { replace: true });
+    } catch (error) {
+      setVerifyError(readableError(
+        error,
+        language === 'vi' ? 'Liên kết đăng nhập không hợp lệ hoặc đã hết hạn.' : 'This sign-in link is invalid or has expired.',
+        language,
+      ));
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
+  const invalidToken = !token || inspection.isError;
+  return (
+    <main className="auth-page magic-link-page">
+      <button className="auth-language-switch" onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')} type="button" aria-label={t('language')}>
+        <Globe size={17} />
+        {language.toUpperCase()}
+      </button>
+      <section className="auth-hero">
+        <p className="eyebrow">CareerFit</p>
+        <h1>{language === 'vi' ? 'Xác nhận đăng nhập' : 'Confirm sign in'}</h1>
+        <p>{language === 'vi' ? 'Kiểm tra liên kết bảo mật trước khi mở không gian làm việc của bạn.' : 'Verify this secure link before opening your workspace.'}</p>
+      </section>
+      <section className="auth-card magic-link-card">
+        {inspection.isLoading ? (
+          <div className="magic-link-state"><Clock3 size={24} /><strong>{language === 'vi' ? 'Đang kiểm tra liên kết...' : 'Checking your link...'}</strong></div>
+        ) : invalidToken ? (
+          <>
+            <ActionMessage tone="error" text={language === 'vi' ? 'Liên kết không hợp lệ hoặc đã hết hạn.' : 'This link is invalid or has expired.'} />
+            <button type="button" onClick={() => navigate('/login')}>{language === 'vi' ? 'Quay lại đăng nhập' : 'Back to sign in'}</button>
+          </>
+        ) : (
+          <>
+            <div className="magic-link-state"><ShieldCheck size={26} /><strong>{language === 'vi' ? 'Liên kết hợp lệ' : 'Link verified'}</strong></div>
+            <p>{inspection.data}</p>
+            {verifyError ? <ActionMessage tone="error" text={verifyError} /> : null}
+            <button className="primary-action full" type="button" disabled={isVerifying} onClick={completeLogin}>
+              <LogIn size={17} />
+              {isVerifying ? (language === 'vi' ? 'Đang đăng nhập...' : 'Signing in...') : (language === 'vi' ? 'Tiếp tục đăng nhập' : 'Continue signing in')}
+            </button>
+          </>
+        )}
+      </section>
+    </main>
+  );
+}
+
 function getRoleHomePath(role: Role) {
   if (role === 'admin') return '/admin';
   return role === 'candidate' ? '/candidate' : '/recruiter';
@@ -711,8 +714,9 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const initialKeyword = searchParams.get('keyword') ?? '';
-  const filters = getJobFilters(searchParams);
+  const filters = useMemo(() => getJobFilters(new URLSearchParams(searchParamsKey)), [searchParamsKey]);
   const [query, setQuery] = useState(initialKeyword);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -723,7 +727,13 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const [candidatePages, setCandidatePages] = useState<CandidateJobPage[]>([]);
   const [isLoadingMoreJobs, setIsLoadingMoreJobs] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-  const { data: publicJobs = [], isLoading: isPublicJobsLoading, isFetching: isPublicJobsFetching } = useJobs({
+  const {
+    data: publicJobs = [],
+    isLoading: isPublicJobsLoading,
+    isFetching: isPublicJobsFetching,
+    isError: publicJobsFailed,
+    refetch: refetchPublicJobs,
+  } = useJobs({
     isPublic,
     keyword: initialKeyword,
     enabled: isPublic,
@@ -732,11 +742,14 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
     data: firstCandidatePage,
     isLoading: isCandidateJobsLoading,
     isFetching: isCandidateJobsFetching,
+    isError: candidateJobsFailed,
+    refetch: refetchCandidateJobs,
   } = useQuery({
     queryKey: ['candidate-jobs-page', 0],
     enabled: !isPublic,
     queryFn: () => careerfitApi.getCandidateJobsPage({ page: 0, size: 20 }),
     refetchInterval: 60_000,
+    retry: 1,
   });
   const sourceJobs = isPublic ? publicJobs : candidatePages.flatMap((page) => page.jobs);
   const lastCandidatePage = candidatePages[candidatePages.length - 1];
@@ -745,18 +758,12 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const totalCandidateJobCount = lastCandidatePage?.total ?? firstCandidatePage?.total ?? loadedCandidateJobCount;
   const isJobsLoading = isPublic ? isPublicJobsLoading : isCandidateJobsLoading;
   const isJobsFetching = isPublic ? isPublicJobsFetching : isCandidateJobsFetching;
+  const jobsFailed = isPublic ? publicJobsFailed : candidateJobsFailed;
   const keywordFilteredJobs = useFilteredJobs(
     sourceJobs.filter((job) => !hiddenJobIds.includes(job.id)),
     query,
   );
-  const filteredJobs = useMemo(() => sortJobsStable(applyJobFilters(keywordFilteredJobs, filters)), [
-    keywordFilteredJobs,
-    filters.city,
-    filters.level,
-    filters.workModel,
-    filters.salary,
-    filters.domain,
-  ]);
+  const filteredJobs = useMemo(() => sortJobsStable(applyJobFilters(keywordFilteredJobs, filters)), [keywordFilteredJobs, filters]);
   const scoreCounts = useMemo(() => getScoreCounts(filteredJobs), [filteredJobs]);
   const activeFilterCount = (Object.keys(filters) as JobFilterKey[]).filter((key) => filters[key] !== defaultJobFilters[key]).length;
   const hasActiveSearchOrFilters = Boolean(query.trim()) || activeFilterCount > 0;
@@ -769,7 +776,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
 
   useEffect(() => {
     setHiddenJobIds([]);
-  }, [searchParams.toString()]);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     if (!isPublic && firstCandidatePage) {
@@ -936,7 +943,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
         </div>
         {applyingJobId ? <p className="validation-message">{t('submittingApplication')}</p> : null}
         {actionMessage ? <ActionMessage {...actionMessage} /> : null}
-        {lowMatchOnly ? (
+        {!jobsFailed && lowMatchOnly ? (
           <MatchingEdgeCaseNotice
             type="low"
             jobs={filteredJobs}
@@ -945,7 +952,15 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
             onTertiary={() => setSearchParams(writeJobSearchParams(query, defaultJobFilters))}
           />
         ) : null}
-        <JobListWithPreview
+        {jobsFailed ? (
+          <section className="empty-state" role="alert">
+            <h3>{language === 'vi' ? 'Không thể tải danh sách việc làm' : 'Could not load jobs'}</h3>
+            <p>{language === 'vi' ? 'Kiểm tra kết nối backend rồi thử lại.' : 'Check the backend connection and try again.'}</p>
+            <button type="button" onClick={() => void (isPublic ? refetchPublicJobs() : refetchCandidateJobs())}>
+              {language === 'vi' ? 'Thử lại' : 'Retry'}
+            </button>
+          </section>
+        ) : <JobListWithPreview
           jobs={filteredJobs}
           isLoading={isJobsLoading || isJobsFetching}
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
@@ -972,8 +987,8 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
               ) : null}
             </div>
           }
-        />
-        {!isPublic && sourceJobs.length > 0 ? (
+        />}
+        {!jobsFailed && !isPublic && sourceJobs.length > 0 ? (
           <div className="load-more-row">
             {loadMoreError ? <p className="validation-error">{loadMoreError}</p> : null}
             {canLoadMoreCandidateJobs ? (
@@ -1005,7 +1020,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   );
 }
 
-function JobDetailPanel({ job }: { job?: Job }) {
+function JobDetailPanelUnused({ job }: { job?: Job }) {
   const { t } = useLanguage();
   if (!job) {
     return (
@@ -1038,12 +1053,10 @@ function JobDetailPanel({ job }: { job?: Job }) {
 function FeedbackBar({
   matchingId,
   initialFeedback,
-  role = 'CANDIDATE',
   onNotInterested,
 }: {
   matchingId?: string;
   initialFeedback?: MatchFeedback;
-  role?: 'CANDIDATE' | 'RECRUITER';
   onNotInterested?: () => void;
 }) {
   const { t } = useLanguage();
@@ -1060,19 +1073,12 @@ function FeedbackBar({
   }
   const feedbackMatchingId = matchingId;
 
-  const options: Array<{ type: MatchFeedback; label: string; icon: ReactNode }> =
-    role === 'RECRUITER'
-      ? [
-          { type: 'GOOD_MATCH', label: t('goodMatch'), icon: <ThumbsUp size={15} /> },
-          { type: 'POTENTIAL', label: t('potentialMatch'), icon: <Sparkles size={15} /> },
-          { type: 'BAD_MATCH', label: t('badMatch'), icon: <ThumbsDown size={15} /> },
-        ]
-      : [
-          { type: 'GOOD_MATCH', label: t('greatMatch'), icon: <ThumbsUp size={15} /> },
-          { type: 'POTENTIAL', label: t('potentialMatch'), icon: <Sparkles size={15} /> },
-          { type: 'BAD_MATCH', label: t('badMatch'), icon: <ThumbsDown size={15} /> },
-          { type: 'NOT_INTERESTED', label: t('skipMatch'), icon: <Ban size={15} /> },
-        ];
+  const options: Array<{ type: MatchFeedback; label: string; icon: ReactNode }> = [
+    { type: 'GOOD_MATCH', label: t('greatMatch'), icon: <ThumbsUp size={15} /> },
+    { type: 'POTENTIAL', label: t('potentialMatch'), icon: <Sparkles size={15} /> },
+    { type: 'BAD_MATCH', label: t('badMatch'), icon: <ThumbsDown size={15} /> },
+    { type: 'NOT_INTERESTED', label: t('skipMatch'), icon: <Ban size={15} /> },
+  ];
 
   async function submitFeedback(type: MatchFeedback, event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
@@ -1082,7 +1088,7 @@ function FeedbackBar({
     setError('');
 
     try {
-      await careerfitApi.submitMatchFeedback(feedbackMatchingId, type, role);
+      await careerfitApi.submitMatchFeedback(feedbackMatchingId, type);
       if (type === 'NOT_INTERESTED') {
         onNotInterested?.();
       }
@@ -1146,7 +1152,18 @@ function JobDetailPage({ isPublic = false }: { isPublic?: boolean }) {
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState('');
+  const [showSimilarJobs, setShowSimilarJobs] = useState(false);
   const { data: job, isLoading, isError } = useJobDetail(jobId, isPublic);
+  const {
+    data: similarJobs = [],
+    isLoading: areSimilarJobsLoading,
+    isError: similarJobsFailed,
+    refetch: refetchSimilarJobs,
+  } = useQuery({
+    queryKey: ['similar-jobs', jobId],
+    enabled: Boolean(jobId) && showSimilarJobs,
+    queryFn: () => careerfitApi.getSimilarJobs(jobId!),
+  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -1190,7 +1207,28 @@ function JobDetailPage({ isPublic = false }: { isPublic?: boolean }) {
       {isApplying ? <p className="validation-message">{t('submittingApplication')}</p> : null}
       {applyError ? <ActionMessage tone="error" text={applyError} /> : null}
       <JobDetailContent job={job} showMatchMeta={!isPublic} onApply={applyToCurrentJob} />
-      {showStickyBar ? <StickyApplyBar onApply={applyToCurrentJob} /> : null}
+      {showSimilarJobs ? (
+        <section className="panel similar-jobs-panel" id="similar-jobs">
+          <div className="section-heading">
+            <p className="eyebrow">{t('jobs')}</p>
+            <h2>{t('similarJobs')}</h2>
+          </div>
+          {similarJobsFailed ? (
+            <div className="empty-state" role="alert">
+              <p>{language === 'vi' ? 'Không thể tải việc làm tương tự.' : 'Could not load similar jobs.'}</p>
+              <button type="button" onClick={() => void refetchSimilarJobs()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+            </div>
+          ) : (
+            <JobListWithPreview
+              jobs={similarJobs}
+              isLoading={areSimilarJobsLoading}
+              onOpen={(similarJob) => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}/${similarJob.id}`)}
+              showMatchMeta={false}
+            />
+          )}
+        </section>
+      ) : null}
+      {showStickyBar ? <StickyApplyBar onApply={applyToCurrentJob} onSimilar={() => setShowSimilarJobs(true)} /> : null}
       {isLoginPromptOpen ? <LoginPromptModal onClose={() => setIsLoginPromptOpen(false)} /> : null}
     </div>
   );
@@ -1200,10 +1238,39 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
   const { employerId } = useParams();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
-  const employer = topEmployers.find((item) => item.id === employerId) ?? topEmployers[0];
-  const { data: availableJobs = [], isLoading } = useJobs({ isPublic });
-  const matchingEmployerJobs = availableJobs.filter((job) => job.company.toLowerCase().includes(employer.name.toLowerCase()));
-  const employerJobs = (matchingEmployerJobs.length ? matchingEmployerJobs : availableJobs).slice(0, 3);
+  const {
+    data: employer,
+    isLoading: isEmployerLoading,
+    isError: employerFailed,
+    refetch: refetchEmployer,
+  } = useQuery({
+    queryKey: ['employer', employerId],
+    enabled: Boolean(employerId),
+    queryFn: () => careerfitApi.getEmployer(employerId!),
+  });
+  const {
+    data: employerJobs = [],
+    isLoading: areJobsLoading,
+    isError: jobsFailed,
+    refetch: refetchEmployerJobs,
+  } = useQuery({
+    queryKey: ['employer-jobs', employerId],
+    enabled: Boolean(employerId),
+    queryFn: () => careerfitApi.getEmployerJobs(employerId!),
+  });
+
+  if (isEmployerLoading) {
+    return <section className="panel empty-state"><p>{language === 'vi' ? 'Đang tải hồ sơ công ty...' : 'Loading company profile...'}</p></section>;
+  }
+
+  if (employerFailed || !employer) {
+    return (
+      <section className="panel empty-state" role="alert">
+        <h2>{language === 'vi' ? 'Không thể tải hồ sơ công ty' : 'Could not load company profile'}</h2>
+        <button type="button" onClick={() => void refetchEmployer()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+      </section>
+    );
+  }
 
   return (
     <div className="employer-detail-route">
@@ -1212,13 +1279,15 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
       </button>
 
       <section className="employer-hero">
-        <div className="employer-cover" />
+        <div className="employer-cover" style={employer.coverUrl ? { backgroundImage: `url(${employer.coverUrl})` } : undefined} />
         <div className="employer-profile-card">
-          <div className={`employer-logo-large ${employer.tone}`}>{employer.mark}</div>
+          <div className="employer-logo-large">
+            {employer.logoUrl ? <img src={employer.logoUrl} alt="" /> : employerInitials(employer)}
+          </div>
           <div>
             <p className="eyebrow">{t('featuredEmployers')}</p>
-            <h1>{employer.name}</h1>
-            <p>{employer.industry}</p>
+            <h1>{employer.companyName}</h1>
+            <p>{employer.industry || (language === 'vi' ? 'Công nghệ thông tin' : 'Information technology')}</p>
           </div>
           <button className="primary-action" disabled title={language === 'vi' ? 'Backend chưa hỗ trợ theo dõi công ty.' : 'Following companies is not supported by the backend yet.'}>{t('followCompany')}</button>
         </div>
@@ -1227,24 +1296,28 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
       <section className="employer-info-grid">
         <article className="employer-main-panel">
           <h2>{t('companyIntro')}</h2>
-          <p>{employer.summary}</p>
-          <p>
-            Công ty đang ưu tiên tuyển các vị trí kỹ thuật có khả năng xây dựng sản phẩm web rõ ràng, vận hành tốt, và
-            phối hợp chặt với product/recruiter stakeholders.
-          </p>
+          <p>{employer.summary || employer.description || (language === 'vi' ? 'Nhà tuyển dụng chưa cập nhật phần giới thiệu.' : 'The employer has not added an introduction yet.')}</p>
+          {employer.description && employer.description !== employer.summary ? <p>{employer.description}</p> : null}
 
           <h2>{t('featuredBenefits')}</h2>
           <div className="benefit-grid">
-            {employer.benefits.map((benefit) => (
+            {(employer.benefits ?? []).map((benefit) => (
               <span key={benefit}>{benefit}</span>
             ))}
+            {!employer.benefits?.length ? <p>{language === 'vi' ? 'Chưa có thông tin phúc lợi.' : 'No benefit information yet.'}</p> : null}
           </div>
 
           <h2>{t('openJobs')}</h2>
           <div className="employer-job-list">
-            {isLoading ? <p>{language === 'vi' ? 'Đang tải công việc...' : 'Loading jobs...'}</p> : null}
-            {!isLoading && employerJobs.length === 0 ? <p>{language === 'vi' ? 'Hiện chưa có công việc đang mở.' : 'No open jobs are available.'}</p> : null}
-            {employerJobs.map((job) => (
+            {areJobsLoading ? <p>{language === 'vi' ? 'Đang tải công việc...' : 'Loading jobs...'}</p> : null}
+            {jobsFailed ? (
+              <div role="alert">
+                <p>{language === 'vi' ? 'Không thể tải việc làm của công ty.' : 'Could not load this company’s jobs.'}</p>
+                <button type="button" onClick={() => void refetchEmployerJobs()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+              </div>
+            ) : null}
+            {!areJobsLoading && !jobsFailed && employerJobs.length === 0 ? <p>{language === 'vi' ? 'Hiện chưa có công việc đang mở.' : 'No open jobs are available.'}</p> : null}
+            {employerJobs.slice(0, 3).map((job) => (
               <article className="employer-job-card" key={job.id} onClick={() => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}/${job.id}`)}>
                 <div>
                   <p className="eyebrow">{job.company}</p>
@@ -1261,21 +1334,21 @@ function EmployerDetailPage({ isPublic = false }: { isPublic?: boolean }) {
           <h3>{t('companyInfo')}</h3>
           <div className="company-fact">
             <Building2 size={18} />
-            <span>{employer.industry}</span>
+            <span>{employer.industry || 'IT'}</span>
           </div>
           <div className="company-fact">
             <MapPin size={18} />
-            <span>{employer.location}</span>
+            <span>{employer.location || (language === 'vi' ? 'Chưa cập nhật' : 'Not provided')}</span>
           </div>
           <div className="company-fact">
             <Users size={18} />
-            <span>{employer.size}</span>
+            <span>{employer.companySize || (language === 'vi' ? 'Chưa cập nhật' : 'Not provided')}</span>
           </div>
           <div className="company-fact">
             <Globe size={18} />
-            <span>{employer.website}</span>
+            {employer.websiteUrl ? <a href={employer.websiteUrl} target="_blank" rel="noreferrer">{employer.websiteUrl}</a> : <span>{language === 'vi' ? 'Chưa cập nhật' : 'Not provided'}</span>}
           </div>
-          <button className="primary-action full" onClick={() => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}?keyword=${encodeURIComponent(employer.name)}`)}>{t('viewAll')}</button>
+          <button className="primary-action full" onClick={() => navigate(`${isPublic ? '/jobs' : '/candidate/jobs'}?keyword=${encodeURIComponent(employer.companyName)}`)}>{t('viewAll')}</button>
         </aside>
       </section>
     </div>
@@ -1290,16 +1363,63 @@ function UploadPage() {
   const [state, setState] = useState<'idle' | 'uploading' | 'processing' | 'scored' | 'failed'>('idle');
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [isSavingManualCv, setIsSavingManualCv] = useState(false);
+  const [pendingCvId, setPendingCvId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollingControllerRef = useRef<AbortController | null>(null);
   const { data: manualProfile } = useQuery<any>({ queryKey: ['candidate-profile'], queryFn: careerfitApi.getCandidateProfile });
   const { data: matchedJobs = [] } = useJobs({ isPublic: false });
   const activeUploadTab: UploadTab = searchParams.get('tab') === 'manual' ? 'manual' : 'parser';
   const skillChips = ['React', 'TypeScript', 'Design System', 'Testing', 'Accessibility'];
 
+  useEffect(() => () => pollingControllerRef.current?.abort(), []);
+
   function setActiveUploadTab(tab: UploadTab) {
     const params = new URLSearchParams(searchParams);
     setOrDeleteParam(params, 'tab', tab, 'parser');
     setSearchParams(params);
+  }
+
+  async function pollCvUntilReady(cvId: string, navigateWhenReady = false) {
+    pollingControllerRef.current?.abort();
+    const controller = new AbortController();
+    pollingControllerRef.current = controller;
+    setPendingCvId(cvId);
+    setState('processing');
+    setActionMessage({
+      tone: 'success',
+      text: language === 'vi'
+        ? 'CV đã được tiếp nhận. Hệ thống đang trích xuất, chuẩn hóa và chấm điểm.'
+        : 'CV accepted. Extraction, normalization, and scoring are in progress.',
+    });
+    try {
+      await careerfitApi.waitForCvProcessing(cvId, { signal: controller.signal });
+      setState('scored');
+      setPendingCvId(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['candidate-cvs'] }),
+        queryClient.invalidateQueries({ queryKey: ['candidate-jobs'] }),
+        queryClient.invalidateQueries({ queryKey: ['recommendations'] }),
+      ]);
+      setActionMessage({
+        tone: 'success',
+        text: language === 'vi' ? 'CV đã chấm điểm xong và sẵn sàng dùng để gợi ý việc làm.' : 'CV scoring is complete and ready for job recommendations.',
+      });
+      if (navigateWhenReady) navigate('/candidate/profile?tab=cvs');
+      return true;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return false;
+      setState('failed');
+      const timedOut = error instanceof Error && error.message === 'CV_PROCESSING_TIMEOUT';
+      setActionMessage({
+        tone: 'error',
+        text: timedOut
+          ? (language === 'vi' ? 'Xử lý CV mất nhiều thời gian hơn dự kiến. Bạn có thể thử kiểm tra lại trạng thái.' : 'CV processing is taking longer than expected. You can retry the status check.')
+          : readableError(error, language === 'vi' ? 'Không thể hoàn tất xử lý CV. Hãy thử kiểm tra lại trạng thái.' : 'CV processing could not be completed. Retry the status check.', language),
+      });
+      return false;
+    } finally {
+      if (pollingControllerRef.current === controller) pollingControllerRef.current = null;
+    }
   }
 
   async function uploadSelectedCv(file?: File) {
@@ -1316,14 +1436,7 @@ function UploadPage() {
         });
         return;
       }
-      setState(result.status === 'SCORED' || result.status === 'SCORING_DONE' ? 'scored' : 'processing');
-      await queryClient.invalidateQueries({ queryKey: ['candidate-cvs'] });
-      setActionMessage({
-        tone: 'success',
-        text: language === 'vi'
-          ? 'CV đã được tiếp nhận. Hệ thống đang trích xuất và chấm điểm hồ sơ.'
-          : 'CV accepted. Extraction and scoring are now running.',
-      });
+      await pollCvUntilReady(result.id);
     } catch (error) {
       setState('idle');
       setActionMessage({
@@ -1356,10 +1469,9 @@ function UploadPage() {
       language,
     };
     try {
-      await careerfitApi.createManualCv(payload);
-      await queryClient.invalidateQueries({ queryKey: ['candidate-cvs'] });
-      setActionMessage({ tone: 'success', text: language === 'vi' ? 'Đã tạo CV và bắt đầu matching.' : 'CV created and matching started.' });
-      navigate('/candidate/profile?tab=cvs');
+      const result = await careerfitApi.createManualCv(payload);
+      if (result.status === 'FAILED') throw new Error(result.message || 'CV processing failed.');
+      await pollCvUntilReady(result.id, true);
     } catch (error) {
       setActionMessage({
         tone: 'error',
@@ -1425,6 +1537,11 @@ function UploadPage() {
                 <span className={state === 'processing' || state === 'scored' ? 'done' : ''}>{t('textExtraction')}</span>
                 <span className={state === 'scored' ? 'done' : ''}>{t('rankingReady')}</span>
               </div>
+              {state === 'failed' && pendingCvId ? (
+                <button className="cv-retry-action" type="button" onClick={() => pollCvUntilReady(pendingCvId)}>
+                  {language === 'vi' ? 'Kiểm tra lại trạng thái' : 'Retry status check'}
+                </button>
+              ) : null}
               <ReasonChips reasons={['PDF / Image / DOCX', 'OCR', 'CV-JD scoring']} />
             </aside>
           </div>
@@ -1613,13 +1730,22 @@ function ProfilePage() {
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [defaultingCvId, setDefaultingCvId] = useState<string | null>(null);
+  const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
+  const [deleteTargetCv, setDeleteTargetCv] = useState<CandidateCvDto | null>(null);
+  const [deletingCvId, setDeletingCvId] = useState<string | null>(null);
   const { data: profile } = useQuery<any>({
     queryKey: ['candidate-profile'],
     queryFn: careerfitApi.getCandidateProfile,
   });
-  const { data: managedCvs = [], isLoading: cvsLoading } = useQuery<any>({
+  const { data: managedCvs = [], isLoading: cvsLoading } = useQuery<CandidateCvDto[]>({
     queryKey: ['candidate-cvs'],
     queryFn: careerfitApi.getCandidateCvs,
+  });
+  const cvDetail = useQuery({
+    queryKey: ['candidate-cv-detail', selectedCvId],
+    queryFn: () => careerfitApi.getCv(selectedCvId!),
+    enabled: Boolean(selectedCvId),
+    retry: false,
   });
   const profileTab = profileTabParamToState[searchParams.get('tab') ?? ''] ?? 'cv';
   function setProfileTab(tab: ProfileTab) {
@@ -1693,6 +1819,32 @@ function ProfilePage() {
       setDefaultingCvId(null);
     }
   }
+
+  async function deleteCv() {
+    if (!deleteTargetCv) return;
+    if (deleteTargetCv.isDefault) {
+      setActionMessage({
+        tone: 'error',
+        text: language === 'vi' ? 'Không thể xóa CV mặc định. Hãy chọn một CV khác làm mặc định trước.' : 'The default CV cannot be deleted. Set another CV as default first.',
+      });
+      setDeleteTargetCv(null);
+      return;
+    }
+    setDeletingCvId(deleteTargetCv.id);
+    setActionMessage(null);
+    try {
+      await careerfitApi.deleteCv(deleteTargetCv.id);
+      if (selectedCvId === deleteTargetCv.id) setSelectedCvId(null);
+      setDeleteTargetCv(null);
+      await queryClient.invalidateQueries({ queryKey: ['candidate-cvs'] });
+      setActionMessage({ tone: 'success', text: language === 'vi' ? 'Đã xóa CV.' : 'CV deleted.' });
+    } catch (error) {
+      setActionMessage({ tone: 'error', text: readableError(error, language === 'vi' ? 'Không thể xóa CV này.' : 'Could not delete this CV.', language) });
+    } finally {
+      setDeletingCvId(null);
+    }
+  }
+
   return (
     <div className="page-stack profile-cv-route">
       <section className="plain-heading profile-cv-heading">
@@ -1734,7 +1886,7 @@ function ProfilePage() {
             <div className="cv-card-list">
               {cvsLoading ? <p>{language === 'vi' ? 'Đang tải danh sách CV...' : 'Loading CVs...'}</p> : null}
               {!cvsLoading && managedCvs.length === 0 ? <p>{language === 'vi' ? 'Bạn chưa có CV. Hãy tải PDF, ảnh, DOCX hoặc tạo CV bằng form.' : 'No CV yet. Upload PDF, image, DOCX, or create one by form.'}</p> : null}
-              {managedCvs.map((cv: any) => (
+              {managedCvs.map((cv) => (
                 <article className="cv-management-card" key={cv.id}>
                   <div className="cv-file-icon">
                     <FileText size={22} />
@@ -1750,8 +1902,21 @@ function ProfilePage() {
                     <span>{cv.isDefault ? t('defaultMatchingCv') : cv.status}</span>
                   </div>
                   <div className="cv-card-actions">
+                    <button type="button" onClick={() => setSelectedCvId(cv.id)}>
+                      {language === 'vi' ? 'Chi tiết' : 'Details'}
+                    </button>
                     <button onClick={() => setDefaultCv(cv)} disabled={cv.isDefault || defaultingCvId === cv.id}>
                       {defaultingCvId === cv.id ? '...' : t('setDefault')}
+                    </button>
+                    <button
+                      className="danger-icon-action"
+                      type="button"
+                      disabled={cv.isDefault || deletingCvId === cv.id}
+                      title={cv.isDefault ? (language === 'vi' ? 'Không thể xóa CV mặc định' : 'The default CV cannot be deleted') : (language === 'vi' ? 'Xóa CV' : 'Delete CV')}
+                      aria-label={language === 'vi' ? `Xóa ${cv.displayName}` : `Delete ${cv.displayName}`}
+                      onClick={() => setDeleteTargetCv(cv)}
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </article>
@@ -1854,6 +2019,66 @@ function ProfilePage() {
           <PortfolioManager />
         )}
       </section>
+      {selectedCvId ? (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSelectedCvId(null)}>
+          <section className="candidate-review-modal cv-detail-modal" role="dialog" aria-modal="true" aria-labelledby="cv-detail-title">
+            <div className="section-heading inline-heading">
+              <div>
+                <p className="eyebrow">CV</p>
+                <h2 id="cv-detail-title">{cvDetail.data?.displayName ?? (language === 'vi' ? 'Chi tiết CV' : 'CV details')}</h2>
+              </div>
+              <button type="button" aria-label={language === 'vi' ? 'Đóng' : 'Close'} onClick={() => setSelectedCvId(null)}><XCircle size={20} /></button>
+            </div>
+            {cvDetail.isLoading ? <div className="cv-detail-loading">{language === 'vi' ? 'Đang tải chi tiết CV...' : 'Loading CV details...'}</div> : null}
+            {cvDetail.isError ? (
+              <div className="cv-detail-error">
+                <ActionMessage tone="error" text={readableError(cvDetail.error, language === 'vi' ? 'Không thể tải chi tiết CV.' : 'Could not load CV details.', language)} />
+                <button type="button" onClick={() => cvDetail.refetch()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+              </div>
+            ) : null}
+            {cvDetail.data ? (
+              <div className="cv-detail-content">
+                <div className="cv-detail-meta">
+                  <span>{cvDetail.data.source === 'MANUAL' ? t('manualCreation') : t('uploadedPdf')}</span>
+                  <span>{cvDetail.data.status}</span>
+                  {cvDetail.data.isDefault ? <strong>{t('defaultMatchingCv')}</strong> : null}
+                  <span>{new Date(cvDetail.data.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</span>
+                </div>
+                <div>
+                  <h3>{language === 'vi' ? 'Kỹ năng đã trích xuất' : 'Extracted skills'}</h3>
+                  {cvDetail.data.topSkills.length ? <ReasonChips reasons={cvDetail.data.topSkills} /> : <p>{language === 'vi' ? 'Chưa có kỹ năng được trích xuất.' : 'No extracted skills yet.'}</p>}
+                </div>
+                <div>
+                  <h3>{language === 'vi' ? 'Tóm tắt hồ sơ' : 'Profile summary'}</h3>
+                  <p>{cvDetail.data.parsedSummary || (language === 'vi' ? 'Chưa có tóm tắt.' : 'No summary available.')}</p>
+                </div>
+                {cvDetail.data.failureReason ? <ActionMessage tone="error" text={cvDetail.data.failureReason} /> : null}
+                <div>
+                  <h3>{language === 'vi' ? 'Nội dung đã trích xuất' : 'Extracted content'}</h3>
+                  <pre className="cv-raw-text">{cvDetail.data.rawText || (language === 'vi' ? 'Chưa có nội dung trích xuất.' : 'No extracted content available.')}</pre>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+      {deleteTargetCv ? (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDeleteTargetCv(null)}>
+          <section className="candidate-review-modal compact-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-cv-title">
+            <div className="section-heading inline-heading">
+              <div><p className="eyebrow">CV</p><h2 id="delete-cv-title">{language === 'vi' ? 'Xóa CV?' : 'Delete CV?'}</h2></div>
+              <button type="button" aria-label={language === 'vi' ? 'Đóng' : 'Close'} onClick={() => setDeleteTargetCv(null)}><XCircle size={20} /></button>
+            </div>
+            <p>{language === 'vi' ? `CV “${deleteTargetCv.displayName}” sẽ bị xóa vĩnh viễn.` : `“${deleteTargetCv.displayName}” will be permanently deleted.`}</p>
+            <div className="filter-modal-actions">
+              <button type="button" onClick={() => setDeleteTargetCv(null)}>{language === 'vi' ? 'Hủy' : 'Cancel'}</button>
+              <button className="danger-action" type="button" disabled={Boolean(deletingCvId)} onClick={deleteCv}>
+                <Trash2 size={16} />{deletingCvId ? (language === 'vi' ? 'Đang xóa...' : 'Deleting...') : (language === 'vi' ? 'Xóa CV' : 'Delete CV')}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2028,11 +2253,11 @@ function RecommendationsPage() {
   const queryClient = useQueryClient();
   const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const { data: candidateJobs = [], isLoading, isFetching } = useJobs({ isPublic: false });
-  const recommendedJobs = [...candidateJobs]
-    .filter((job) => !hiddenJobIds.includes(job.id))
-    .sort((left, right) => right.normalizedScore - left.normalizedScore)
-    .slice(0, 8);
+  const recommendationsQuery = useQuery({
+    queryKey: ['recommendations'],
+    queryFn: () => careerfitApi.getRecommendations(20),
+  });
+  const recommendedJobs = (recommendationsQuery.data ?? []).filter((job) => !hiddenJobIds.includes(job.id));
 
   async function applyToJob(job: Job) {
     setActionMessage(null);
@@ -2075,9 +2300,15 @@ function RecommendationsPage() {
         <h2>{t('recommendationsTitle')}</h2>
       </section>
       {actionMessage ? <ActionMessage {...actionMessage} /> : null}
+      {recommendationsQuery.isError ? (
+        <section className="query-error-panel">
+          <ActionMessage tone="error" text={readableError(recommendationsQuery.error, language === 'vi' ? 'Không thể tải gợi ý việc làm.' : 'Could not load job recommendations.', language)} />
+          <button type="button" onClick={() => recommendationsQuery.refetch()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+        </section>
+      ) : null}
       <JobListWithPreview
         jobs={recommendedJobs}
-        isLoading={isLoading || isFetching}
+        isLoading={recommendationsQuery.isLoading || recommendationsQuery.isFetching}
         onOpen={(job) => navigate(`/candidate/jobs/${job.id}`)}
         onApply={applyToJob}
         onSkip={skipJob}
@@ -2233,7 +2464,7 @@ function AutomationPage() {
   );
 }
 
-function CandidateSettingsPage({
+function CandidateSettingsPageUnused({
   onLogout,
   onDeleteAccount,
 }: {
@@ -2341,7 +2572,7 @@ function CandidateSettingsPage({
   );
 }
 
-function RecruiterSettingsPage({
+function RecruiterSettingsPageUnused({
   onLogout,
   onDeleteAccount,
 }: {
@@ -2787,14 +3018,18 @@ function RecruiterJobsPage() {
   const { jobId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const recruiterSubview = getRecruiterSubview(location.pathname);
-  const recruiterQuery = getRecruiterJobsQuery(searchParams);
+  const recruiterSearchParamsKey = searchParams.toString();
+  const recruiterQuery = useMemo(
+    () => getRecruiterJobsQuery(new URLSearchParams(recruiterSearchParamsKey)),
+    [recruiterSearchParamsKey],
+  );
   const { data: recruiterJobs = [], refetch: refetchRecruiterJobs } = useRecruiterJobs();
   const [showCreateJob, setShowCreateJob] = useState(searchParams.get('create') === '1');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [deletingJob, setDeletingJob] = useState<Job | null>(null);
   const [creatingJob, setCreatingJob] = useState(false);
   const selectedJob = recruiterJobs.find((job) => job.id === jobId) ?? recruiterJobs[0] ?? null;
-  const candidateOptions = useMemo(() => recruiterDiscoveryOptions(recruiterQuery), [recruiterQuery.match, recruiterQuery.sort]);
+  const candidateOptions = useMemo(() => recruiterDiscoveryOptions(recruiterQuery), [recruiterQuery]);
   const [invitingCandidateId, setInvitingCandidateId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<RecruiterCandidateItem | null>(null);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
@@ -2975,25 +3210,6 @@ function RecruiterJobsPage() {
       setActionMessage({
         tone: 'error',
         text: readableError(error, language === 'vi' ? 'Không thể cập nhật trạng thái.' : 'Could not update status.', language),
-      });
-    } finally {
-      setInvitingCandidateId(null);
-    }
-  }
-
-  async function markCandidatePotential(item: RecruiterCandidateItem) {
-    setInvitingCandidateId(item.candidateId);
-    setActionMessage(null);
-    try {
-      await careerfitApi.submitMatchFeedback(item.matchingId, 'POTENTIAL', 'RECRUITER');
-      setActionMessage({
-        tone: 'success',
-        text: language === 'vi' ? `Đã ghi nhận ${item.name} là ứng viên tiềm năng cho thuật toán.` : `${item.name} marked as a potential learning signal.`,
-      });
-    } catch (error) {
-      setActionMessage({
-        tone: 'error',
-        text: readableError(error, language === 'vi' ? 'Không thể lưu đánh giá tiềm năng.' : 'Could not save potential feedback.', language),
       });
     } finally {
       setInvitingCandidateId(null);
@@ -3186,12 +3402,10 @@ function RecruiterJobsPage() {
                   </div>
                 </div>
                 <div className="candidate-review-actions">
-                  <FeedbackBar matchingId={item.matchingId} role="RECRUITER" />
                   {!item.hasApplied && (item.label === 'HIGH' || item.isPotential) ? (
                     <>
                       <button disabled={invitingCandidateId === item.candidateId} onClick={() => inviteCandidate(item)}>{t('invite')}</button>
                       <button onClick={() => setSelectedCandidate(item)}>{t('review')}</button>
-                      <button disabled={invitingCandidateId === item.candidateId} onClick={() => markCandidatePotential(item)}>{t('markPotential')}</button>
                     </>
                   ) : null}
                   {item.hasApplied && item.applicationId ? (
@@ -3518,7 +3732,7 @@ function ProgressRow({ label, value, max }: { label: string; value: number; max:
   );
 }
 
-function RefineSearchPanel() {
+function RefineSearchPanelUnused() {
   const { t } = useLanguage();
   return (
     <aside className="filter-panel">
@@ -3550,7 +3764,12 @@ function RefineSearchPanel() {
 
 function TopEmployers() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const { data: employers = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['featured-employers'],
+    queryFn: careerfitApi.getFeaturedEmployers,
+    staleTime: 5 * 60_000,
+  });
 
   return (
     <section className="top-employers">
@@ -3562,14 +3781,32 @@ function TopEmployers() {
         </div>
       </div>
       <div className="employer-strip">
-        {topEmployers.map((employer) => (
-          <button className="employer-card" key={employer.id} onClick={() => navigate(`/candidate/employers/${employer.id}`)}>
-            <span className={`employer-mark ${employer.tone}`}>{employer.mark}</span>
+        {isLoading ? <p>{language === 'vi' ? 'Đang tải nhà tuyển dụng...' : 'Loading employers...'}</p> : null}
+        {isError ? (
+          <div className="employer-load-error" role="alert">
+            <span>{language === 'vi' ? 'Không thể tải nhà tuyển dụng nổi bật.' : 'Could not load featured employers.'}</span>
+            <button type="button" onClick={() => void refetch()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+          </div>
+        ) : null}
+        {employers.map((employer) => (
+          <button className="employer-card" key={employer.id} onClick={() => navigate(`/candidate/employers/${employer.slug}`)} title={employer.companyName} aria-label={employer.companyName}>
+            <span className="employer-mark">
+              {employer.logoUrl ? <img src={employer.logoUrl} alt="" /> : employerInitials(employer)}
+            </span>
           </button>
         ))}
       </div>
     </section>
   );
+}
+
+function employerInitials(employer: Pick<EmployerDetailDto, 'companyName'>) {
+  return employer.companyName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'CF';
 }
 
 function MatchingEdgeCaseNotice({
@@ -3705,7 +3942,6 @@ function JobListWithPreview({
                   <FeedbackBar
                     matchingId={job.matchingId}
                     initialFeedback={job.feedback}
-                    role="CANDIDATE"
                     onNotInterested={() => onSkip?.(job.id, { feedbackSaved: true })}
                   />
                 ) : null}
@@ -4130,7 +4366,7 @@ function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; sh
         <aside className="jd-side-content">
           <button className="primary-action full" onClick={onApply}>{t('apply')}</button>
           {showMatchMeta && job.matchingId ? (
-            <FeedbackBar matchingId={job.matchingId} initialFeedback={job.feedback} role="CANDIDATE" />
+            <FeedbackBar matchingId={job.matchingId} initialFeedback={job.feedback} />
           ) : null}
           {showMatchMeta ? (
             <>
@@ -4148,7 +4384,7 @@ function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; sh
   );
 }
 
-function StickyApplyBar({ onApply }: { onApply?: () => void }) {
+function StickyApplyBar({ onApply, onSimilar }: { onApply?: () => void; onSimilar?: () => void }) {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   return (
@@ -4160,7 +4396,7 @@ function StickyApplyBar({ onApply }: { onApply?: () => void }) {
         <Bookmark size={17} />
         {t('save')}
       </button>
-      <button disabled title={language === 'vi' ? 'Tính năng việc làm tương tự chưa được nối backend.' : 'Similar jobs are not connected to the backend yet.'}>
+      <button onClick={onSimilar}>
         <Mail size={17} />
         {t('similarJobs')}
       </button>
@@ -4291,48 +4527,57 @@ function SearchHero({
 function JobMarketDashboard() {
   const { language, t } = useLanguage();
   const [demandMode, setDemandMode] = useState<'job' | 'salary'>('job');
-  const dayLabels = language === 'vi'
-    ? { Mon: 'T2', Tue: 'T3', Wed: 'T4', Thu: 'T5', Fri: 'T6', Sat: 'T7', Sun: 'CN' }
-    : { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' };
-  const jobPostingTrend = [
-    { day: dayLabels.Mon, postings: 43820 },
-    { day: dayLabels.Tue, postings: 52940 },
-    { day: dayLabels.Wed, postings: 60849 },
-    { day: dayLabels.Thu, postings: 78420 },
-    { day: dayLabels.Fri, postings: 75260 },
-    { day: dayLabels.Sat, postings: 36180 },
-    { day: dayLabels.Sun, postings: 28450 },
-  ];
-  const itDemandData = [
-    { label: 'Frontend', value: 14861, color: '#20d488' },
-    { label: 'Backend', value: 11920, color: '#3f8cff' },
-    { label: 'Data/AI', value: 10540, color: '#f49a20' },
-    { label: 'DevOps', value: 9860, color: '#21d8d0' },
-    { label: 'QA/Testing', value: 7420, color: '#ffd51f' },
-    { label: 'Mobile', value: 6820, color: '#72f8e8' },
-  ];
-  const salaryDemandData = [
-    { label: '<10tr', value: 920, color: '#20d488' },
-    { label: '10-20tr', value: 9680, color: '#3f8cff' },
-    { label: '20-30tr', value: 31286, color: '#f49a20' },
-    { label: '30-45tr', value: 33640, color: '#21d8d0' },
-    { label: '>45tr', value: 2860, color: '#ffd51f' },
-    { label: 'Thỏa thuận', value: 16820, color: '#ffffff' },
-  ];
+  const statsQuery = useQuery({ queryKey: ['market-stats'], queryFn: careerfitApi.getMarketStats });
+  const trendQuery = useQuery({ queryKey: ['market-trend', 7], queryFn: () => careerfitApi.getMarketTrend(7) });
+  const rolesQuery = useQuery({ queryKey: ['market-roles', 6], queryFn: () => careerfitApi.getMarketRoles(6) });
+  const salaryQuery = useQuery({ queryKey: ['market-salary'], queryFn: careerfitApi.getAdvancedMarketSalary });
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US';
+  const colors = ['#20d488', '#3f8cff', '#f49a20', '#21d8d0', '#ffd51f', '#72f8e8'];
+  const jobPostingTrend = (trendQuery.data ?? []).map((point) => ({
+    day: new Date(`${point.date}T00:00:00`).toLocaleDateString(locale, { weekday: 'short' }),
+    postings: point.activeJobs,
+  }));
+  const itDemandData = Object.entries(rolesQuery.data ?? {}).map(([label, value], index) => ({
+    label,
+    value: Number(value),
+    color: colors[index % colors.length],
+  }));
+  const salaryDemandData = (salaryQuery.data ?? []).slice(0, 6).map((bucket, index) => ({
+    label: `${bucket.seniority || (language === 'vi' ? 'Không rõ' : 'Unspecified')} · ${bucket.currency}`,
+    value: bucket.jobCount,
+    color: colors[index % colors.length],
+  }));
   const activeDemandData = demandMode === 'job' ? itDemandData : salaryDemandData;
+  const stats = statsQuery.data;
+  const isLoading = statsQuery.isLoading || trendQuery.isLoading || rolesQuery.isLoading || salaryQuery.isLoading;
+  const hasError = statsQuery.isError || trendQuery.isError || rolesQuery.isError || salaryQuery.isError;
+  const number = (value?: number) => Number(value ?? 0).toLocaleString(locale);
+
+  function retryMarketData() {
+    void Promise.all([statsQuery.refetch(), trendQuery.refetch(), rolesQuery.refetch(), salaryQuery.refetch()]);
+  }
   return (
     <section className="market-dashboard">
       <div className="market-dashboard-heading">
         <h2>
-          {t('marketToday')} <span>16/05/2026</span>
+          {t('marketToday')} <span>{new Date().toLocaleDateString(locale)}</span>
         </h2>
       </div>
 
       <div className="market-stats-row">
-        <StatCard label={t('newJobs24h')} value="3.332" detail={t('itRolesRefreshed')} />
-        <StatCard label={t('openJobs')} value="55.088" detail={t('activeItOpportunities')} />
-        <StatCard label={t('companiesHiring')} value="18.485" detail={t('verifiedEmployers')} />
+        <StatCard label={t('newJobs24h')} value={isLoading ? '...' : number(stats?.newJobsToday)} detail={t('itRolesRefreshed')} />
+        <StatCard label={t('openJobs')} value={isLoading ? '...' : number(stats?.activeJobs)} detail={`${number(stats?.totalJobs)} ${language === 'vi' ? 'việc làm đã đăng' : 'jobs posted'}`} />
+        <StatCard label={t('companiesHiring')} value={isLoading ? '...' : number(stats?.employers)} detail={t('verifiedEmployers')} />
       </div>
+
+      {hasError ? (
+        <div className="market-query-state market-query-error" role="alert">
+          <span>{language === 'vi' ? 'Không thể tải đầy đủ dữ liệu thị trường việc làm.' : 'The job market data could not be fully loaded.'}</span>
+          <button type="button" onClick={retryMarketData}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button>
+        </div>
+      ) : null}
+
+      {isLoading ? <div className="market-query-state">{language === 'vi' ? 'Đang đồng bộ số liệu thị trường...' : 'Loading live market data...'}</div> : null}
 
       <div className="market-chart-grid">
         <section className="market-chart-card">
@@ -4340,8 +4585,11 @@ function JobMarketDashboard() {
             <span className="trend-dot">↗</span>
             <h3>{t('jobGrowth')}</h3>
           </div>
-          <ResponsiveContainer width="100%" height={270}>
-            <AreaChart data={jobPostingTrend}>
+          {!isLoading && jobPostingTrend.length === 0 ? (
+            <div className="market-chart-empty">{language === 'vi' ? 'Chưa có dữ liệu xu hướng cho khoảng thời gian này.' : 'No trend data is available for this period.'}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={270}>
+              <AreaChart data={jobPostingTrend}>
               <defs>
                 <linearGradient id="market-growth" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#20d488" stopOpacity={0.22} />
@@ -4353,8 +4601,9 @@ function JobMarketDashboard() {
               <YAxis tick={{ fill: 'rgba(255,255,255,.82)', fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip content={<MarketLineTooltip />} cursor={{ stroke: 'rgba(255,255,255,.65)' }} />
               <Area type="monotone" dataKey="postings" stroke="#20d488" strokeWidth={4} fill="url(#market-growth)" />
-            </AreaChart>
-          </ResponsiveContainer>
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </section>
 
         <section className="market-chart-card">
@@ -4367,8 +4616,11 @@ function JobMarketDashboard() {
             </select>
           </div>
           <div className="bar-chart-wrap">
-            <ResponsiveContainer width="100%" height={270}>
-              <BarChart data={activeDemandData}>
+            {!isLoading && activeDemandData.length === 0 ? (
+              <div className="market-chart-empty">{language === 'vi' ? 'Chưa có dữ liệu phân bổ cho lựa chọn này.' : 'No distribution data is available for this selection.'}</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={270}>
+                <BarChart data={activeDemandData}>
                 <CartesianGrid strokeDasharray="4 8" stroke="rgba(255,255,255,.14)" />
                 <XAxis dataKey="label" tick={{ fill: 'rgba(255,255,255,.82)', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: 'rgba(255,255,255,.82)', fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -4378,8 +4630,9 @@ function JobMarketDashboard() {
                     <Cell key={entry.label} fill={entry.color} />
                   ))}
                 </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
           <div className="market-legend">
             {activeDemandData.map((item) => (
@@ -4553,6 +4806,7 @@ function useJobs({ isPublic, keyword = '', enabled = true }: { isPublic: boolean
     enabled,
     queryFn: () => isPublic ? careerfitApi.searchJobs(keyword) : careerfitApi.getCandidateJobs(),
     refetchInterval: 60_000,
+    retry: 1,
   });
 }
 

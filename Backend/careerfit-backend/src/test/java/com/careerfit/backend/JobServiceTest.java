@@ -5,6 +5,7 @@ import com.careerfit.backend.auth.entity.UserAccount;
 import com.careerfit.backend.auth.repository.UserAccountRepository;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.common.service.QualityValidationService;
+import com.careerfit.backend.common.util.AfterCommitExecutor;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
 import com.careerfit.backend.employer.repository.EmployerProfileRepository;
@@ -20,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +34,10 @@ class JobServiceTest {
     private JobRepository jobRepo;
     private UserAccountRepository userRepo;
     private ApplicationRepository applicationRepo;
+    private MatchingService matchingService;
+    private AfterCommitExecutor afterCommitExecutor;
+    private TextNormalizationService normalizer;
+    private TfIdfService tfidf;
     private JobService service;
     private UserAccount recruiter;
 
@@ -40,18 +46,23 @@ class JobServiceTest {
         jobRepo = mock(JobRepository.class);
         userRepo = mock(UserAccountRepository.class);
         applicationRepo = mock(ApplicationRepository.class);
+        matchingService = mock(MatchingService.class);
+        afterCommitExecutor = mock(AfterCommitExecutor.class);
+        normalizer = mock(TextNormalizationService.class);
+        tfidf = mock(TfIdfService.class);
         recruiter = new UserAccount("recruiter@test.local", "hash", UserAccount.Role.RECRUITER, "Recruiter");
         ReflectionTestUtils.setField(recruiter, "id", recruiterId);
         service = new JobService(
                 jobRepo,
                 userRepo,
                 mock(EmployerProfileRepository.class),
-                mock(TextNormalizationService.class),
-                mock(TfIdfService.class),
-                mock(MatchingService.class),
+                normalizer,
+                tfidf,
+                matchingService,
                 new ObjectMapper(),
                 mock(QualityValidationService.class),
-                applicationRepo);
+                applicationRepo,
+                afterCommitExecutor);
     }
 
     @Test
@@ -100,6 +111,44 @@ class JobServiceTest {
         assertThatThrownBy(() -> service.exportMyJobsCsv(recruiterId))
                 .isInstanceOf(AppException.class)
                 .satisfies(error -> assertThat(((AppException) error).getCode()).isEqualTo("FORBIDDEN"));
+    }
+
+    @Test
+    void publicJobDetailDoesNotExposeNonActiveJob() {
+        Job hiddenJob = job();
+        hiddenJob.setStatus(Job.JobStatus.HIDDEN_BY_ADMIN);
+        when(jobRepo.findByIdAndStatus(hiddenJob.getId(), Job.JobStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getById(hiddenJob.getId()))
+                .isInstanceOf(AppException.class)
+                .satisfies(error -> assertThat(((AppException) error).getCode()).isEqualTo("NOT_FOUND"));
+    }
+
+    @Test
+    void createJobSchedulesMatchingAfterPersistence() {
+        when(userRepo.findById(recruiterId)).thenReturn(Optional.of(recruiter));
+        when(normalizer.detectLanguage(anyString())).thenReturn("en");
+        when(normalizer.normalize(anyString(), eq("en"))).thenReturn(List.of("java"));
+        when(tfidf.buildVector(anyList())).thenReturn(Map.of("java", 1.0));
+        when(jobRepo.save(any(Job.class))).thenAnswer(invocation -> {
+            Job saved = invocation.getArgument(0);
+            if (saved.getId() == null) ReflectionTestUtils.setField(saved, "id", UUID.randomUUID());
+            return saved;
+        });
+
+        var request = new com.careerfit.backend.job.dto.JobDtos.CreateJobRequest(
+                "Backend Engineer", "CareerFit", "Java Spring Boot PostgreSQL",
+                List.of("Java"), List.of("Docker"), "MID", "FULL_TIME", "Can Tho",
+                "HYBRID", "NEGOTIABLE", null, null, "VND", "MONTHLY",
+                true, "Negotiable", "Backend", null);
+
+        var response = service.createJob(recruiterId, request);
+
+        org.mockito.ArgumentCaptor<Runnable> task = org.mockito.ArgumentCaptor.forClass(Runnable.class);
+        verify(afterCommitExecutor).execute(task.capture());
+        task.getValue().run();
+        verify(matchingService).scoreJobAgainstAllCvs(UUID.fromString(response.id()));
     }
 
     private Job job() {

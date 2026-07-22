@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { adminApi, type AdminDashboardResponse, type AdminUserSummary, type AdminJobSummary, type EmailActionSummary, type EmailTokenSummary, type PageResponse, type AuditLogPageResponse } from '../lib/adminApi';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { ToastMessage } from '../components/ToastMessage';
@@ -10,15 +10,16 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     adminApi.getDashboard()
-      .then((res: any) => {
+      .then((res) => {
         setData(res);
         setError(null);
       })
       .catch(() => {
         setError(t('adminDataLoadFailed'));
       });
-  }, []);
+  }, [t]);
 
+  if (error) return <div className="page-stack"><InlineAdminError message={error} /></div>;
   if (!data) return <div className="page-stack">{t('loadingDashboard')}</div>;
 
   return (
@@ -41,21 +42,21 @@ export function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => { fetchUsers(); }, []);
-  const fetchUsers = () => adminApi.searchUsers({})
-    .then((res: any) => {
+  const fetchUsers = useCallback(() => adminApi.searchUsers({})
+    .then((res) => {
       setData(res);
       setError(null);
     })
-      .catch(() => {
-        setError(t('adminDataLoadFailed'));
-      });
+    .catch(() => {
+      setError(t('adminDataLoadFailed'));
+    }), [t]);
+  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
   const handleToggleStatus = async (user: AdminUserSummary) => {
     try {
       if (user.status === 'ACTIVE') await adminApi.suspendUser(user.id);
       else await adminApi.activateUser(user.id);
-      fetchUsers();
+      await fetchUsers();
       setActionMessage({ tone: 'success', text: t('userStatusUpdated') });
     } catch {
       setError(t('backendOfflineLocalUpdate'));
@@ -95,21 +96,21 @@ export function AdminJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => { fetchJobs(); }, []);
-  const fetchJobs = () => adminApi.getJobs({})
-    .then((res: any) => {
+  const fetchJobs = useCallback(() => adminApi.getJobs({})
+    .then((res) => {
       setData(res);
       setError(null);
     })
-      .catch(() => {
-        setError(t('adminDataLoadFailed'));
-      });
+    .catch(() => {
+      setError(t('adminDataLoadFailed'));
+    }), [t]);
+  useEffect(() => { void fetchJobs(); }, [fetchJobs]);
 
   const handleToggleJob = async (job: AdminJobSummary) => {
     try {
       if (job.status === 'ACTIVE') await adminApi.hideJob(job.id);
       else await adminApi.restoreJob(job.id);
-      fetchJobs();
+      await fetchJobs();
       setActionMessage({ tone: 'success', text: t('jobVisibilityUpdated') });
     } catch {
       setError(t('backendOfflineLocalUpdate'));
@@ -150,14 +151,14 @@ export function AdminAuditLogsPage() {
 
   useEffect(() => {
     adminApi.getAuditLogs({})
-      .then((res: any) => {
+      .then((res) => {
         setData(res);
         setError(null);
       })
       .catch(() => {
         setError(t('adminDataLoadFailed'));
       });
-  }, []);
+  }, [t]);
 
   return (
     <div className="page-stack">
@@ -190,28 +191,28 @@ export function AdminEmailMonitorPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => { fetchActions(); fetchTokens(); }, []);
-  const fetchActions = () => adminApi.getEmailActions({})
-    .then((res: any) => {
+  const fetchActions = useCallback(() => adminApi.getEmailActions({})
+    .then((res) => {
       setActions(res);
       setError(null);
     })
-      .catch(() => {
-        setError(t('adminDataLoadFailed'));
-      });
-  const fetchTokens = () => adminApi.getEmailTokens({})
-    .then((res: any) => {
+    .catch(() => {
+      setError(t('adminDataLoadFailed'));
+    }), [t]);
+  const fetchTokens = useCallback(() => adminApi.getEmailTokens({})
+    .then((res) => {
       setTokens(res);
       setError(null);
     })
-      .catch(() => {
+    .catch(() => {
       setError(t('adminDataLoadFailed'));
-    });
+    }), [t]);
+  useEffect(() => { void Promise.all([fetchActions(), fetchTokens()]); }, [fetchActions, fetchTokens]);
 
   const markPending = async (action: EmailActionSummary) => {
     try {
       await adminApi.retryEmailAction(action.id);
-      fetchActions();
+      await fetchActions();
       setActionMessage({ tone: 'success', text: t('emailActionUpdated') });
     } catch {
       setError(t('backendOfflineLocalUpdate'));
@@ -252,14 +253,6 @@ export function AdminEmailMonitorPage() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function AdminError({ message }: { message: string }) {
-  return (
-    <div className="page-stack">
-      <InlineAdminError message={message} />
     </div>
   );
 }

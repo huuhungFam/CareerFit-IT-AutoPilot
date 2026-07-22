@@ -45,8 +45,8 @@ Web app có hai vai trò:
 Email là kênh hành động nhanh cho các quyết định nhỏ hoặc cần xác nhận:
 
 - candidate bấm `Apply`, `Skip`, `Show Similar`,
-- recruiter bấm `Invite`, `Reject`, `Mark Potential`,
-- người dùng gửi feedback `Good Match`, `Potential`, `Bad Match`,
+- recruiter bấm `Invite` hoặc cập nhật trạng thái ứng tuyển,
+- candidate gửi feedback `Good Match`, `Potential`, `Bad Match`, `Not Interested`,
 - người dùng đăng nhập bằng passwordless magic-link.
 
 ### 1.3. Backend Automation Agent
@@ -750,7 +750,7 @@ Quy tắc:
 Luồng:
 
 1. Candidate nhập keyword ở homepage hoặc trang việc làm.
-2. Frontend gọi `GET /api/jobs/search/suggestions` khi input focus và keyword đủ dài; nếu backend chưa sẵn sàng, UI fallback sang suggestions từ dữ liệu mock.
+2. Frontend gọi `GET /api/jobs/search/suggestions` khi input focus và keyword đủ dài; nếu backend không sẵn sàng, UI ẩn suggestion hoặc hiển thị trạng thái lỗi phù hợp, không thay bằng dữ liệu mock.
 3. Candidate bấm Search hoặc chọn suggestion.
 4. Frontend chuyển sang trang search results với keyword/filter trong query string.
 5. Backend trả danh sách job, tổng số kết quả, pagination và filter metadata.
@@ -774,7 +774,7 @@ Luồng:
 4. Backend nên trả `label`, `isPotential`, `applicationStatus`, `normalizedScore` và tie-break metadata nếu có.
 5. Nếu filter không có kết quả, frontend hiển thị empty state riêng và CTA xem toàn bộ ranking hoặc xóa search.
 
-Backend vẫn là nguồn sự thật cho score, label, potential và application status. Frontend chỉ hiển thị/lọc theo dữ liệu trả về hoặc fallback mock khi backend chưa sẵn sàng.
+Backend vẫn là nguồn sự thật cho score, label, potential và application status. Frontend chỉ hiển thị/lọc theo dữ liệu trả về; backend lỗi phải tạo error state, không được biến thành ranking mock.
 
 ### 7.8.2. Guest access và login redirect
 
@@ -790,7 +790,7 @@ Luồng:
 8. Sau login, frontend/backend session chuyển người dùng về `next` nếu role phù hợp; nếu không phù hợp thì chuyển về dashboard của role đăng nhập.
 
 Backend thật phải enforce cùng rule bằng role-based authorization; frontend guard chỉ là UX.
-Frontend hiện lưu access token và account summary trong `localStorage`. `POST /api/auth/login` là đường chính; mock account `ca`/`re` chỉ là fallback development khi backend chưa chạy.
+Frontend hiện lưu access token và account summary trong `sessionStorage`. `POST /api/auth/login` là đường đăng nhập duy nhất; `ca`/`re`/`ad` là account seed thật và backend phải chạy để đăng nhập.
 
 ### 7.9. Employer detail
 
@@ -880,8 +880,8 @@ Luồng:
 ### 8.7. Employer
 
 - `GET /api/employers/featured`
-- `GET /api/employers/{id}`
-- `GET /api/employers/{id}/jobs`
+- `GET /api/employers/{slug}`
+- `GET /api/employers/{slug}/jobs`
 
 ### 8.8. Recruiter Workspace
 
@@ -893,14 +893,13 @@ Luồng:
 
 ### 8.9. Feedback
 
-- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE`
-- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=RECRUITER`
-- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER`
-- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB&role=RECRUITER`
+- `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=BAD_MATCH&channel=WEB`
+- `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB`
 - `GET /api/email-action/redeem?token=...`
+
+Các route `/api/matches/**` yêu cầu JWT Candidate. Query `role` mặc định là `CANDIDATE`; giá trị khác bị từ chối `400`, còn Recruiter bị chặn `403` bởi security chain.
 
 ### 8.10. Analytics
 
@@ -1086,3 +1085,12 @@ Kiến trúc automation chỉ coi là xong khi:
 
 - `POST /api/admin/users/{userId}/suspend` - Admin suspend User Account.
 - Role/Permission: `ADMIN` mới được phép call các api bắt đầu bằng `/api/admin/*`.
+
+### 12.4. Frontend Contract Integration Checkpoint 2026-07-18
+
+- Session lưu JWT trong `sessionStorage`, nhưng mỗi lần reload phải gọi `GET /api/auth/me` để xác minh identity/role hiện tại; `401/403` phải xóa session local.
+- Magic-link frontend route `/auth/magic-link/verify?token=...` thực hiện GET inspect, POST consume token, lưu JWT, gọi `/api/auth/me` rồi redirect theo role.
+- CV upload/manual là workflow async: POST trả `cvId`, frontend poll `GET /api/cv/{cvId}/status` với retry có giới hạn và timeout đến `SCORING_DONE` hoặc `FAILED`.
+- CV management dùng `GET /api/cv/me`, `GET /api/cv/{cvId}`, `POST /api/cv/{cvId}/set-default` và `DELETE /api/cv/{cvId}`; frontend không tạo chức năng edit khi chưa có update endpoint.
+- Candidate Recommendations dùng `/api/recommendations/jobs`; matching card feed `/api/matches/me/cards` là representation riêng cho Candidate Jobs.
+- Job Market Dashboard chỉ dùng `/api/analytics/stats`, `/trend`, `/roles` và `/api/analytics/market/salary`; không dùng matching count hoặc mảng tĩnh làm dữ liệu thị trường.

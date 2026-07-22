@@ -61,6 +61,8 @@ public class FeedbackService {
         var user = userRepo.findById(userId)
                 .orElseThrow(() -> AppException.notFound("User", userId));
 
+        authorizeActor(matching, userId, actorRole);
+
         // Upsert: if feedback already exists, update it
         Feedback feedback = feedbackRepo.findByMatchingIdAndActorId(matchingId, userId)
                 .orElse(new Feedback(matching, user, actorRole, feedbackType, channel));
@@ -102,6 +104,16 @@ public class FeedbackService {
             } else {
                 rocchioService.updateJobVector(jobId);
             }
+        }
+    }
+
+    private void authorizeActor(Matching matching, UUID userId, Feedback.ActorRole actorRole) {
+        boolean authorized = switch (actorRole) {
+            case CANDIDATE -> matching.getCv().getCandidate().getUser().getId().equals(userId);
+            case RECRUITER -> matching.getJob().getRecruiter().getId().equals(userId);
+        };
+        if (!authorized) {
+            throw AppException.forbidden("You cannot submit feedback for this matching");
         }
     }
 

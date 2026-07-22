@@ -120,7 +120,7 @@ Frontend nam trong thu muc `Frontend` va hien dang chay bang React 18, TypeScrip
 
 ```powershell
 cd Frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -164,13 +164,13 @@ Hiện tại UI candidate có các luồng chính:
 - Guest có nav gần giống Candidate để xem được Dashboard và Jobs public; các tab Upload CV, Hồ sơ & CV, Gợi ý, Ứng tuyển và AutoFit sẽ hiển thị màn hình yêu cầu đăng nhập.
 - Header Guest chỉ có Guest chip, nút Đăng nhập và chuyển ngôn ngữ. Sau khi đăng nhập, header hiển thị workspace đầy đủ và logout/delete account nằm trong Settings.
 - Login guard và Apply modal truyền `next` intent để sau login quay lại trang vừa định mở nếu role phù hợp.
-- Login gọi backend `POST /api/auth/login`; token và account được lưu trong `localStorage`. Các tài khoản test nhanh `ca` / `1`, `re` / `1`, `ad` / `1` là tài khoản seed thật từ backend/Flyway, không phải phiên mock tạm thời. Backend cần chạy để đăng nhập các tài khoản này; admin seed dùng email/identifier `ad`.
+- Login gọi backend `POST /api/auth/login`; token và account được lưu trong `sessionStorage` và được xóa khi đóng tab. Các tài khoản test nhanh `ca` / `1`, `re` / `1`, `ad` / `1` là tài khoản seed thật từ backend/Flyway, không phải phiên mock tạm thời. Backend cần chạy để đăng nhập các tài khoản này; admin seed dùng email/identifier `ad`.
 - Trang tổng quan hiển thị search hero, một số job mới và nút xem tất cả.
 - Khi gõ keyword sẽ hiển thị gợi ý tìm kiếm trong lúc input đang focus.
 - Bấm Search sẽ chuyển sang trang kết quả `/candidate/jobs?keyword=...`.
 - Trang kết quả hiển thị list job một cột, filter bar và link vào job detail.
 - Job detail có sticky apply bar khi cuộn xuống.
-- Nhà tuyển dụng nổi bật có route chi tiết riêng.
+- Nhà tuyển dụng nổi bật, hồ sơ công ty và danh sách JD của công ty dùng lần lượt `/api/employers/featured`, `/api/employers/{slug}` và `/api/employers/{slug}/jobs`.
 - Upload CV có 2 tab: Document Parser và Manual Creation.
 - Hồ sơ & CV quản lý nhiều CV, hồ sơ cố định và Portfolio / Dự án.
 - Candidate Settings quản lý tài khoản, job alerts, privacy và security.
@@ -181,27 +181,32 @@ Hiện tại UI candidate có các luồng chính:
 - Public job feed/detail ưu tiên `GET /api/jobs/search` và `GET /api/jobs/{jobId}`.
 - Recruiter tổng quan (`/recruiter`) tách riêng với trang Việc làm HR Dashboard (`/recruiter/jobs`) và ưu tiên `GET /api/recruiter/dashboard`, `GET /api/recruiter/jobs`.
 - Recruiter job workspace có candidate filter riêng theo `HIGH`, `POTENTIAL`, `HIGH_OR_POTENTIAL`, `APPLIED`, `NOT_APPLIED`; filter được lưu trên URL bằng `match=...` và không thay thế tab Applied CVs / AI Potential Matches.
-- Recruiter applicant/ranking cards có Rocchio feedback UI role `RECRUITER`, tie-break note khi điểm bằng nhau và CTA Invite/Review/Mark Potential cho candidate chưa apply nhưng high/potential.
+- Recruiter applicant/ranking cards có tie-break note khi điểm bằng nhau và CTA Invite/Review cho candidate chưa apply nhưng high/potential. Rocchio feedback trên web hiện chỉ dành cho Candidate; Recruiter không thấy feedback controls hoặc Mark Potential.
 - Recruiter Settings quản lý company profile, team permissions, JD defaults và recruiting notifications.
 - Admin control panel có dashboard, user management, job moderation, audit logs và email/token monitor; UI dùng các endpoint `/api/admin/*`, chặn role không phải Admin và hiển thị error panel nếu API lỗi thay vì treo loading vô hạn.
 - Trang Thống kê cũ của recruiter vẫn giữ tại `/recruiter/analytics`.
 - Advanced Analytics UI đã có route riêng `/candidate/advanced-analytics` và `/recruiter/advanced-analytics`, sử dụng market analytics public kết hợp analytics theo role. Backend contract cho UI nằm tại `Frontend/ADVANCED_ANALYTICS_API.md`.
 - Candidate application flow đã nối API thật: Apply từ job card/detail gọi `POST /api/applications`, trang `/candidate/applications` đọc `GET /api/applications/me` và withdraw gọi `DELETE /api/applications/{id}`.
+- Nút Việc làm tương tự ở job detail đọc endpoint public `/api/recommendations/jobs/{jobId}/similar`; xuất CSV recruiter tạo file có dữ liệu thật từ `/api/recruiter/jobs` thay vì file rỗng.
 - Dashboard Candidate lấy số gợi ý, số đơn ứng tuyển và trạng thái Auto-Apply từ API thật; nút Apply trên job mới thực hiện `POST /api/applications` thay vì chỉ đổi giao diện.
 - Trang Gợi ý đọc `/api/matches/me/cards`, xếp các kết quả tốt nhất hiện có và nối xem chi tiết, ứng tuyển, bỏ qua/phản hồi. Trang không còn phụ thuộc ngưỡng cứng khiến tài khoản có match thấp bị rỗng giả.
 - Trang Candidate Jobs dùng phân trang 20 job/trang; nút `Xem thêm 20 việc làm` gọi tiếp page kế tiếp và tự ẩn khi backend trả hết `totalPages`.
-- Candidate/Recruiter Settings đọc và lưu `/api/settings/me`; giá trị giữ nguyên sau reload. Đăng ký và yêu cầu magic-link cũng gọi backend thật.
+- Candidate/Recruiter Settings đọc và lưu `/api/settings/me`; session được xác minh lại bằng `/api/auth/me` khi reload. Magic-link có route `/auth/magic-link/verify` để inspect token, consume token, lưu JWT và chuyển về dashboard theo role. URL trong email backend cần trỏ token về route frontend này thay vì mở trực tiếp API GET.
 - AutoFit/Automation page đã nối policy backend, có toggle `emailNotificationsEnabled`/no-spam, Auto-Apply threshold, high-match email, daily digest, quiet hours, cooldown và nút `Run now` để gọi `POST /api/automation/auto-apply/run-now` khi cần test ngay. Frontend mapper chuyển đúng field UI như `highMatchEmailEnabled`, `highMatchThreshold`, `maxEmailsPerDay` sang contract backend tương ứng.
 - Recruiter job page đã nối discovery/invite/status flow: `GET /api/recruiter/jobs/{jobId}/candidates`, `POST /api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite`, `PATCH /api/recruiter/applications/{id}/status`. Modal review ứng viên hiển thị portfolio chỉ khi candidate đã apply và bật `showPortfolioAfterApply`.
 - UX hiện tại đã được polish: job card có avatar công ty, metadata có icon, insight row, hover/detail action rõ hơn; search suggestions và modal có animation; job list có skeleton loading khi API đang fetch; các interactive surfaces có focus visible, hover lift và reduced-motion support.
 
-Frontend API client nằm tại `Frontend/src/lib/api.ts`. Mặc định client gọi `http://localhost:8080/api`; có thể đổi bằng biến môi trường Vite `VITE_API_BASE_URL`.
+Frontend API client nằm tại `Frontend/src/lib/api.ts`. Mặc định client gọi đường dẫn cùng origin `/api`; Vite proxy sang `http://localhost:8080` khi phát triển. Có thể đổi bằng `VITE_API_BASE_URL` theo mẫu `Frontend/.env.example`.
 
 ### Build kiểm tra
 
 ```powershell
 cd Frontend
+npm run type-check
+npm run lint
+npm test
 npm run build
+npm run check-bundle
 ```
 
 Build output sẽ nằm trong `Frontend/dist`.
@@ -213,13 +218,14 @@ cd Frontend
 npm run test:e2e -- --project=chromium --reporter=line
 ```
 
-Bộ test hiện kiểm tra guest search/detail, magic-link request, candidate apply/withdraw, settings persistence, recommendations, recruiter create/cleanup JD, admin suspend/activate và smoke toàn bộ route của ba role.
+Bộ test hiện kiểm tra guest search/detail, magic-link request/verify, CV status polling, session restore, Recommendation API, candidate apply/withdraw, settings persistence, recruiter create/cleanup JD, admin suspend/activate và smoke route của ba role.
 
 ### Ghi chú hiện tại
 
 - Frontend da co API client that cho auth, public/candidate jobs, suggestions va recruiter dashboard/jobs.
 - Các route API-driven không còn fallback sang dữ liệu mock khi backend lỗi. UI phải hiển thị đúng loading, error hoặc empty state; dữ liệu trong `src/data/mock.ts` chỉ còn phục vụ các phần trình bày tĩnh chưa có contract riêng.
-- Các tính năng chưa có backend contract gồm lưu việc làm, theo dõi công ty, báo cáo/việc làm tương tự, hộp thư thông báo và xóa tài khoản. Nút tương ứng được disabled kèm lý do, không mô phỏng thành công giả.
+- Các tính năng chưa có backend contract gồm lưu việc làm, theo dõi công ty, báo cáo việc làm, hộp thư thông báo và xóa tài khoản. Nút tương ứng được disabled kèm lý do, không mô phỏng thành công giả.
+- Frontend chưa phủ 100% capability backend. Ma trận endpoint/UI nằm tại `Frontend/BACKEND_UI_COVERAGE.md`; các workflow Candidate P0 đã hoàn tất, còn recruiter/admin drill-down, employer self-service, telemetry và automation pause/resume được hoãn.
 
 ### Trạng thái dữ liệu và matching 2026-06-21
 

@@ -69,7 +69,7 @@ public class AppProperties {
     @Value("${app.cors.allowed-origins}")
     private String allowedOriginsRaw;
 
-    @Value("${app.email-action.base-url:http://localhost:8080/api/email-action/redeem}")
+    @Value("${app.email-action.base-url:}")
     private String emailActionBaseUrl;
 
     public String getJwtSecret()                    { return jwtSecret; }
@@ -92,5 +92,13 @@ public class AppProperties {
     public double getScoreLabelMediumMax()          { return scoreLabelMediumMax; }
     public double getScoreLabelHighMax()            { return scoreLabelHighMax; }
     public String[] getAllowedOrigins()             { return allowedOriginsRaw.split(","); }
-    public String getEmailActionBaseUrl()           { return emailActionBaseUrl; }
+    public String getEmailActionBaseUrl() {
+        if (emailActionBaseUrl != null && !emailActionBaseUrl.isBlank()) {
+            return emailActionBaseUrl;
+        }
+        String normalizedBaseUrl = baseUrl.endsWith("/")
+                ? baseUrl.substring(0, baseUrl.length() - 1)
+                : baseUrl;
+        return normalizedBaseUrl + "/api/email-action/redeem";
+    }
 }

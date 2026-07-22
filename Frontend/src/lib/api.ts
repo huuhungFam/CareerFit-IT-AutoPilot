@@ -1,14 +1,8 @@
-import type { AutomationPolicy, Job, MatchLabel, MockAccount, RecruiterCandidateItem, Role } from '../types';
+import type { AutomationPolicy, Job, MatchFeedback, MatchLabel, MockAccount, RecruiterCandidateItem, Role } from '../types';
 
 const API_BASE_URL = ((import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api').replace(/\/$/, '');
 const TOKEN_KEY = 'careerfit.accessToken';
 const ACCOUNT_KEY = 'careerfit.account';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data: T;
-  error?: { code?: string; message?: string };
-};
 
 type SalaryDisplayDto = {
   mode?: string | null;
@@ -80,6 +74,23 @@ type CandidateJobListDto = {
   totalPages: number;
 };
 
+type JobRecommendationDto = {
+  jobId: string;
+  title: string;
+  company: string;
+  location?: string | null;
+  seniorityLevel?: string | null;
+  employmentType?: string | null;
+  salaryDisplay?: string | null;
+  language?: string | null;
+  finalScore?: number | null;
+  matchLabel?: string | null;
+  isPotential?: boolean;
+  requiredSkills?: string[] | null;
+  matchingSkills?: string[] | null;
+  postedAt?: string | null;
+};
+
 export type CandidateJobPage = {
   jobs: Job[];
   total: number;
@@ -100,6 +111,28 @@ type SuggestionsDto = {
   titles?: string[] | null;
   companies?: string[] | null;
   skills?: string[] | null;
+};
+
+export type EmployerSummaryDto = {
+  id: string;
+  companyName: string;
+  slug: string;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  summary?: string | null;
+  industry?: string | null;
+  companySize?: string | null;
+  location?: string | null;
+  isFeatured: boolean;
+  jobCount: number;
+};
+
+export type EmployerDetailDto = EmployerSummaryDto & {
+  description?: string | null;
+  websiteUrl?: string | null;
+  benefits?: string[] | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 type RecruiterDashboardDto = {
@@ -212,7 +245,80 @@ type AuthResponseDto = {
   };
 };
 
+type MeResponseDto = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  emailVerified: boolean;
+  preferredLanguage?: string | null;
+};
+
+export type CvStatus = 'UPLOADED' | 'VALIDATING' | 'PROCESSING' | 'SCORING_DONE' | 'FAILED';
+
+export type CandidateCvDto = {
+  id: string;
+  displayName: string;
+  source: 'UPLOAD' | 'MANUAL';
+  isDefault: boolean;
+  status: CvStatus;
+  language?: string | null;
+  topSkills: string[];
+  parsedSummary?: string | null;
+  lastScoredAt?: string | null;
+  createdAt: string;
+};
+
+export type CandidateCvDetailDto = CandidateCvDto & {
+  rawText?: string | null;
+  failureReason?: string | null;
+  updatedAt?: string | null;
+};
+
+export type CvStatusDto = {
+  id: string;
+  status: CvStatus;
+  failureReason?: string | null;
+  lastScoredAt?: string | null;
+};
+
+export type CvUploadDto = {
+  id: string;
+  displayName: string;
+  status: CvStatus;
+  message?: string | null;
+  qualitySignals?: Array<{ code?: string; level?: string; message?: string }>;
+};
+
+type CvListDto = {
+  cvs: CandidateCvDto[];
+  total: number;
+  defaultCvId?: string | null;
+};
+
+export type MarketStatsDto = {
+  activeJobs: number;
+  totalJobs: number;
+  newJobsToday: number;
+  employers: number;
+  distributionByRole?: Record<string, number> | null;
+  distributionBySalary?: Record<string, number> | null;
+};
+
+export type MarketTrendPointDto = {
+  date: string;
+  activeJobs: number;
+  newJobs: number;
+};
+
 export type SearchSuggestionGroup = Array<{ group: string; items: string[] }>;
+
+export class ApiRequestError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
 
 function getToken() {
   return window.sessionStorage.getItem(TOKEN_KEY);
@@ -242,7 +348,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   const payload = (await response.json().catch(() => null)) as any;
 
   if (!response.ok || (payload && payload.success === false)) {
-    throw new Error(payload?.error?.message ?? payload?.message ?? `Request failed: ${response.status}`);
+    throw new ApiRequestError(payload?.error?.message ?? payload?.message ?? `Request failed: ${response.status}`, response.status);
   }
 
   return (payload?.data !== undefined ? payload.data : payload) as T;
@@ -269,7 +375,8 @@ function normalizeLabel(label?: string | null): MatchLabel {
   if (normalized === 'low') return 'Low';
   if (normalized === 'medium') return 'Medium';
   if (normalized === 'potential') return 'Potential';
-  return 'High';
+  if (normalized === 'high') return 'High';
+  return 'Low';
 }
 
 function formatSalary(salary?: SalaryDisplayDto | null, salaryDisplay?: string | null) {
@@ -295,6 +402,29 @@ function mapStatus(status?: string | null): Job['status'] {
   if (status === 'CLOSED' || status === 'PAUSED') return 'skipped';
   if (status === 'DRAFT') return 'saved';
   return 'new';
+}
+
+function meToAccount(payload: MeResponseDto): MockAccount {
+  return {
+    username: payload.email,
+    password: '',
+    role: normalizeRole(payload.role),
+    displayName: payload.fullName,
+  };
+}
+
+function wait(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Polling cancelled', 'AbortError'));
+      return;
+    }
+    const timer = window.setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      window.clearTimeout(timer);
+      reject(new DOMException('Polling cancelled', 'AbortError'));
+    }, { once: true });
+  });
 }
 
 function initialsFromName(name: string) {
@@ -425,7 +555,7 @@ function toAutomationPolicyPatch(payload: Partial<AutomationPolicy>) {
   return patch;
 }
 
-export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
+export function mapPublicJob(dto: JobCardDto | JobDetailDto): Job {
   const detail = dto as JobDetailDto;
   return {
     id: dto.id,
@@ -447,9 +577,10 @@ export function mapPublicJob(dto: JobCardDto | JobDetailDto, index = 0): Job {
   };
 }
 
-export function mapCandidateJob(dto: CandidateJobCardDto, index = 0): Job {
+export function mapCandidateJob(dto: CandidateJobCardDto): Job {
   return {
     id: dto.id,
+    matchingId: dto.matchingId ?? undefined,
     title: dto.title,
     company: dto.company,
     location: [dto.location, dto.remoteType].filter(Boolean).join(', ') || 'Not specified',
@@ -468,7 +599,7 @@ export function mapCandidateJob(dto: CandidateJobCardDto, index = 0): Job {
   };
 }
 
-export function mapRecruiterJob(dto: RecruiterJobDto, index = 0): Job {
+export function mapRecruiterJob(dto: RecruiterJobDto): Job {
   return {
     id: dto.id,
     title: dto.title,
@@ -489,6 +620,31 @@ export function mapRecruiterJob(dto: RecruiterJobDto, index = 0): Job {
   };
 }
 
+function mapRecommendation(dto: JobRecommendationDto): Job {
+  return {
+    id: dto.jobId,
+    title: dto.title,
+    company: dto.company,
+    location: dto.location ?? 'Not specified',
+    seniority: dto.seniorityLevel ?? dto.employmentType ?? 'Not specified',
+    language: dto.language ?? 'Not specified',
+    salary: dto.salaryDisplay ?? 'Negotiable',
+    requiredSkills: dto.requiredSkills ?? [],
+    optionalSkills: [],
+    description: 'Recommended role based on your CV and candidate profile.',
+    normalizedScore: Math.round(Number(dto.finalScore ?? 0)),
+    label: normalizeLabel(dto.matchLabel),
+    isPotential: Boolean(dto.isPotential),
+    reasons: dto.matchingSkills ?? [],
+    status: 'new',
+    postedAt: formatPostedAt(dto.postedAt),
+  };
+}
+
+function csvCell(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
 export const careerfitApi = {
   restoreAccount() {
     const raw = window.sessionStorage.getItem(ACCOUNT_KEY);
@@ -505,8 +661,29 @@ export const careerfitApi = {
     window.sessionStorage.removeItem(ACCOUNT_KEY);
   },
 
-  saveMockSession(account: MockAccount) {
-    saveSession(account);
+  async getCurrentUser() {
+    return request<MeResponseDto>('/auth/me');
+  },
+
+  async restoreSession() {
+    const storedAccount = careerfitApi.restoreAccount();
+    if (!getToken()) {
+      if (storedAccount) careerfitApi.clearSession();
+      return null;
+    }
+    try {
+      const me = await careerfitApi.getCurrentUser();
+      const account = meToAccount(me);
+      saveSession(account);
+      return account;
+    } catch (error) {
+      if (error instanceof ApiRequestError && (error.status === 401 || error.status === 403)) {
+        careerfitApi.clearSession();
+        return null;
+      }
+      // A temporary outage should not discard the last server-validated identity.
+      return storedAccount;
+    }
   },
 
   async login(identifier: string, password: string) {
@@ -536,6 +713,23 @@ export const careerfitApi = {
     });
   },
 
+  async inspectPasswordlessToken(token: string) {
+    return request<string>(`/auth/passwordless/verify?token=${encodeURIComponent(token)}`);
+  },
+
+  async verifyPasswordlessToken(token: string) {
+    const payload = await request<AuthResponseDto>('/auth/passwordless/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+    const initialAccount = toAccount(payload);
+    saveSession(initialAccount, payload.accessToken);
+    const me = await careerfitApi.getCurrentUser();
+    const account = meToAccount(me);
+    saveSession(account);
+    return account;
+  },
+
   async searchJobs(keyword = '') {
     const params = new URLSearchParams({ page: '0', size: '20', sort: 'recent' });
     if (keyword.trim()) params.set('keyword', keyword.trim());
@@ -546,6 +740,29 @@ export const careerfitApi = {
   async getJob(jobId: string) {
     const payload = await request<JobDetailDto>(`/jobs/${jobId}`);
     return mapPublicJob(payload);
+  },
+
+  async getFeaturedEmployers() {
+    return request<EmployerSummaryDto[]>('/employers/featured');
+  },
+
+  async getEmployer(slug: string) {
+    return request<EmployerDetailDto>(`/employers/${encodeURIComponent(slug)}`);
+  },
+
+  async getEmployerJobs(slug: string) {
+    const payload = await request<JobListDto>(`/employers/${encodeURIComponent(slug)}/jobs?page=0&size=20`);
+    return payload.jobs.map(mapPublicJob);
+  },
+
+  async getSimilarJobs(jobId: string, limit = 5) {
+    const payload = await request<JobRecommendationDto[]>(`/recommendations/jobs/${encodeURIComponent(jobId)}/similar?limit=${limit}`);
+    return payload.map(mapRecommendation);
+  },
+
+  async getRecommendations(limit = 20) {
+    const payload = await request<JobRecommendationDto[]>(`/recommendations/jobs?limit=${limit}`);
+    return payload.map(mapRecommendation);
   },
 
   async getCandidateJobsPage(params: CandidateJobPageParams = {}): Promise<CandidateJobPage> {
@@ -614,6 +831,18 @@ export const careerfitApi = {
     return request<AdvancedTrendPoint[]>(`/analytics/market/trends?days=${days}`);
   },
 
+  async getMarketStats() {
+    return request<MarketStatsDto>('/analytics/stats');
+  },
+
+  async getMarketTrend(days = 7) {
+    return request<MarketTrendPointDto[]>(`/analytics/trend?days=${days}`);
+  },
+
+  async getMarketRoles(top = 6) {
+    return request<Record<string, number>>(`/analytics/roles?top=${top}`);
+  },
+
   async getCandidateAdvancedOverview() {
     return request<CandidateAnalyticsOverview>('/candidate/analytics/overview');
   },
@@ -639,8 +868,22 @@ export const careerfitApi = {
   },
 
   async exportRecruiterJobs() {
-    // Return dummy blob for now since test doesn't explicitly download it
-    return new Blob();
+    const jobs = await request<RecruiterJobDto[]>('/recruiter/jobs');
+    const rows = [
+      ['Title', 'Company', 'Location', 'Seniority', 'Status', 'Applicants', 'Matches', 'Created at'],
+      ...jobs.map((job) => [
+        job.title,
+        job.company,
+        job.location ?? '',
+        job.seniorityLevel ?? '',
+        job.status ?? '',
+        String(job.applicantCount ?? 0),
+        String(job.matchCount ?? 0),
+        job.createdAt ?? '',
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+    return new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
   },
 
   async submitApplication(jobId: string) {
@@ -652,7 +895,8 @@ export const careerfitApi = {
   },
 
   async getCandidateCvs() {
-    return request<any[]>('/candidates/me/cvs');
+    const payload = await request<CvListDto>('/cv/me');
+    return payload.cvs;
   },
 
   async getCandidateProfile() {
@@ -662,14 +906,14 @@ export const careerfitApi = {
   async uploadCv(file: File) {
     const formData = new FormData();
     formData.append('file', file);
-    return request<any>('/cv/upload', {
+    return request<CvUploadDto>('/cv/upload', {
       method: 'POST',
       body: formData,
     });
   },
 
   async createManualCv(payload: any) {
-    return request<any>('/cv/manual', {
+    return request<CvUploadDto>('/cv/manual', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
@@ -693,9 +937,52 @@ export const careerfitApi = {
   },
 
   async setDefaultCv(cvId: string) {
-    return request<any>(`/cv/${cvId}/set-default`, {
+    return request<CandidateCvDto>(`/cv/${encodeURIComponent(cvId)}/set-default`, {
       method: 'POST',
     });
+  },
+
+  async getCv(cvId: string) {
+    return request<CandidateCvDetailDto>(`/cv/${encodeURIComponent(cvId)}`);
+  },
+
+  async getCvStatus(cvId: string) {
+    return request<CvStatusDto>(`/cv/${encodeURIComponent(cvId)}/status`);
+  },
+
+  async deleteCv(cvId: string) {
+    return request<void>(`/cv/${encodeURIComponent(cvId)}`, { method: 'DELETE' });
+  },
+
+  async waitForCvProcessing(
+    cvId: string,
+    options: { timeoutMs?: number; intervalMs?: number; maxRetries?: number; signal?: AbortSignal } = {},
+  ) {
+    const timeoutMs = options.timeoutMs ?? 90_000;
+    const intervalMs = options.intervalMs ?? 1_200;
+    const maxRetries = options.maxRetries ?? 3;
+    const startedAt = Date.now();
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startedAt < timeoutMs) {
+      if (options.signal?.aborted) throw new DOMException('Polling cancelled', 'AbortError');
+      let status: CvStatusDto;
+      try {
+        status = await careerfitApi.getCvStatus(cvId);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
+        consecutiveErrors += 1;
+        const isClientError = error instanceof ApiRequestError && error.status >= 400 && error.status < 500;
+        if (consecutiveErrors > maxRetries || isClientError) throw error;
+        await wait(intervalMs, options.signal);
+        continue;
+      }
+      consecutiveErrors = 0;
+      if (status.status === 'SCORING_DONE') return status;
+      if (status.status === 'FAILED') throw new Error(status.failureReason || 'CV processing failed.');
+      await wait(intervalMs, options.signal);
+    }
+    throw new Error('CV_PROCESSING_TIMEOUT');
   },
 
   async getPortfolio() {
@@ -840,16 +1127,14 @@ export const careerfitApi = {
     });
   },
 
-  async submitMatchFeedback(matchingId: string, type: string, role = 'CANDIDATE') {
-    return request<any>(`/matches/${matchingId}/feedback`, {
+  async submitMatchFeedback(matchingId: string, type: MatchFeedback) {
+    const params = new URLSearchParams({ type, channel: 'WEB' });
+    return request<void>(`/matches/${encodeURIComponent(matchingId)}/feedback?${params}`, {
       method: 'POST',
-      body: JSON.stringify({ type, role }),
-      headers: { 'Content-Type': 'application/json' },
     });
   },
 };
 
-export type CandidateCvDto = any;
 export type CandidateProfileDto = any;
 export type CreateJobPayload = any;
 export type ManualCvPayload = any;

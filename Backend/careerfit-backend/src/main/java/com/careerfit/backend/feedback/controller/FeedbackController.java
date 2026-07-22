@@ -38,11 +38,8 @@ public class FeedbackController {
             throw AppException.badRequest("Invalid feedback type: " + type);
         }
 
-        Feedback.ActorRole actorRole;
-        try {
-            actorRole = Feedback.ActorRole.valueOf(role.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw AppException.badRequest("Invalid role: " + role);
+        if (!"CANDIDATE".equalsIgnoreCase(role)) {
+            throw AppException.badRequest("Feedback role must be CANDIDATE for this endpoint");
         }
 
         Feedback.SourceChannel sourceChannel;
@@ -52,7 +49,8 @@ public class FeedbackController {
             sourceChannel = Feedback.SourceChannel.WEB;
         }
 
-        feedbackService.submitFeedback(matchingId, userId, actorRole, feedbackType, sourceChannel);
+        feedbackService.submitFeedback(matchingId, userId, Feedback.ActorRole.CANDIDATE,
+                feedbackType, sourceChannel);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 }

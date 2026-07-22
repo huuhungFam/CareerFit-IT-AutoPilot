@@ -20,6 +20,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query("SELECT j FROM Job j WHERE j.id = :id")
     Optional<Job> findByIdWithRecruiter(@Param("id") UUID id);
 
+    Optional<Job> findByIdAndStatus(UUID id, Job.JobStatus status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT j FROM Job j WHERE j.id = :id")
     Optional<Job> findByIdForUpdate(@Param("id") UUID id);

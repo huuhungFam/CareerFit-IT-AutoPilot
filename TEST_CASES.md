@@ -293,13 +293,13 @@ Quy tắc đọc kết quả:
 | REC-003 | P0 | Security | Recruiter xem recommendations candidate | Recruiter | `GET /api/recommendations/jobs` | HTTP 403 |
 | REC-004 | P1 | API | Similar jobs public | Guest | `GET /api/recommendations/jobs/{jobId}/similar` | HTTP 200, trả job tương tự |
 | REC-005 | P1 | API | Similar jobs với job không tồn tại | Guest | UUID random | HTTP 404 |
-| FB-001 | P0 | API | Candidate feedback GOOD_MATCH | Candidate | `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB&role=CANDIDATE` | HTTP 200, tạo feedback, trigger Rocchio/recompute nếu có |
-| FB-002 | P0 | API | Candidate feedback NOT_INTERESTED | Candidate | `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB&role=CANDIDATE` | Feedback lưu, recommendation giảm ưu tiên job tương tự |
+| FB-001 | P0 | API | Candidate feedback GOOD_MATCH | Candidate | `POST /api/matches/{matchingId}/feedback?type=GOOD_MATCH&channel=WEB` | HTTP 200, tạo feedback, trigger Rocchio/recompute nếu có |
+| FB-002 | P0 | API | Candidate feedback NOT_INTERESTED | Candidate | `POST /api/matches/{matchingId}/feedback?type=NOT_INTERESTED&channel=WEB` | Feedback lưu, recommendation giảm ưu tiên job tương tự |
 | FB-003 | P0 | Security | Feedback match người khác | Candidate | matchingId không thuộc Candidate | HTTP 403 hoặc 404 |
 | FB-004 | P1 | API | Feedback type không hợp lệ | Candidate | type `UNKNOWN` | HTTP 400 |
 | FB-005 | P1 | API | Feedback duplicate cùng match | Candidate | Gửi feedback nhiều lần | Hệ thống update hoặc reject nhất quán, không tạo duplicate ngoài ý muốn |
 | FB-006 | P1 | Integration | Feedback qua email tạo cùng effect với web | Email Recipient | Redeem GOOD_MATCH token hoặc submit với `channel=EMAIL` khi có token hợp lệ | Feedback source `EMAIL`, matching được cập nhật như web |
-| FB-007 | P1 | API | Recruiter đánh dấu Potential | Recruiter | `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB&role=RECRUITER` | Feedback lưu với role Recruiter, ranking/potential pool cập nhật nhất quán |
+| FB-007 | P0 | Security | Recruiter gọi Candidate feedback endpoint | Recruiter | `POST /api/matches/{matchingId}/feedback?type=POTENTIAL&channel=WEB` | HTTP 403; không tạo feedback và không đổi ranking/application |
 
 ## 7. Application Flow
 

@@ -6,11 +6,19 @@ Frontend route hiện tại:
 
 - Candidate: `/candidate/advanced-analytics`
 - Recruiter: `/recruiter/advanced-analytics`
-- Optional public market view: `/analytics/market`
+- Chưa có route public riêng; market widgets hiện được dùng trong hai route Advanced Analytics theo role.
 
 Lưu ý: `/recruiter/analytics` vẫn là trang Thống kê cũ/basic analytics. Advanced Analytics phải nằm ở route riêng để không phá UI cũ.
 
-Các route role-specific phải dùng JWT thật khi gọi endpoint role-scoped. Trong demo/local dev, UI có thể fallback mock có kiểm soát để không trắng màn khi backend chưa chạy, nhưng khi backend trả response sai contract thì cần hiện lỗi/empty state rõ ràng trong quá trình QA.
+Các route role-specific phải dùng JWT thật khi gọi endpoint role-scoped. UI không fallback sang số liệu mock khi request API thất bại; cần hiển thị loading/error/empty state rõ ràng.
+
+Trạng thái wiring 2026-07-18:
+
+- Đã nối market overview, skills, salary, trends; candidate overview/match trends; recruiter overview/trends.
+- Candidate skill-demand/profile-gaps hiện được hiển thị từ payload overview; API client có method riêng nhưng trang chưa gọi riêng.
+- Chưa có UI drill-down cho recruiter job funnel và skill-gap.
+- Chưa phát `POST /api/analytics/events` từ các interaction frontend.
+- Xem ma trận tổng thể tại [BACKEND_UI_COVERAGE.md](BACKEND_UI_COVERAGE.md).
 
 ## Auth
 

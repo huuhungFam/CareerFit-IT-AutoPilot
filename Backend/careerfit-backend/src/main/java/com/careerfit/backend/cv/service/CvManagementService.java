@@ -8,6 +8,8 @@ import com.careerfit.backend.cv.repository.CVRepository;
 import com.careerfit.backend.common.util.StorageService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Service
 public class CvManagementService {
 
+    private static final Logger log = LoggerFactory.getLogger(CvManagementService.class);
     private static final TypeReference<List<String>> LIST_TYPE = new TypeReference<>() {};
 
     private final CVRepository cvRepo;
@@ -126,9 +129,8 @@ public class CvManagementService {
             try {
                 storageService.delete(cv.getFilePath());
             } catch (Exception e) {
-                // Log and swallow so DB tx still commits
-                // e.g., file was already removed manually
-                System.err.println("Failed to delete CV file: " + cv.getFilePath());
+                log.warn("CV database record was deleted, but physical file cleanup failed: {}",
+                        cv.getFilePath(), e);
             }
         }
     }

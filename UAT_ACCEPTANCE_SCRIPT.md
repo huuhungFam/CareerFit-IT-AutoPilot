@@ -55,15 +55,16 @@ Tài liệu này hướng dẫn người dùng cuối (Candidate, Recruiter, Adm
 **Status**: PENDING_USER_ACCEPTANCE *(Note: Form access đã được automated qua Playwright)*
 **Severity**: 
 
-### Test ID: REC-02 - Đánh giá Ứng Viên (Feedback Loop)
+### Test ID: REC-02 - Xử lý vòng đời ứng viên
 **Precondition**: Đã có ít nhất 1 Candidate Apply vào Job của Recruiter.
 **Steps**:
 1. Vào chi tiết Job, xem danh sách **Applicants**.
-2. Đánh giá một ứng viên là `GOOD_MATCH` hoặc `BAD_MATCH`.
+2. Approve hoặc Reject một application test.
+3. Với Candidate chưa apply nhưng đủ điều kiện, kiểm tra action Invite.
 **Expected Result**:
-- Phản hồi được lưu thành công.
-- Background Job chạy thuật toán Rocchio để cập nhật `learnedProfileVectorJson`.
-- Ranking của các ứng viên khác cho Job này có sự thay đổi sau quá trình Recompute.
+- Application status hoặc invitation được lưu thành công.
+- Recruiter không thấy Rocchio feedback controls; Candidate feedback endpoint trả `403` với token Recruiter.
+- Ranking không bị thay đổi chỉ vì cập nhật application lifecycle.
 **Actual Result**: 
 **Status**: PENDING_USER_ACCEPTANCE
 **Severity**: 

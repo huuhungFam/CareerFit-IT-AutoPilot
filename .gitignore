@@ -19,6 +19,22 @@ Backend/build/
 .idea/
 .vscode/
 *.log
+*.bak
+~$*.docx
 Thumbs.db
 
 evidence/*.txt
+evidence/*.pid
+backups/
+
+# Agent working notes/prompts that should not be published by default
+*PROMPT*.md
+*HANDOVER*.md
+AGENT_*_REPORT.md
+AGENT_*_LOG.md
+FINAL_REMEDIATION_*.md
+FINAL_REVIEW_REPORT.md
+QA_*_REPORT.md
+task.md
+implementation_plan.md
+staged_files.txt

@@ -541,3 +541,16 @@ Ghi chú: test output có cảnh báo Testcontainers không tìm thấy Docker e
   - **Monitoring:** Cấu hình Prometheus, Grafana trong `docker-compose.prod.yml`.
 - **Kiểm chứng:** `.\mvnw.cmd test` passes. Compose config hợp lệ.
 
+### 2026-07-18 - Chốt feedback API authorization contract
+
+- Public registration chỉ chấp nhận `CANDIDATE` hoặc `RECRUITER`; yêu cầu role `ADMIN` trả `400` và không ghi user.
+- Web feedback endpoint giữ dạng query parameter: `POST /api/matches/{matchingId}/feedback?type=...&channel=WEB`.
+- Endpoint thuộc `/api/matches/**`, yêu cầu JWT Candidate và kiểm tra matching thuộc CV của Candidate đang đăng nhập.
+- Query `role` chỉ chấp nhận `CANDIDATE`; Recruiter bị security chain chặn `403` và không tạo feedback.
+- Public `GET /api/jobs/{id}` chỉ trả job `ACTIVE`; Recruiter quản lý draft/paused/closed qua `/api/recruiter/jobs` và job write endpoints có JWT.
+- CV ingestion, Job create/update và Admin matching rebuild chuyển sang `AfterCommitExecutor`, tránh worker đọc entity trước khi transaction commit.
+- Email action URL ưu tiên `EMAIL_ACTION_BASE_URL`, nếu để trống sẽ dùng `APP_BASE_URL + /api/email-action/redeem`.
+- Frontend đã bỏ Recruiter Rocchio controls/Mark Potential, giữ application lifecycle actions riêng.
+- Backend verification với Docker/Testcontainers: Maven `72/72`, 0 fail/error/skip; runtime API theo ba role pass. Frontend contract verification: type-check, lint, Chromium `16/16`, production build và bundle check pass.
+- Runtime feedback contract check: Guest `401`, Candidate với matching không tồn tại `404`, Recruiter `403`.
+

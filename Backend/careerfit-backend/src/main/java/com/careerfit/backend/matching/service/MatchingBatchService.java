@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.Map;
 
 @Service
 public class MatchingBatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(MatchingBatchService.class);
     private final JobRepository jobRepo;
     private final CVRepository cvRepo;
     private final MatchingService matchingService;
@@ -56,7 +60,8 @@ public class MatchingBatchService {
                     scored++;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to rebuild matching for Job={}: {}",
+                        job.getId(), e.getMessage(), e);
                 failed++;
             }
         }

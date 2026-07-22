@@ -6,6 +6,7 @@ import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.common.service.QualityValidationService;
+import com.careerfit.backend.common.util.AfterCommitExecutor;
 import com.careerfit.backend.common.util.StorageService;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
@@ -16,7 +17,6 @@ import com.careerfit.backend.matching.service.MatchingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,6 +52,7 @@ public class CvIngestionService {
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
     private final QualityValidationService qualityValidationService;
+    private final AfterCommitExecutor afterCommitExecutor;
 
     public CvIngestionService(CVRepository cvRepo,
                               CandidateRepository candidateRepo,
@@ -62,7 +63,8 @@ public class CvIngestionService {
                               StorageService storage,
                               AuditLogRepository auditRepo,
                               ObjectMapper objectMapper,
-                              QualityValidationService qualityValidationService) {
+                              QualityValidationService qualityValidationService,
+                              AfterCommitExecutor afterCommitExecutor) {
         this.cvRepo = cvRepo;
         this.candidateRepo = candidateRepo;
         this.pdfService = pdfService;
@@ -73,6 +75,7 @@ public class CvIngestionService {
         this.auditRepo = auditRepo;
         this.objectMapper = objectMapper;
         this.qualityValidationService = qualityValidationService;
+        this.afterCommitExecutor = afterCommitExecutor;
     }
 
     // ── PDF Upload ─────────────────────────────────────────────────────────
@@ -119,8 +122,8 @@ public class CvIngestionService {
                 .withTarget("CV", cv.getId())
                 .withResult(AuditLog.Result.SUCCESS));
 
-        // Trigger async processing
-        processDocumentAsync(cv.getId());
+        UUID cvId = cv.getId();
+        afterCommitExecutor.execute(() -> processDocument(cvId));
 
         return new CvDtos.CvUploadResponse(
                 cv.getId().toString(),
@@ -159,8 +162,8 @@ public class CvIngestionService {
         auditRepo.save(new AuditLog(AuditLog.ActorType.USER, userId, "CV_MANUAL_CREATE")
                 .withTarget("CV", cv.getId()));
 
-        // Trigger async vectorization + matching
-        processManualAsync(cv.getId());
+        UUID cvId = cv.getId();
+        afterCommitExecutor.execute(() -> processManual(cvId));
 
         return new CvDtos.CvUploadResponse(
                 cv.getId().toString(),
@@ -173,8 +176,7 @@ public class CvIngestionService {
 
     // ── Async Workers ─────────────────────────────────────────────────────
 
-    @Async
-    public void processDocumentAsync(UUID cvId) {
+    public void processDocument(UUID cvId) {
         CV cv = cvRepo.findById(cvId).orElse(null);
         if (cv == null) {
             log.error("CV not found for async processing: {}", cvId);
@@ -209,8 +211,7 @@ public class CvIngestionService {
         }
     }
 
-    @Async
-    public void processManualAsync(UUID cvId) {
+    public void processManual(UUID cvId) {
         CV cv = cvRepo.findById(cvId).orElse(null);
         if (cv == null) return;
 
@@ -276,7 +277,7 @@ public class CvIngestionService {
         log.info("CV={} vectorized: {} terms, top skills: {}", cv.getId(), vector.size(), topSkills.subList(0, Math.min(5, topSkills.size())));
 
         // Trigger async matching against all active jobs
-        matchingService.scoreAllJobsForCv(cv);
+        matchingService.scoreAllJobsForCv(cv.getId());
     }
 
     @Transactional

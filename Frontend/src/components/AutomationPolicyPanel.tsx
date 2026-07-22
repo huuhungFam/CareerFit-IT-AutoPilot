@@ -1,5 +1,5 @@
 import { Clock, Mail, Radar, ShieldCheck } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { AutomationPolicy } from '../types';
 import { useLanguage } from '../i18n/LanguageProvider';
 
@@ -38,6 +38,7 @@ export function AutomationPolicyPanel({
         </label>
         <label>
           <RangeSetting
+            key={`auto-apply-${policy.autoApplyThreshold}`}
             disabled={!policy.autoApplyEnabled}
             label={t('autoApplyThreshold')}
             max={100}
@@ -66,6 +67,7 @@ export function AutomationPolicyPanel({
         </label>
         <label>
           <RangeSetting
+            key={`high-match-${policy.highMatchThreshold}`}
             label={t('threshold')}
             max={100}
             min={50}
@@ -171,8 +173,6 @@ function RangeSetting({
   value: number;
 }) {
   const [draft, setDraft] = useState(value);
-
-  useEffect(() => setDraft(value), [value]);
 
   function commit() {
     if (!disabled && draft !== value) onCommit(draft);

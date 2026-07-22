@@ -25,7 +25,7 @@ This log records what was requested, what was implemented or reviewed, and which
 - Recruiter UI includes:
   - Dashboard/overview.
   - Jobs Management / HR Dashboard style page.
-  - Applicant/potential match review with recruiter Rocchio feedback.
+  - Applicant/potential match review với Invite/Review/Approve/Reject; Rocchio feedback web hiện Candidate-only.
   - Analytics, Advanced Analytics, AutoFit, Settings.
 - URL state has been added for:
   - Public/Candidate jobs: `keyword`, `city`, `level`, `workModel`, `salary`, `domain`.
@@ -296,6 +296,24 @@ This log records what was requested, what was implemented or reviewed, and which
 - Recruiter review modal hiển thị portfolio candidate khi backend trả `portfolioVisible=true`; nếu candidate tắt `showPortfolioAfterApply`, UI không render link/project.
 - `npm run build` thành công sau thay đổi UI/API mapper.
 
+### 2026-07-18 13:00 +07:00 - Frontend Debug, Resilience And Real Employer Integration
+
+- Bổ sung script chuẩn `type-check`, `lint`, `test`; thêm ESLint flat config và cập nhật Vite 6 để xử lý advisory dependency mà không tắt rule.
+- Sửa Admin Dashboard treo loading khi API lỗi, job list hiển thị empty state sai khi request thất bại và dependency React hooks có thể giữ query/filter cũ.
+- Sửa header chồng nav ở desktop hẹp, kiểm tra trực quan ở 1280px và mobile 390x844.
+- Thay nhà tuyển dụng/hồ sơ công ty tĩnh bằng endpoint employer thật; thêm loading, error, retry và logo/cover từ backend.
+- Nối Việc làm tương tự với Recommendation API và sửa Export CSV recruiter từ file rỗng thành dữ liệu JD thật.
+- Bổ sung Playwright regression cho error states, header, employer detail/jobs và similar jobs.
+- `npm audit` còn 0 vulnerability. Type-check, lint và 5 regression Chromium test đều pass; E2E dùng database thật bị chặn do PostgreSQL local không chấp nhận credential project và Docker engine không phản hồi.
+
+### 2026-07-18 13:30 +07:00 - Backend UI Coverage Audit
+
+- Rà soát 22 Spring controller, 95 handler mapping annotations, toàn bộ React routes và hai API client frontend.
+- Xác nhận frontend đã phủ phần lớn luồng MVP nhưng chưa phủ toàn bộ backend; không đánh đồng component tĩnh hoặc endpoint thay thế với UI hoàn chỉnh.
+- Tạo `BACKEND_UI_COVERAGE.md` với ma trận theo domain và backlog P0/P1/P2.
+- Ghi nhận P0: passwordless verify chưa consume token, CV async chưa polling status và homepage market dashboard còn dùng số liệu tĩnh.
+- Cập nhật README, SRS, Frontend Implementation Guide và Advanced Analytics contract để phân biệt yêu cầu đích với trạng thái triển khai hiện tại.
+
 ## Verification Notes
 
 - `npm run build` was run successfully after the URL-state work.
@@ -304,7 +322,8 @@ This log records what was requested, what was implemented or reviewed, and which
 - `npm run build` was run successfully after list metadata API type sync.
 - Browser checks confirmed:
   - Public `/jobs` does not show feedback controls.
-  - Recruiter applicant cards show recruiter feedback controls.
+  - Candidate feedback gửi `type` và `channel` bằng query parameters.
+  - Recruiter applicant cards không hiển thị Candidate-only feedback controls.
 - Some Browser-plugin form-fill checks were limited by plugin/runtime interaction issues, but TypeScript build passed.
 
 ## Maintenance Rules For This Log
@@ -341,3 +360,23 @@ Keep reconstructed chat entries concise. Use this file as a human-readable histo
 - Bổ sung toast portal nổi bật và hoàn thiện bản dịch tiếng Việt cho Admin, Automation, Settings, filter và metadata phổ biến.
 - Mở rộng Playwright từ 4 lên 10 test: magic-link, settings persistence, recommendations và route-smoke Candidate/Recruiter/Admin.
 - Verification: `npm run build` pass; Chromium E2E `10 passed`; candidate apply/withdraw, recruiter create/cleanup JD và admin suspend/activate đều quan sát được request ghi dữ liệu thật.
+
+### 2026-07-18 - Đồng bộ contract feedback Candidate-only
+
+- Đồng bộ frontend với backend cuối: `POST /api/matches/{matchingId}/feedback?type=...&channel=WEB`, không gửi JSON body hoặc `role=RECRUITER`.
+- Khôi phục `matchingId` từ Candidate job-card DTO để feedback controls render đúng.
+- Gỡ Recruiter feedback controls và Mark Potential vì `/api/matches/**` yêu cầu role Candidate; Recruiter tiếp tục dùng Invite/Review/Approve/Reject.
+- Bổ sung Playwright regression test kiểm tra method, query parameters và body rỗng.
+- Verification: `npm run type-check`, `npm run lint`, Chromium `16/16`, `npm run build` và `npm run check-bundle` đều pass; runtime auth trả đúng `401/404/403` cho Guest/Candidate-nonexistent/Recruiter.
+
+### 2026-07-18 - Hoàn thiện Candidate P0 Backend Contracts
+
+- CV upload và Manual Creation poll `GET /api/cv/{cvId}/status` đến `SCORING_DONE`/`FAILED`, tự retry lỗi tạm thời, có timeout, error state và nút kiểm tra lại.
+- Tab Hồ sơ & CV chuyển sang `GET /api/cv/me`, bổ sung CV detail/raw text và delete confirmation; CV mặc định bị khóa xóa, không thêm edit khi backend chưa có update endpoint.
+- Thêm `/auth/magic-link/verify` với GET inspect, POST consume, lưu JWT, `/api/auth/me` và redirect đúng role; reload session cũng revalidate bằng `/api/auth/me`.
+- Job Market Dashboard bỏ ngày/số liệu/chart tĩnh, đọc stats/trend/roles/salary analytics với loading/error/empty state.
+- Candidate Recommendations dùng `GET /api/recommendations/jobs`, không tự suy ra recommendation từ matching feed.
+- Thêm `tests/backend-contracts.spec.ts` cho CV polling/retry, magic-link, Recommendation API và session restore.
+- QA browser với backend/database thật: market analytics render hoặc empty state đúng dữ liệu, CV detail/default-delete guard hoạt động, console sạch; sửa modal fixed bị lệch do page animation và tên CV dài gây tràn ngang mobile.
+- Verification cuối: `npm run type-check`, `npm run lint`, Chromium Playwright `20/20` và `npm run build` đều pass.
+- Integration note: backend email-link builder hiện vẫn cần cấu hình/sửa URL đích để mở `/auth/magic-link/verify?token=...`; frontend consume flow đã hoàn chỉnh và có regression test.

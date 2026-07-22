@@ -6,6 +6,7 @@ import com.careerfit.backend.application.repository.ApplicationRepository;
 import com.careerfit.backend.common.dto.ValidationDtos;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.common.service.QualityValidationService;
+import com.careerfit.backend.common.util.AfterCommitExecutor;
 import com.careerfit.backend.common.util.TextNormalizationService;
 import com.careerfit.backend.common.util.TfIdfService;
 import com.careerfit.backend.employer.entity.EmployerProfile;
@@ -46,6 +47,7 @@ public class JobService {
     private final ObjectMapper objectMapper;
     private final QualityValidationService qualityValidationService;
     private final ApplicationRepository applicationRepo;
+    private final AfterCommitExecutor afterCommitExecutor;
 
     public JobService(JobRepository jobRepo,
                       UserAccountRepository userRepo,
@@ -55,7 +57,8 @@ public class JobService {
                       MatchingService matchingService,
                       ObjectMapper objectMapper,
                       QualityValidationService qualityValidationService,
-                      ApplicationRepository applicationRepo) {
+                      ApplicationRepository applicationRepo,
+                      AfterCommitExecutor afterCommitExecutor) {
         this.jobRepo = jobRepo;
         this.userRepo = userRepo;
         this.employerRepo = employerRepo;
@@ -65,6 +68,7 @@ public class JobService {
         this.objectMapper = objectMapper;
         this.qualityValidationService = qualityValidationService;
         this.applicationRepo = applicationRepo;
+        this.afterCommitExecutor = afterCommitExecutor;
     }
 
     // ── Create Job ────────────────────────────────────────────────────────
@@ -101,8 +105,8 @@ public class JobService {
 
         jobRepo.save(job);
 
-        // Trigger matching against existing candidate CVs (async)
-        matchingService.scoreJobAgainstAllCvs(job);
+        UUID jobId = job.getId();
+        afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(jobId));
 
         log.info("Job created: id={} title='{}' by recruiter={}", job.getId(), job.getTitle(), userId);
         return toDetail(job, employerRepo.findByRecruiterId(userId).orElse(null));
@@ -164,10 +168,13 @@ public class JobService {
 
         if (shouldRevectorize) {
             vectorizeJob(job);
-            matchingService.scoreJobAgainstAllCvs(job);
         }
 
         jobRepo.save(job);
+        if (shouldRevectorize) {
+            UUID persistedJobId = job.getId();
+            afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(persistedJobId));
+        }
         return toDetail(job, employerRepo.findByRecruiterId(userId).orElse(null));
     }
 
@@ -220,7 +227,7 @@ public class JobService {
 
     @Transactional(readOnly = true)
     public JobDtos.JobDetailResponse getById(UUID jobId) {
-        Job job = jobRepo.findById(jobId)
+        Job job = jobRepo.findByIdAndStatus(jobId, Job.JobStatus.ACTIVE)
                 .orElseThrow(() -> AppException.notFound("Job", jobId));
         var employer = employerRepo.findByRecruiterId(job.getRecruiter().getId()).orElse(null);
         return toDetail(job, employer);

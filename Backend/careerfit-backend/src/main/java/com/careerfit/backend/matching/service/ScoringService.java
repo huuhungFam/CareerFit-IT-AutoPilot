@@ -64,7 +64,7 @@ public class ScoringService {
         List<String> matchReasons = buildMatchReasons(cvVec, jobVec, job);
         String potentialReason = isPotential ? buildPotentialReason(cv, job) : null;
 
-        log.debug("Score CV={} vs Job={}: raw={:.4f} normalized={} label={} potential={}",
+        log.trace("Score CV={} vs Job={}: raw={} normalized={} label={} potential={}",
                 cv.getId(), job.getId(), rawScore, normalized, label, isPotential);
 
         return new ScoringResult(
