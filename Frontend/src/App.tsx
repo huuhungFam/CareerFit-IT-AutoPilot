@@ -2818,7 +2818,8 @@ function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'can
     {message ? <ActionMessage {...message} /> : null}
     {isLoading ? <p>{vi ? 'Đang tải cài đặt...' : 'Loading settings...'}</p> : null}
     {error ? <p className="form-error">{readableError(error, vi ? 'Không thể tải cài đặt.' : 'Could not load settings.', language)}</p> : null}
-    {!isLoading && !error && role === 'candidate' ? <>
+    {!isLoading && !error ? <DemoModeSettings data={data} role={role} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['settings', role] })} /> : null}
+      {!isLoading && !error && role === 'candidate' ? <>
       <SettingsSection icon={<Bell size={20} />} title={vi ? 'Thông báo việc làm' : 'Job notifications'}>
         <div className="settings-option-grid">
           {toggle('highMatchEmail', vi ? 'Email match cao' : 'High-match email', vi ? 'Nhận email khi có JD điểm cao.' : 'Email for strong job matches.')}

@@ -1151,13 +1151,13 @@ export const careerfitApi = {
       method: 'POST',
     });
   },
-  async getJobFieldSuggestions(field: JobSuggestionField, keyword: string) {
+  async getJobFieldSuggestions(keyword: string, field: JobSuggestionField, signal?: AbortSignal) {
     const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
     if (field === 'title') return payload.titles || [];
     if (field === 'company') return payload.companies || [];
     return [];
   },
-  async getSkillSuggestions(keyword: string) {
+  async getSkillSuggestions(keyword: string, limit?: number, signal?: AbortSignal) {
     const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
     return payload.skills || [];
   },

@@ -1,6 +1,6 @@
 # Vận hành cốt lõi của CareerFit
 
-Tài liệu này bổ sung cho file `THUAT_TOAN_CHINH_CAREERFIT.md`. File thuật toán tập trung vào TF-IDF, cosine similarity, potential heuristic và Rocchio. File này giải thích toàn bộ các luồng vận hành cốt lõi xung quanh thuật toán: phân tích CV từ file, phân tích JD, tính matching, feedback, email, scheduler, auto-apply và các trạng thái dữ liệu quan trọng.
+Tài liệu này bổ sung cho file `THUAT_TOAN_CHINH_CAREERFIT.md`. File thuật toán tập trung vào TF-IDF, cosine similarity, Potential và Rocchio. File này giải thích toàn bộ các luồng vận hành cốt lõi xung quanh thuật toán: phân tích CV từ file, phân tích JD, tính matching, recommendation feed, feedback, email, scheduler, automation policy, auto-apply và các trạng thái dữ liệu quan trọng.
 
 Nếu chỉ cần hiểu nhanh, hãy nhớ CareerFit vận hành theo chuỗi sau:
 
@@ -10,6 +10,7 @@ CV/JD đi vào hệ thống
   -> biến text thành vector
   -> tính điểm matching
   -> lưu kết quả
+  -> recommendation xếp hạng lại theo hồ sơ candidate
   -> gửi thông báo/email nếu đủ điều kiện
   -> nhận feedback
   -> học lại và tính lại khi cần
@@ -27,9 +28,12 @@ CV/JD đi vào hệ thống
 | Matching | Bản ghi kết quả so sánh một CV với một job |
 | Score | Điểm phù hợp của một CV với một job |
 | Potential | Cờ đánh dấu ứng viên có tiềm năng dù điểm chưa thật cao |
+| Recommendation | Danh sách job gợi ý đã kết hợp matching với thông tin hồ sơ candidate |
 | Feedback | Đánh giá của người dùng như phù hợp, tiềm năng, không quan tâm |
 | Learned vector | Vector job đã được điều chỉnh sau feedback |
 | Scheduler | Các job nền chạy định kỳ, ví dụ gửi digest hoặc tính lại matching |
+| Effective policy | Giá trị policy có hiệu lực sau khi xét demo mode và loại tài khoản |
+| Outbox | Bảng hàng đợi bền vững dự kiến dùng để lập lịch/gửi notification |
 
 ## 2. Tổng quan các khối cốt lõi
 
@@ -41,10 +45,13 @@ CV/JD đi vào hệ thống
 | Vectorization/scoring | TF-IDF, cosine similarity, score 0-100, label, potential, match reasons | `TfIdfService`, `ScoringService` |
 | Matching orchestration | So CV với nhiều job hoặc job với nhiều CV, upsert bản ghi matching | `MatchingService`, `MatchingBatchService` |
 | Query/ranking | Trả kết quả matching cho candidate/recruiter, sort, filter, tie-break | `MatchingQueryService` |
+| Recommendation | Kết hợp matching với desired skill/location hoặc fallback từ profile | `RecommendationService` |
 | Feedback learning | Ghi nhận feedback và cập nhật learned vector của job bằng Rocchio | `FeedbackService`, `RocchioService` |
 | Email channel | Gửi email lifecycle, match notification, digest, token feedback qua email | `NotificationEmailService`, `EmailActionService`, `EmailActionController` |
 | Scheduler | Tính lại matching, gửi digest, cleanup token, gửi high-match email, auto-apply | `AutomationScheduler` |
 | Automation | Policy thông báo/auto-apply và tự động ứng tuyển theo ngưỡng | `AutomationPolicyService`, `AutoApplyService` |
+| Settings/policy projection | Trả policy đã lưu và timing có hiệu lực cho UI | `SettingsService`, `EffectiveAutomationPolicyResolver` |
+| Durable outbox foundation | Enqueue idempotent notification theo recipient/type/target | `OutboxService`, `NotificationOutbox` |
 | Audit/log | Ghi lại hành động quan trọng để truy vết | `AuditLogRepository`, `NotificationDeliveryLogRepository` |
 
 Luồng tổng thể:
@@ -55,6 +62,7 @@ Candidate upload/nhập CV
   -> chuẩn hóa và vector hóa CV
   -> so với các job active
   -> lưu matching
+  -> recommendation re-rank cho candidate
   -> candidate/recruiter xem ranking
   -> email/scheduler gửi thông báo nếu đủ điều kiện
   -> user feedback
@@ -234,6 +242,7 @@ VALIDATING
 PROCESSING
 SCORING_DONE
 FAILED
+BANNED
 ```
 
 Ý nghĩa:
@@ -243,6 +252,19 @@ FAILED
 - `PROCESSING`: đang extract text, normalize, vectorize.
 - `SCORING_DONE`: CV đã có vector và matching có thể được tính.
 - `FAILED`: CV không xử lý được, ví dụ file lỗi, OCR thất bại, text quá ít.
+- `BANNED`: CV bị admin khóa sau quy trình report/moderation; không còn được dùng trong các luồng tuyển dụng có kiểm tra trạng thái cấm.
+
+### 3.8. Retry CV thất bại và chọn CV mặc định
+
+Candidate có thể gọi:
+
+```text
+POST /api/cvs/{cvId}/retry
+```
+
+Chỉ CV thuộc chính candidate và đang ở trạng thái `FAILED` mới được retry. Backend đặt lại `status=UPLOADED`, xóa `failureReason`, rồi chạy lại pipeline tương ứng sau transaction commit: CV upload gọi `processDocument`, còn CV nhập tay gọi `processManual`.
+
+Endpoint `POST /api/cvs/{cvId}/set-default` chỉ chấp nhận CV đã `SCORING_DONE`. CV mặc định là đầu vào chính cho matching feed, recommendation, digest và auto-apply.
 
 ## 4. Luồng phân tích JD/job
 
@@ -381,6 +403,7 @@ Trong đó:
 - `label`: LOW/MEDIUM/HIGH theo threshold.
 - `is_potential`: cờ tiềm năng bổ sung.
 - `match_reasons`: các kỹ năng/domain giải thích vì sao match.
+- `potential_reason`: câu giải thích bổ sung khi heuristic Potential bật.
 - `needs_recompute`: đánh dấu cần tính lại sau Rocchio hoặc thay đổi vector.
 
 ## 7. Query ranking và feed kết quả

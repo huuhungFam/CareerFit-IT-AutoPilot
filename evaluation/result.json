@@ -1,12 +1,12 @@
 {
   "schemaVersion" : "1.2",
-  "timestamp" : "Sun Aug 16 17:55:05 ICT 2026",
+  "timestamp" : "Sun Aug 16 18:24:43 ICT 2026",
   "dataset" : {
+    "hash" : "6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2",
     "cvs" : 100,
     "trainPairs" : 300,
     "holdoutPairs" : 300,
-    "jobs" : 50,
-    "hash" : "6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2"
+    "jobs" : 50
   },
   "rocchioParams" : {
     "alpha" : 1.0,
