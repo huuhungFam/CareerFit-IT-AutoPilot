@@ -1,0 +1,53 @@
+paragraphs=720 tables=27 images=35
+
+LONG PARAGRAPHS
+29	107	Front matter	CareerFit is implemented as a role-based web platform for guests, candidates, recruiters, and administrators using a Spring Boot backend, a React and TypeScript frontend, and Postg
+287	107	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recruitment data also has domain-specific ambiguity. A technology may be expressed by an abbreviation, a product name, or a broader skill family; job titles vary across companies; 
+285	96	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recruitment matching is an information-retrieval and decision-support problem in which heterogeneous evidence about candidates and vacancies must be compared. A curriculum vitae co
+286	95	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	The same information supports different user tasks. From the candidate perspective, the system retrieves and ranks jobs that fit a CV or desired profile. From the recruiter perspec
+296	95	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	In a bag-of-words representation, a document is represented by the terms it contains and their weights; word order is not modeled directly. If the vocabulary contains |V| terms, ea
+354	94	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	An actionable email link can be opened by the intended user, forwarded accidentally, or visited automatically by a mail-security scanner. A safer target pattern lets a GET request 
+28	92	Front matter	The system processes candidate profiles, curricula vitae, job descriptions, preferences, and user feedback. Textual information is normalized and represented with Term Frequency–In
+311	92	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Matching and recommendation can be formalized as ranking tasks. Given a query representation q and a candidate set D, the system computes a relevance score s(q,d) for each d ∈ D an
+468	91	CHAPTER 4. SYSTEM IMPLEMENTATION	PdfExtractionService accepts PDF, PNG, JPG/JPEG, and DOCX. It checks the extension, MIME type, and leading magic bytes rather than trusting the filename alone. Empty input and mism
+267	90	CHAPTER 1. INTRODUCTION	The thesis does not attempt to implement a complete enterprise applicant tracking system. Interview scheduling, offer management, payroll, and full employee lifecycle management ar
+387	89	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	Preconditions are an active Candidate account and an authenticated request. The candidate uploads a supported document or submits manual CV data. The backend validates file type, s
+322	86	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	CareerFit distinguishes feedback such as GOOD_MATCH, POTENTIAL, BAD_MATCH, and NOT_INTERESTED. These labels should not be collapsed without a documented mapping. GOOD_MATCH provide
+566	86	CHAPTER 5. EXPERIMENTAL EVALUATION	The evaluation was designed to answer four questions. First, does the lexical scoring and Rocchio feedback pipeline behave deterministically and change holdout rankings in the inte
+641	86	CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION	The objective of providing role-specific workflows was achieved at prototype level. Guests can browse public Jobs and employer information. Candidates can maintain profiles, CVs, a
+27	85	Front matter	Recruitment in the information technology sector requires candidates and recruiters to process large amounts of heterogeneous information from curricula vitae and job descriptions.
+359	85	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Prior work can be grouped into lexical retrieval, learned resume–job representation, explainable recommendation, and human-centered governance. The classical vector-space and relev
+394	85	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	An authenticated Recruiter creates a JD with structured fields and free text. Validation checks required content and conditional salary rules. The backend normalizes and vectorizes
+332	84	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	For a query, reciprocal rank is 1/r, where r is the rank of the first relevant result; it is zero if no relevant result is retrieved. Mean Reciprocal Rank (MRR) averages this value
+447	84	CHAPTER 4. SYSTEM IMPLEMENTATION	CareerFit is implemented as two application projects and a shared runtime environment. The backend is a Java 21 application based on Spring Boot 3.2.5. The frontend is a React 18 s
+537	84	CHAPTER 4. SYSTEM IMPLEMENTATION	App.tsx defines public, Candidate, Recruiter, and Administrator routes. protectedRoute checks the locally loaded account role and redirects or blocks an incompatible workspace. Thi
+268	82	CHAPTER 1. INTRODUCTION	The evaluation scope is also bounded. Controlled or synthetic datasets may be used to demonstrate whether the Rocchio feedback mechanism changes rankings in the expected direction,
+302	82	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Implementations often use logarithmic TF scaling, smoothed IDF, or vector normalization to handle repeated terms and unseen values. The exact formulation changes numeric scores, so
+396	81	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	A Candidate or Recruiter submits feedback for a matching record. The system validates the actor and matching context, stores one current feedback judgment per actor and matching, a
+392	80	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	A Guest or Candidate can search public jobs and open job details. Personalized scores and application actions require a Candidate account. When the candidate applies, the service r
+578	80	CHAPTER 5. EXPERIMENTAL EVALUATION	The benchmark is intentionally synthetic. Each Job is associated with a training-positive CV and a separate holdout-positive CV sharing a latent skill that is not emphasized in the
+266	78	CHAPTER 1. INTRODUCTION	The data-processing scope includes extraction of text from supported CV documents, OCR fallback for image-based content where the configured runtime permits it, hard and soft valid
+353	78	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	JSON Web Token is a compact, URL-safe format for transferring claims that can be signed or message-authentication-code protected and may include registered claims such as subject, 
+411	78	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	The presentation layer contains React pages, reusable components, route guards, API mapping, and query state. It calls the backend over HTTP and must not be trusted to enforce prot
+314	77	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recent resume–job matching research increasingly uses dense encoders and contrastive learning. ConFit v2, for example, improves resume–job representations through hypothetical resu
+323	77	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	A robust update process retains the immutable base vector and recomputes the learned vector from the relevant feedback history. Repeatedly applying an update to the previously lear
+340	77	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recruitment decisions can materially affect people, so a similarity engine should assist prioritization rather than act as an unquestioned authority. CareerFit separates perception
+292	76	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Before vectorization, text must be converted into a consistent representation. A typical pipeline extracts machine-readable text, normalizes character encoding and case, separates 
+439	76	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	The optional backend container exposes port 8080, depends on PostgreSQL health, and mounts a named volume for CV storage. The React/Vite frontend is normally run separately on port
+330	75	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Precision@K is the proportion of the top K results that are relevant. Recall@K is the proportion of all known relevant items that appear in the top K. HitRate@K records whether at 
+400	75	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	Automation begins with a persisted policy associated with a user. Candidate-oriented policy data includes enablement, score thresholds, digest and high-match notification preferenc
+
+REPEATED PHRASES
+7x	4-gram	candidate recruiter and administrator
+4x	4-gram	but it is not
+4x	4-gram	it is not a
+4x	4-gram	in proceedings of the
+3x	4-gram	careerfit is implemented as
+3x	4-gram	four chromium p workflows
+3x	4-gram	returned http with status
+3x	4-gram	http with status up
+3x	5-gram	returned http with status up
+3x	4-gram	and should not be
+3x	4-gram	the controlled rocchio benchmark
+
+NEAR-DUPLICATE PARAGRAPHS

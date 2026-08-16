@@ -1,0 +1,62 @@
+paragraphs=824 tables=33 images=37
+
+LONG PARAGRAPHS
+400	107	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Recruitment data also has domain-specific ambiguity. A technology may be expressed by an abbreviation, a product name, or a broader skill family; job titles vary across companies; 
+398	96	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Recruitment matching is an information-retrieval and decision-support problem that compares different types of evidence about candidates and vacancies. A curriculum vitae usually d
+399	95	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	The same information supports different user tasks. From the candidate perspective, the system retrieves and ranks jobs that fit a CV or desired profile. From the recruiter perspec
+409	95	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	In a bag-of-words representation, a document is represented by the terms it contains and their weights; word order is not modeled directly. If the vocabulary contains |V| terms, ea
+424	92	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Matching and recommendation can be formalized as ranking tasks. Given a query representation q and a candidate set D, the system computes a relevance score s(q,d) for each d ∈ D an
+332	90	Front matter	The thesis does not attempt to implement a complete enterprise applicant tracking system. Interview scheduling, offer management, payroll, and full employee lifecycle management ar
+296	89	Front matter	Methods: Recruitment text is normalized and represented with Term Frequency-Inverse Document Frequency vectors. Cosine similarity ranks CV-job pairs and candidate-job recommendatio
+467	87	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	An actionable email link may be opened by the intended user, forwarded by mistake, or visited by a mail-security scanner. CareerFit uses a two-step flow to reduce this risk. The GE
+435	86	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	CareerFit distinguishes feedback such as GOOD_MATCH, POTENTIAL, BAD_MATCH, and NOT_INTERESTED. These labels should not be collapsed without a documented mapping. GOOD_MATCH provide
+472	85	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Prior work can be grouped into lexical retrieval, learned resume–job representation, explainable recommendation, and human-centered governance. The classical vector-space and relev
+445	84	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	For a query, reciprocal rank is 1/r, where r is the rank of the first relevant result; it is zero if no relevant result is retrieved. Mean Reciprocal Rank (MRR) averages this value
+516	84	CHAPTER 3. SYSTEM IMPLEMENTATION	CareerFit is implemented as two application projects and a shared runtime environment. The backend is a Java 21 application based on Spring Boot 3.2.5. The frontend is a React 18 s
+415	82	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Implementations often use logarithmic TF scaling, smoothed IDF, or vector normalization to handle repeated terms and unseen values. The exact formulation changes numeric scores, so
+312	81	Front matter	Related work includes classical lexical retrieval, learned resume-job representations, explainable recommendation, and human-centered governance. Lexical methods provide inspectabl
+568	80	CHAPTER 3. SYSTEM IMPLEMENTATION	FeedbackService.submitFeedback resolves the Matching and authenticated Candidate, verifies that the Candidate owns the associated CV, and then upserts feedback by (matching_id, act
+647	80	CHAPTER 4. TESTING AND EVALUATION	The benchmark is intentionally synthetic. Each Job is associated with a training-positive CV and a separate holdout-positive CV sharing a latent skill that is not emphasized in the
+490	79	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	matching is the unique association between one CV and one Job. It stores the direct score, label, separate Potential flag and explanation, reasons, and recomputation state. applica
+635	79	CHAPTER 4. TESTING AND EVALUATION	The evaluation was designed to answer four questions. First, does lexical scoring with Rocchio produce repeatable results and move holdout items in the expected direction after fee
+405	78	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Before vectorization, text must be converted into a consistent form. A typical pipeline extracts machine-readable text, normalizes character encoding and letter case, separates or 
+453	78	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Recruitment decisions can strongly affect people, so a similarity engine should help users set priorities instead of acting as the final decision-maker. CareerFit separates input p
+456	78	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Research on algorithmic hiring warns that claims about reducing bias and improving performance must be checked against real practices, data, and organizational context [10]. Explan
+466	78	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	JSON Web Token is a compact, URL-safe format for transferring claims that can be signed or message-authentication-code protected and may include registered claims such as subject, 
+480	78	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	The presentation layer contains React pages, reusable components, route guards, API mapping, and query state. It calls the backend over HTTP and must not be trusted to enforce prot
+427	77	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Recent resume–job matching research increasingly uses dense encoders and contrastive learning. ConFit v2, for example, improves resume–job representations through hypothetical resu
+710	77	CHAPTER 4. TESTING AND EVALUATION	The role-based workflow objective was achieved at prototype level. Guests can browse public Jobs and employers. Candidates can review CVs, inspect matching and recommendation resul
+508	76	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	The optional backend container exposes port 8080, depends on PostgreSQL health, and mounts a named volume for CV storage. The React/Vite frontend is normally run separately on port
+443	75	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Precision@K is the proportion of the top K results that are relevant. Recall@K is the proportion of all known relevant items that appear in the top K. HitRate@K records whether at 
+698	75	CHAPTER 4. TESTING AND EVALUATION	The dataset hash and generated JSON help reproduce the algorithm experiment. Maven Wrapper, Flyway, Testcontainers, the package lock, and recorded commands help rebuild the environ
+436	74	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	A reliable update process keeps the original base vector and rebuilds the learned vector from the current feedback history. Updating the previously learned vector again and again c
+469	74	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Audit logging records security-relevant and business-relevant events so that operations can be monitored and investigated. NIST guidance emphasizes a managed logging process that i
+479	73	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	CareerFit is implemented as a modular monolith. The frontend is a separate React application, while the backend is one Spring Boot deployable application organized into domain pack
+437	72	CHAPTER 2. THEORETICAL BACKGROUND AND SOLUTION DESIGN	Feedback learning should be evaluated by comparing rankings before and after a defined feedback event in a controlled setup. The experiment records the baseline ranking, adds feedb
+524	72	CHAPTER 3. SYSTEM IMPLEMENTATION	Each authenticated request passes through JwtAuthenticationFilter, a OncePerRequestFilter. The filter requires the Bearer prefix when an Authorization header is present, validates 
+780	72	CHAPTER 4. TESTING AND EVALUATION	Representative endpoints are POST /api/auth/login; GET /api/jobs/search; POST /api/cv/upload; GET/PATCH /api/cv/{cvId}/review; POST /api/cv/{cvId}/review/confirm; GET /api/matches/
+356	71	CHAPTER 1. PROBLEM DESCRIPTION AND REQUIREMENTS	The central design distinction is between evidence, business state, and action. A matching record contains evidence about the similarity between one CV and one job. An application 
+
+REPEATED PHRASES
+7x	4-gram	candidate recruiter and administrator
+4x	4-gram	actions and audit records
+4x	4-gram	the controlled rocchio benchmark
+4x	4-gram	in proceedings of the
+3x	4-gram	and the bundle check
+3x	4-gram	but they do not
+3x	4-gram	talent pool bookmarks and
+3x	4-gram	pool bookmarks and invitations
+3x	5-gram	talent pool bookmarks and invitations
+3x	4-gram	api cv cvid review
+3x	4-gram	and should not be
+3x	4-gram	does not prove that
+3x	4-gram	should not be treated
+3x	4-gram	not be treated as
+3x	5-gram	should not be treated as
+3x	4-gram	but it is not
+3x	4-gram	it is not a
+
+NEAR-DUPLICATE PARAGRAPHS
+0.43	297/700	Front matter <> CHAPTER 4. TESTING AND EVALUATION
+  A Results: On August 3, 2026, the refreshed backend suite passed 131 of 131 tests across 33 suites. TypeScript checking, ESLint, the production frontend build, an
+  B The August 3 evaluation passed all 131 backend tests, completed TypeScript, ESLint, production-build, and bundle checks, and passed all 41 integrated Chrome tes

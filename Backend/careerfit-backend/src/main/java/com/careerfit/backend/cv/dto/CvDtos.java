@@ -10,6 +10,8 @@ import java.util.List;
  * All CV-related DTOs grouped in one file.
  */
 public class CvDtos {
+    public record ManualCvDraftRequest(String fullName, String desiredTitle, String seniorityLevel, Integer yearsOfExperience, String email, String phone, String location, String summary, java.util.List<String> skills, java.util.List<String> niceToHaveSkills, String workExperience, String education, String projects, String certifications, String languages) {}
+    public record CvReviewIssue(String id, String sectionKey, String category, String severity, String targetText, String replacementText, String messageVi, String messageEn, int startIndex, int endIndex) {}
 
     // ── Requests ──────────────────────────────────────────────────────────
 

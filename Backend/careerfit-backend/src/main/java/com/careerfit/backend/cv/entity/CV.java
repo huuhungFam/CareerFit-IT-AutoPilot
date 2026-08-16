@@ -92,7 +92,7 @@ public class CV {
 
     public enum CvSource { UPLOAD, MANUAL }
 
-    public enum CvStatus { UPLOADED, VALIDATING, PROCESSING, SCORING_DONE, FAILED }
+    public enum CvStatus { UPLOADED, VALIDATING, PROCESSING, SCORING_DONE, FAILED, BANNED }
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -134,6 +134,9 @@ public class CV {
     public String getFailureReason()                 { return failureReason; }
     public void setFailureReason(String r)           { this.failureReason = r; }
     public Instant getCreatedAt()                    { return createdAt; }
+    private int pendingReportCount;
+    public int getPendingReportCount() { return pendingReportCount; }
+    public void setPendingReportCount(int c) { this.pendingReportCount = c; }
     public Instant getUpdatedAt()                    { return updatedAt; }
     public long getVersion()                         { return version; }
 }

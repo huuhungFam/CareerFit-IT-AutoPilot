@@ -1,0 +1,168 @@
+{
+  "input": "C:\\CODING\\Thesis\\Doc\\CareerFit-Thesis-Report.docx",
+  "fonts_by_char_count": {},
+  "direct_run_formatting_runs": 588,
+  "direct_paragraph_formatting_paragraphs": 759,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 3,
+      "text": "CAN THO UNIVERSITY",
+      "style": "Normal"
+    },
+    {
+      "para_index": 4,
+      "text": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+      "style": "Normal"
+    },
+    {
+      "para_index": 5,
+      "text": "FACULTY OF SOFTWARE ENGINEERING",
+      "style": "Normal"
+    },
+    {
+      "para_index": 8,
+      "text": "SOFTWARE DEVELOPMENT THESIS PROJECT",
+      "style": "Normal"
+    },
+    {
+      "para_index": 9,
+      "text": "COURSE: CT250H",
+      "style": "Normal"
+    },
+    {
+      "para_index": 725,
+      "text": "Abbreviation",
+      "style": "Normal"
+    },
+    {
+      "para_index": 726,
+      "text": "Full Term",
+      "style": "Normal"
+    },
+    {
+      "para_index": 727,
+      "text": "Meaning / Explanation",
+      "style": "Normal"
+    },
+    {
+      "para_index": 773,
+      "text": "Thesis objective",
+      "style": "Normal"
+    },
+    {
+      "para_index": 774,
+      "text": "Implemented contribution",
+      "style": "Normal"
+    },
+    {
+      "para_index": 775,
+      "text": "Evaluation evidence",
+      "style": "Normal"
+    },
+    {
+      "para_index": 791,
+      "text": "Approach",
+      "style": "Normal"
+    },
+    {
+      "para_index": 792,
+      "text": "Strength",
+      "style": "Normal"
+    },
+    {
+      "para_index": 793,
+      "text": "Limitation relative to CareerFit scope",
+      "style": "Normal"
+    },
+    {
+      "para_index": 794,
+      "text": "CareerFit position",
+      "style": "Normal"
+    },
+    {
+      "para_index": 815,
+      "text": "Actor",
+      "style": "Normal"
+    },
+    {
+      "para_index": 816,
+      "text": "Primary responsibilities",
+      "style": "Normal"
+    },
+    {
+      "para_index": 817,
+      "text": "Access boundary",
+      "style": "Normal"
+    },
+    {
+      "para_index": 836,
+      "text": "Group",
+      "style": "Normal"
+    },
+    {
+      "para_index": 837,
+      "text": "Required capabilities",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "text": "CAN THO UNIVERSITY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "FACULTY OF SOFTWARE ENGINEERING",
+        "style": "Normal"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 3,
+        "run_text": "CAN THO UNIVERSITY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "run_text": "FACULTY OF SOFTWARE ENGINEERING",
+        "style": "Normal"
+      },
+      {
+        "para_index": 8,
+        "run_text": "SOFTWARE DEVELOPMENT THESIS PROJECT",
+        "style": "Normal"
+      },
+      {
+        "para_index": 9,
+        "run_text": "COURSE: CT250H",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

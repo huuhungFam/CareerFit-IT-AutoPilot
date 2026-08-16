@@ -1,0 +1,1201 @@
+{
+  "document": "C:\\CODING\\Thesis\\Doc\\CareerFit-Thesis-Report.docx",
+  "counts": {
+    "paragraphs": 880,
+    "tables": 41,
+    "inline_images": 35,
+    "suspicious_characters": 0,
+    "repeated_words": 0,
+    "spacing_flags": 41,
+    "drawings_missing_alt": 0,
+    "tables_missing_header_flag": 0
+  },
+  "suspicious_characters": [],
+  "repeated_words": [],
+  "spacing_flags": [
+    {
+      "kind": "paragraph",
+      "location": "P45",
+      "heading": "ACKNOWLEDGEMENTS",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t          Can Tho, August 2026"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P46",
+      "heading": "ACKNOWLEDGEMENTS",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t\t            Student"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P50",
+      "heading": "ACKNOWLEDGEMENTS",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t\t     Pham Huu Hung"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P55",
+      "heading": "DECLARATION OF ORIGINALITY",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t          Can Tho, August 2026"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P56",
+      "heading": "DECLARATION OF ORIGINALITY",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t\t            Student"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P60",
+      "heading": "DECLARATION OF ORIGINALITY",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t\t     Pham Huu Hung"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P82",
+      "heading": "SUPERVISOR'S COMMENTS",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\t          Can Tho, August 2026"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P87",
+      "heading": "SUPERVISOR'S COMMENTS",
+      "style": "Normal",
+      "text": "\t\t\t\t\t\t\t\tNguyen Thanh Khoa, Ph.D."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P469",
+      "heading": "2.3.1 Term Frequency and Inverse Document Frequency",
+      "style": "Normal",
+      "text": "Let tf(t,d) denote the frequency of term t in document d, let N be the number of documents in the reference corpus, and let df(t) be the number of documents containing t. A basic formulation is:"
+    },
+    {
+      "kind": "paragraph",
+      "location": "P470",
+      "heading": "2.3.1 Term Frequency and Inverse Document Frequency",
+      "style": "Normal",
+      "text": "tfidf(t,d) = tf(t,d) × log(N / df(t))."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P474",
+      "heading": "2.3.2 Cosine Similarity",
+      "style": "Normal",
+      "text": "cos(x,y) = (x · y) / (||x||₂ ||y||₂)."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P480",
+      "heading": "2.4 Matching, Recommendation, and Ranking",
+      "style": "Normal",
+      "text": "Matching and recommendation can be formalized as ranking tasks. Given a query representation q and a candidate set D, the system computes a relevance score s(q,d) for each d ∈ D and orders the results by decreasing score. For candidate-to-job matching, q may be a CV vector and D the active job vectors. For recruiter-side discovery, q may be the selected JD and D the available candidate or CV vectors. For profile-based recommendation, q represents the candidate’s desired role, skills, location, seniority, and other preferences rather than one uploaded CV."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P504",
+      "heading": "2.6.3 Discounted Cumulative Gain",
+      "style": "Normal",
+      "text": "DCG@K = Σ(i=1..K) (2^relᵢ − 1) / log₂(i + 1),     nDCG@K = DCG@K / IDCG@K."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P574",
+      "heading": "3.1 Implementation Overview",
+      "style": "Normal",
+      "text": "The backend package root is com.careerfit.backend. Domain packages include auth, candidate, cv, skill, job, employer, matching, recommendation, application, feedback, automation, notification, analytics, report, admin, audit, and settings. Shared responses, exceptions, text utilities, validation, security filters, and configuration are placed in common or configuration packages."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P601",
+      "heading": "3.4.1 Text Normalization",
+      "style": "Normal",
+      "text": "This implementation is deterministic and easy to inspect, but it is not a linguistic word segmenter. Vietnamese multi-syllable skills can be split into independent tokens, and punctuation-containing technology names such as C++, C#, .NET, or Node.js may lose distinguishing characters. These limitations are important when interpreting matching errors and motivate a future domain-aware tokenizer or controlled alias dictionary."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P617",
+      "heading": "3.5.2 Matching Orchestration and Persistence",
+      "style": "Normal",
+      "text": "After the Candidate confirms the CV review, vectorization is committed and AfterCommitExecutor submits MatchingService.scoreAllJobsForCv. The service reloads the CV, scores eligible active Jobs, and creates or updates the unique Matching row. Reasons and Potential metadata are stored as JSON. The same post-commit boundary is used when a published Job is scored against existing confirmed CVs."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P624",
+      "heading": "3.6 Feedback Learning with Rocchio",
+      "style": "Normal",
+      "text": "FeedbackService.submitFeedback resolves the Matching and authenticated Candidate, verifies that the Candidate owns the associated CV, and then upserts feedback by (matching_id, actor_id). Concurrent uniqueness conflicts are resolved by reloading and updating the existing row. Each event stores actor role, feedback type, and source channel and creates an audit entry. NOT_INTERESTED is stored but does not trigger Rocchio because it can represent preference rather than technical relevance. GOOD_MATCH, POTENTIAL, and BAD_MATCH trigger post-commit Job-vector learning."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P627",
+      "heading": "3.6 Feedback Learning with Rocchio",
+      "style": "Normal",
+      "text": "Negative weights are removed rather than persisted. The learned vector is stored in learnedProfileVectorJson. Every Matching associated with the Job is then marked needsRecompute=true. AutomationScheduler.recomputeStaleMatchings rescans these rows every 30 minutes and clears the marker only after successful scoring."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P633",
+      "heading": "3.7 Application and Recruiter Workflow",
+      "style": "Normal",
+      "text": "ApplicationService.submit resolves the authenticated Candidate, requires an active Job before its application deadline, rejects an existing Candidate–Job application, and uses the requested or default confirmed CV. If a Matching exists, it is attached to keep the score context. The service saves an audit event, updates the Job application count through the database rule, and requests Candidate and Recruiter notifications."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P643",
+      "heading": "3.8.2 Auto-Apply",
+      "style": "Normal",
+      "text": "AutoApplyService.runForPolicy resolves the policy owner, Candidate, and confirmed default CV. It checks policy enablement and pause state, eligible categories, active Job state, deadline, score threshold, previous interactions, quota, and cooldown before creating an automatic application. Database uniqueness remains the final concurrency guard. Every created or skipped outcome can be audited and followed by a notification decision."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P662",
+      "heading": "3.11 Frontend Integration",
+      "style": "Normal",
+      "text": "App.tsx defines public, Candidate, Recruiter, and Administrator routes. Protected routes check the loaded account role, while session restoration calls /api/auth/me and clears invalid state. Candidate pages include Job reporting. Recruiter applicant and Talent Pool views can report a visible CV with the owned Job ID. The Administrator workspace includes a Report moderation tab for the pending queue, case detail, ban, and dismiss actions."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P663",
+      "heading": "3.11 Frontend Integration",
+      "style": "Normal",
+      "text": "Frontend/src/lib/api.ts centralizes HTTP access. It reads VITE_API_BASE_URL with /api as the default, attaches the bearer token from sessionStorage, selects JSON headers except for multipart FormData, unwraps the shared response envelope, and throws a normalized error for unsuccessful responses. DTO mapping functions convert backend shapes and labels into UI models. React Query hooks manage loading, refetching, caching, polling, and error state for server data."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P697",
+      "heading": "4.2 Evaluation Environment",
+      "style": "Normal",
+      "text": "Earlier commands are recorded in evidence/CHAPTER5_EVIDENCE_20260703.md. For the August 7 refresh, Surefire XML, Maven output, TypeScript/ESLint/Vite results, Playwright output, the current report, and evaluation/result.json are the main evidence. The report states the working-tree limitation instead of treating the commit hash as a complete release identifier."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P702",
+      "heading": "4.3.1 Controlled Algorithm Dataset",
+      "style": "Normal",
+      "text": "AlgorithmEvaluatorTest loads evaluation/controlled-dataset.json. The dataset contains 50 Jobs and 100 unique CVs across IT domains. It defines 300 training pairs and 300 holdout pairs. The file hash observed during every repeated run was 6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P708",
+      "heading": "4.4 Backend Automated Testing",
+      "style": "Normal",
+      "text": "The complete backend suite was executed with .\\mvnw.cmd clean verify. It compiled 148 application source files and 37 test source files, started PostgreSQL 16 Testcontainers, applied Flyway migrations V1–V25, executed 35 Surefire suites, and built the backend JAR."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P778",
+      "heading": "2.5 Policy-Driven Automation and Email Action",
+      "style": "Normal",
+      "text": "This objective is achieved as configurable prototype automation. Notification policy and application authorization remain separate control paths, scheduler timing is externalized through app.scheduler.*, and the email-action channel uses hashed token storage with GET confirmation followed by POST execution. Further production work is still required for rate limiting, secret rotation, mail delivery, and deployment-specific origin controls."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P819",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[2] C. D. Manning, P. Raghavan, and H. Schütze, Introduction to Information Retrieval. Cambridge, U.K.: Cambridge University Press, 2008."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P824",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[7] X. Yu, R. Xu, C. Xue, J. Zhang, X. Ma, and Z. Yu, “ConFit v2: Improving resume-job matching using hypothetical resume embedding and runner-up hard-negative mining,” in Findings of the Association for Computational Linguistics: ACL 2025, Vienna, Austria, 2025, pp. 12775–12790, doi: 10.18653/v1/2025.findings-acl.661."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P825",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[8] S. Vaishampayan et al., “Human and LLM-based resume matching: An observational study,” in Findings of the Association for Computational Linguistics: NAACL 2025, Albuquerque, NM, USA, 2025, pp. 4823–4838, doi: 10.18653/v1/2025.findings-naacl.270."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P826",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[9] E. Tabassi, Artificial Intelligence Risk Management Framework (AI RMF 1.0), NIST AI 100-1. Gaithersburg, MD, USA: National Institute of Standards and Technology, 2023, doi: 10.6028/NIST.AI.100-1."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P828",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[11] R. T. Fielding, “Architectural styles and the design of network-based software architectures,” Ph.D. dissertation, University of California, Irvine, CA, USA, 2000."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P830",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[13] K. Kent and M. Souppaya, Guide to Computer Security Log Management, NIST SP 800-92. Gaithersburg, MD, USA: National Institute of Standards and Technology, 2006, doi: 10.6028/NIST.SP.800-92."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P831",
+      "heading": "PART 4. REFERENCES",
+      "style": "Normal",
+      "text": "[14] A. Colas, J. Araki, Z. Zhou, B. Wang, and Z. Feng, “Knowledge-grounded natural language recommendation explanation,” in Proceedings of the 6th BlackboxNLP Workshop, Singapore, 2023, pp. 1–15, doi: 10.18653/v1/2023.blackboxnlp-1.1."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P840",
+      "heading": "Appendix D. Evaluation Summary",
+      "style": "Normal",
+      "text": "The final evidence package contains the 141-test backend reports, controlled algorithm benchmark, frontend type/lint/build results, 46-test Chrome output, runtime health evidence, the updated report, and evaluation/result.json. Chapter 4 reports what this evidence supports and what it does not support."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P859",
+      "heading": "Prerequisites",
+      "style": "List Paragraph",
+      "text": "• Install Java 21, Node.js with npm, Docker Desktop with Docker Compose, and Git."
+    },
+    {
+      "kind": "paragraph",
+      "location": "P863",
+      "heading": "Startup procedure",
+      "style": "List Paragraph",
+      "text": "2. From `Backend/careerfit-backend`, run `mvnw.cmd spring-boot:run`. The host backend connects to Compose PostgreSQL at `localhost:5433`."
+    },
+    {
+      "kind": "table",
+      "location": "T0R0",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Supervisor / Nguyen Thanh Khoa, Ph.D. | Student / Pham Huu Hung - B2203557"
+    },
+    {
+      "kind": "table",
+      "location": "T28R8",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "GET /api/admin/reports; POST .../{type}/{id}/ban or /dismiss | Load report cases and resolve all pending reports for a target | Target status/counter, report resolutions, audit"
+    },
+    {
+      "kind": "table",
+      "location": "T30R5",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Node.js / npm | Bundled Node runtime with repository npm scripts"
+    },
+    {
+      "kind": "table",
+      "location": "T33R1",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "index.html | 1.37 kB | 0.67 kB"
+    },
+    {
+      "kind": "table",
+      "location": "T36R1",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "/api/jobs/search?page=0&size=20 | 200"
+    }
+  ],
+  "non_ascii": [
+    [
+      "U+2013 EN DASH '–'",
+      38
+    ],
+    [
+      "U+2022 BULLET '•'",
+      16
+    ],
+    [
+      "U+201C LEFT DOUBLE QUOTATION MARK '“'",
+      14
+    ],
+    [
+      "U+201D RIGHT DOUBLE QUOTATION MARK '”'",
+      14
+    ],
+    [
+      "U+1D63 LATIN SUBSCRIPT SMALL LETTER R 'ᵣ'",
+      6
+    ],
+    [
+      "U+00E4 LATIN SMALL LETTER A WITH DIAERESIS 'ä'",
+      6
+    ],
+    [
+      "U+2192 RIGHTWARDS ARROW '→'",
+      6
+    ],
+    [
+      "U+2019 RIGHT SINGLE QUOTATION MARK '’'",
+      5
+    ],
+    [
+      "U+03B1 GREEK SMALL LETTER ALPHA 'α'",
+      4
+    ],
+    [
+      "U+03B2 GREEK SMALL LETTER BETA 'β'",
+      4
+    ],
+    [
+      "U+03B3 GREEK SMALL LETTER GAMMA 'γ'",
+      4
+    ],
+    [
+      "U+2082 SUBSCRIPT TWO '₂'",
+      3
+    ],
+    [
+      "U+2208 ELEMENT OF '∈'",
+      3
+    ],
+    [
+      "U+2099 LATIN SUBSCRIPT SMALL LETTER N 'ₙ'",
+      3
+    ],
+    [
+      "U+03A3 GREEK CAPITAL LETTER SIGMA 'Σ'",
+      3
+    ],
+    [
+      "U+2212 MINUS SIGN '−'",
+      3
+    ],
+    [
+      "U+2014 EM DASH '—'",
+      2
+    ],
+    [
+      "U+2080 SUBSCRIPT ZERO '₀'",
+      2
+    ],
+    [
+      "U+2265 GREATER-THAN OR EQUAL TO '≥'",
+      2
+    ],
+    [
+      "U+00D7 MULTIPLICATION SIGN '×'",
+      1
+    ],
+    [
+      "U+00B7 MIDDLE DOT '·'",
+      1
+    ],
+    [
+      "U+2098 LATIN SUBSCRIPT SMALL LETTER M 'ₘ'",
+      1
+    ],
+    [
+      "U+1D62 LATIN SUBSCRIPT SMALL LETTER I 'ᵢ'",
+      1
+    ],
+    [
+      "U+00FC LATIN SMALL LETTER U WITH DIAERESIS 'ü'",
+      1
+    ]
+  ],
+  "terminology": [
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P119",
+      "heading": "TABLE OF CONTENTS",
+      "style": "toc 3",
+      "text": "1.5.1 Candidate Manages CV, Profile, and Portfolio and Receives Match Results\t11"
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P188",
+      "heading": "TABLE OF CONTENTS",
+      "style": "toc 3",
+      "text": "3.8.1 Async Executor and Scheduler\t52"
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P265",
+      "heading": "LIST OF TABLES",
+      "style": "toc 1",
+      "text": "Table 1.5. Use case - Candidate manages CV, profile, portfolio, and match results\t11"
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "paragraph",
+      "location": "P347",
+      "heading": "1. Problem Statement",
+      "style": "Normal",
+      "text": "This thesis develops CareerFit IT AutoPilot, an IT-focused web platform that combines job discovery, reviewed CV and JD processing, matching, recommendation, Rocchio feedback, AutoFit policies, secure email actions, recruiter talent discovery, and audit records. The system helps users make decisions but does not replace recruitment judgment."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P413",
+      "heading": "1.5.1 Candidate Manages CV, Profile, and Portfolio and Receives Match Results",
+      "style": "Heading 3",
+      "text": "1.5.1 Candidate Manages CV, Profile, and Portfolio and Receives Match Results"
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P414",
+      "heading": "1.5.1 Candidate Manages CV, Profile, and Portfolio and Receives Match Results",
+      "style": "Table Caption",
+      "text": "Table 1.5. Use case - Candidate manages CV, profile, portfolio, and match results"
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P536",
+      "heading": "2.11 System Architecture",
+      "style": "Normal",
+      "text": "The presentation layer contains React pages, reusable components, route guards, API mapping, and query state. It calls the backend over HTTP and must not be trusted to enforce protected business rules. The API layer contains controllers and DTO validation. The service layer owns use-case orchestration, transactions, scoring, policy decisions, and ownership checks. Repositories map domain entities to PostgreSQL through Spring Data JPA. Cross-cutting configuration covers security, CORS, async execution, exception responses, scheduling, API documentation, and health/metrics endpoints."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P545",
+      "heading": "2.13.1 Core Identity and Recruitment Data",
+      "style": "Normal",
+      "text": "user_account stores identity, role, activation, verification, language, and password hash. A Candidate owns a profile, multiple CVs, reviewable CV sections, extracted skills, portfolio links, and portfolio projects. A Recruiter owns an employer profile and Jobs. A Job stores its JD, structured recruitment fields, lifecycle status, report count, urgent flag, deadline, application count, source details, and vector data. A CV also stores its lifecycle status and pending report count."
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "paragraph",
+      "location": "P546",
+      "heading": "2.13.1 Core Identity and Recruitment Data",
+      "style": "Normal",
+      "text": "matching is the unique association between one CV and one Job. It stores the direct score, label, separate Potential flag and explanation, reasons, and recomputation state. application links a Candidate and Job and may reference the CV and Matching used at that time. feedback stores a judgment about a Matching. recruiter_cv_bookmark keeps a Recruiter's saved Candidate/CV for an owned Job, while recommendation_interaction records events such as viewed, skipped, applied, saved, not interested, or show similar."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P558",
+      "heading": "2.14.2 Failure Handling",
+      "style": "Normal",
+      "text": "CV processing represents long-running work with statuses rather than keeping a browser request open until every score completes. Extraction or validation failure records a failure state and reason. Matching tasks start after commit so background work cannot read uncommitted rows. Report moderation uses transactions and row locking to update the target, report counter, report resolutions, and audit state together. A banned Job is excluded from active flows, while a banned CV can no longer remain the default CV."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P618",
+      "heading": "3.5.2 Matching Orchestration and Persistence",
+      "style": "Normal",
+      "text": "A Recruiter first completes a company profile, then can save a Job as DRAFT, check JD quality, and publish it with the required deadline. Published Jobs can be marked urgent and are scored after commit. MatchingQueryService supports Candidate and Recruiter views with server-side filters, pagination, sorting, label/Potential filters, and clear empty-state metadata. Portfolio details remain protected by the Candidate's visibility setting and application state."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P618",
+      "heading": "3.5.2 Matching Orchestration and Persistence",
+      "style": "Normal",
+      "text": "A Recruiter first completes a company profile, then can save a Job as DRAFT, check JD quality, and publish it with the required deadline. Published Jobs can be marked urgent and are scored after commit. MatchingQueryService supports Candidate and Recruiter views with server-side filters, pagination, sorting, label/Potential filters, and clear empty-state metadata. Portfolio details remain protected by the Candidate's visibility setting and application state."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P635",
+      "heading": "3.7 Application and Recruiter Workflow",
+      "style": "Normal",
+      "text": "Response DTOs combine application, Candidate, CV, Matching, Job, and bookmark details without exposing persistence entities. Portfolio fields are returned only when the Candidate has enabled visibility and the application state permits it. Server-side pagination, sorting, and filters keep larger Job and Candidate catalogues manageable."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P639",
+      "heading": "3.8.1 Async Executor and Scheduler",
+      "style": "Heading 3",
+      "text": "3.8.1 Async Executor and Scheduler"
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P640",
+      "heading": "3.8.1 Async Executor and Scheduler",
+      "style": "Normal",
+      "text": "AsyncConfig creates a bounded ThreadPoolTaskExecutor. AfterCommitExecutor submits CV and Job matching only after the related transaction commits. Mail sending and Rocchio learning can also leave the request thread, while persisted CV, Matching, email-action, and delivery states make completion and failures observable."
+    },
+    {
+      "label": "raw email-action token claim",
+      "kind": "paragraph",
+      "location": "P651",
+      "heading": "3.9 Email Action and Audit Implementation",
+      "style": "Normal",
+      "text": "EmailActionController exposes a public confirmation and redemption flow because possession of the high-entropy token is the credential. The raw token is sent to the user but only its SHA-256 hash is persisted. GET validates the token and renders a non-mutating confirmation page; POST performs the supported action, records redemption, and rejects unknown, expired, or already-used records."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P722",
+      "heading": "4.6 Concurrency Observation in Benchmark Runs",
+      "style": "Normal",
+      "text": "The implemented correction controls asynchronous transaction timing and checks the final logs for background failures. Production work should still define retry, conflict, timeout, and recovery policies, and CI should continue to fail when uncaught background exceptions appear even if foreground JUnit assertions pass."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P750",
+      "heading": "4.12.2 Internal Validity",
+      "style": "Normal",
+      "text": "The benchmark runs inside a Spring context, so asynchronous work and persisted Matching records can affect repeatability if they are not controlled. The final test registers learning after commit, clears previous Matching state before recomputation, and checks logs for background failures. Browser tests use explicit API and UI conditions, avoid relying only on the first seeded Job, and delete the Job created by the Recruiter flow."
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "paragraph",
+      "location": "P766",
+      "heading": "2.1 Role-Based Recruitment Platform",
+      "style": "Normal",
+      "text": "The role-based workflow objective was achieved at prototype level. Guests can browse public Jobs and employers. Candidates can review CVs, inspect matching and recommendation results, apply or withdraw, submit feedback, configure AutoFit, and report an active Job. Recruiters can manage Jobs, applicants, and the Talent Pool and can report a CV that is visible through an owned Job. Administrators can review grouped report cases and choose Dismiss or Ban. The 46 Chrome tests cover representative flows but not every route or browser."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P774",
+      "heading": "2.4 Feedback Learning",
+      "style": "Normal",
+      "text": "The system records GOOD_MATCH, POTENTIAL, BAD_MATCH, and NOT_INTERESTED feedback with actor and channel information. Positive and negative learning signals update the Job representation using Rocchio with α=1.0, β=0.75, and γ=0.15. Recalculation begins from the original Job vector and current feedback history, which produces repeatable results for the same inputs. Affected Matchings are marked stale and rescored asynchronously."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P794",
+      "heading": "3.4 Test Results versus Background Errors",
+      "style": "Normal",
+      "text": "The earlier background StaleObjectStateException showed why test counts cannot be the only release check. JUnit assertions can pass while asynchronous tasks log failures outside the main test flow. Component health and overall health must also be read together. A reliable system report should check logs, health components, output files, and side effects in addition to exit codes."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "paragraph",
+      "location": "P795",
+      "heading": "3.4 Test Results versus Background Errors",
+      "style": "Normal",
+      "text": "Future CI should continue to fail on uncaught background exceptions, control schedulers during algorithm tests, wait for asynchronous work explicitly, and archive logs as first-class results. Operational health details should be protected while remaining available to authorized operators."
+    },
+    {
+      "label": "localStorage claim",
+      "kind": "paragraph",
+      "location": "P805",
+      "heading": "4.3 Security and Privacy Limitations",
+      "style": "Normal",
+      "text": "Notification action tokens are hashed, and state changes require POST after confirmation. Access tokens are stored in frontend sessionStorage rather than persistent localStorage. Local CV storage lacks documented malware scanning, encryption, retention enforcement, and recovery testing. Public Swagger and Prometheus access are suitable for local demonstration but should be restricted in production. Privacy, fairness, and management of users' personal data have not been validated with a real deployment population."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "paragraph",
+      "location": "P834",
+      "heading": "Appendix A. Requirement-Test Traceability Matrix",
+      "style": "Normal",
+      "text": "The core traceability chain is: UC-01 to CV/profile/portfolio and ingestion tests; UC-02 to public catalogue, detail, employer, and similar-Job contracts; UC-03 to Application and invitation lifecycle tests; UC-04 to feedback and AlgorithmEvaluatorTest; UC-05 to recommendation and analytics contracts; UC-06 to AutomationPolicy/AutoApply tests; UC-07 to ContentReportServiceTest and Job/CV reporting browser contracts; UC-08 to company and Job lifecycle tests; UC-09 and UC-10 to applicants, Talent Pool, bookmark, and invitation flows; UC-11 to analytics and settings contracts; UC-12 and UC-13 to administrative account/Job/report moderation tests; UC-14 to hashed token, confirmation, redemption, replay, and expiry behavior."
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "paragraph",
+      "location": "P838",
+      "heading": "Appendix C. Data Model Summary",
+      "style": "Normal",
+      "text": "Identity data is centered on UserAccount and role profiles. Recruitment data includes Job, CV with review and report fields, Matching, Application, RecruiterCvBookmark, Invitation state, Feedback, and Skill. Automation and operations use AutomationPolicy, EmailAction, Notification, DeliveryLog, ContentReport, AuditLog, and scheduler state. Flyway V1–V25 records schema changes, and one-time email action tokens are stored as SHA-256 hashes."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T3R2",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Candidate | Manage profile, portfolio, and CVs; review matches/recommendations/analytics; apply or answer invitations; give feedback; configure AutoFit; report an active Job | Candidate-owned resources and Candidate/report APIs"
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T4R3",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Candidate profile, CV, and portfolio | Profile/portfolio editing; CV draft, upload, OCR, review/edit/confirm, default/delete, quality signals, and match results | Candidate"
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "table",
+      "location": "T4R10",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Actionable email | Match feedback, Daily Digest feedback/unsubscribe, and Recruiter invitation accept/decline through confirm-then-POST tokens | Email recipient"
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T6R3",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Preconditions | The Candidate account is active and authenticated. Candidate-owned profile, CV, and portfolio APIs are available."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T6R4",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Trigger | The Candidate uploads or drafts a CV, edits profile/portfolio data, manages an existing CV, or opens its match results."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T6R5",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Main flow | Create or upload a CV; validate and extract content; review and edit sections; confirm the CV; update profile and portfolio links/projects; list owned CVs; set an eligible SCORING_DONE CV as default or delete a permitted CV; vectorize confirmed content; score active Jobs; show the score, label, Potential explanation, and reasons."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T6R6",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Alternative/exception flows | Save incomplete manual content as DRAFT; keep extracted content in REVIEW_REQUIRED until confirmation; reject unsafe or unsupported files; record FAILED processing; reject a default change for an unscored CV; protect portfolio data according to the Candidate's privacy settings."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T6R7",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Postconditions | The owned profile, portfolio, and CV collection reflect the accepted changes, and confirmed CVs expose current matching results when scoring completes."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "table",
+      "location": "T9R6",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Alternative/exception flows | Reject another role, another Candidate's Matching, missing evidence, or invalid feedback; store NOT_INTERESTED without treating it as a technical relevance signal; retain retry visibility when asynchronous recomputation fails."
+    },
+    {
+      "label": "portfolio claim",
+      "kind": "table",
+      "location": "T14R5",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Main flow | Load and filter applicants by valid states; show Candidate, CV, Matching, label, Potential, and permitted portfolio information; open a Candidate detail; approve or reject an eligible Application; update the list; send configured lifecycle notifications; add audit evidence."
+    },
+    {
+      "label": "recruiter feedback claim",
+      "kind": "table",
+      "location": "T19R5",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "Main flow | GET hashes and validates the token and shows a non-mutating confirmation page; POST repeats validation and performs the selected action. Match notification supports GOOD_MATCH, POTENTIAL, or NOT_INTERESTED; Daily Digest supports per-Job feedback and UNSUBSCRIBE_DIGEST; Recruiter Invitation supports INVITATION_ACCEPT or INVITATION_DECLINE. The service records redemption and audit/feedback/application effects."
+    },
+    {
+      "label": "async matching claim",
+      "kind": "table",
+      "location": "T25R5",
+      "heading": "Table content",
+      "style": "TABLE",
+      "text": "PROCESSING | Confirmed content is normalized and vectorized | Vector saved → asynchronous scoring"
+    }
+  ],
+  "table_headers": [
+    {
+      "table": 0,
+      "rows": 1,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Supervisor\nNguyen Thanh Khoa, Ph.D. | Student\nPham Huu Hung - B2203557"
+    },
+    {
+      "table": 1,
+      "rows": 15,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Abbreviation | Full Term | Meaning / Explanation"
+    },
+    {
+      "table": 2,
+      "rows": 6,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Thesis objective | Implemented contribution | Evaluation evidence"
+    },
+    {
+      "table": 3,
+      "rows": 7,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Actor | Primary responsibilities | Access boundary"
+    },
+    {
+      "table": 4,
+      "rows": 11,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Group | Required capabilities | Main actor"
+    },
+    {
+      "table": 5,
+      "rows": 9,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Quality attribute | Requirement | Design response"
+    },
+    {
+      "table": 6,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 7,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 8,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 9,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 10,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 11,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 12,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 13,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 14,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 15,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 16,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 17,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 18,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 19,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Field | Description"
+    },
+    {
+      "table": 20,
+      "rows": 6,
+      "columns": 4,
+      "has_header": true,
+      "first_row": "Approach | Strength | Limitation relative to CareerFit scope | CareerFit position"
+    },
+    {
+      "table": 21,
+      "rows": 10,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Module | Main responsibility | Representative services"
+    },
+    {
+      "table": 22,
+      "rows": 10,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Constraint | Purpose"
+    },
+    {
+      "table": 23,
+      "rows": 10,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Risk | Current control | Remaining treatment"
+    },
+    {
+      "table": 24,
+      "rows": 11,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Layer | Technology | Implementation purpose"
+    },
+    {
+      "table": 25,
+      "rows": 9,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "State | Meaning | Typical transition"
+    },
+    {
+      "table": 26,
+      "rows": 7,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Condition | Stored/displayed result"
+    },
+    {
+      "table": 27,
+      "rows": 5,
+      "columns": 4,
+      "has_header": true,
+      "first_row": "Feedback | Persisted | Rocchio classification | Immediate learning trigger"
+    },
+    {
+      "table": 28,
+      "rows": 9,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "API operation | Controller/service responsibility | Persistence effect"
+    },
+    {
+      "table": 29,
+      "rows": 10,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Area | Current limitation | Consequence or required improvement"
+    },
+    {
+      "table": 30,
+      "rows": 13,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Component | Observed version or configuration"
+    },
+    {
+      "table": 31,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Measure | Result"
+    },
+    {
+      "table": 32,
+      "rows": 9,
+      "columns": 4,
+      "has_header": true,
+      "first_row": "Metric | Baseline | After Rocchio | Delta"
+    },
+    {
+      "table": 33,
+      "rows": 8,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Artifact | Uncompressed size | Gzip size"
+    },
+    {
+      "table": 34,
+      "rows": 7,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Scenario group | Main verification | Result"
+    },
+    {
+      "table": 35,
+      "rows": 6,
+      "columns": 4,
+      "has_header": true,
+      "first_row": "Request | Expected | Observed | Result"
+    },
+    {
+      "table": 36,
+      "rows": 6,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Endpoint or check | Observation"
+    },
+    {
+      "table": 37,
+      "rows": 8,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Question | Evidence-supported answer"
+    },
+    {
+      "table": 38,
+      "rows": 9,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Evaluation area | Supported result | Qualification"
+    },
+    {
+      "table": 39,
+      "rows": 9,
+      "columns": 3,
+      "has_header": true,
+      "first_row": "Objective | Assessment | Primary evidence"
+    },
+    {
+      "table": 40,
+      "rows": 10,
+      "columns": 2,
+      "has_header": true,
+      "first_row": "Limitation | Impact on conclusions"
+    }
+  ],
+  "drawings": [
+    {
+      "id": "37",
+      "name": "Picture 37",
+      "title": "Can Tho University logo",
+      "descr": "Can Tho University logo"
+    },
+    {
+      "id": "1",
+      "name": "Picture 1",
+      "title": "Can Tho University logo",
+      "descr": "Can Tho University logo"
+    },
+    {
+      "id": "7",
+      "name": "Picture 7",
+      "title": "Figure 1.1. CareerFit system context",
+      "descr": "Figure 1.1. CareerFit system context"
+    },
+    {
+      "id": "8",
+      "name": "Picture 8",
+      "title": "CareerFit role-oriented overview mapping fourteen use cases to Guest/Candidate, Recruiter, Administrator, and Email Recipient actors.",
+      "descr": "CareerFit role-oriented overview mapping fourteen use cases to Guest/Candidate, Recruiter, Administrator, and Email Recipient actors."
+    },
+    {
+      "id": "9",
+      "name": "Picture 9",
+      "title": "Current CareerFit diagram for Figure 1.3",
+      "descr": "Current CareerFit diagram for Figure 1.3"
+    },
+    {
+      "id": "10",
+      "name": "Picture 10",
+      "title": "Figure 1.4. Feedback learning and recomputation sequence",
+      "descr": "Figure 1.4. Feedback learning and recomputation sequence"
+    },
+    {
+      "id": "11",
+      "name": "Picture 11",
+      "title": "Figure 1.5. AutoFit decision flow",
+      "descr": "Figure 1.5. AutoFit decision flow"
+    },
+    {
+      "id": "12",
+      "name": "Picture 12",
+      "title": "Figure 1.6. Secure email-action confirmation and redemption sequence",
+      "descr": "Figure 1.6. Secure email-action confirmation and redemption sequence"
+    },
+    {
+      "id": "4",
+      "name": "Picture 4",
+      "title": "Figure 2.1. Distinction between matching, recommendation, and recruitment action",
+      "descr": "Figure 2.1. Distinction between matching, recommendation, and recruitment action"
+    },
+    {
+      "id": "5",
+      "name": "Picture 5",
+      "title": "Figure 2.2. TF-IDF vectorization and cosine-similarity pipeline",
+      "descr": "Figure 2.2. TF-IDF vectorization and cosine-similarity pipeline"
+    },
+    {
+      "id": "6",
+      "name": "Picture 6",
+      "title": "Figure 2.3. Rocchio relevance-feedback vector update",
+      "descr": "Figure 2.3. Rocchio relevance-feedback vector update"
+    },
+    {
+      "id": "13",
+      "name": "Picture 13",
+      "title": "Figure 2.4. Human-in-the-Loop control cycle in CareerFit",
+      "descr": "Figure 2.4. Human-in-the-Loop control cycle in CareerFit"
+    },
+    {
+      "id": "14",
+      "name": "Picture 14",
+      "title": "Figure 2.5. CareerFit container and component architecture",
+      "descr": "Figure 2.5. CareerFit container and component architecture"
+    },
+    {
+      "id": "15",
+      "name": "Picture 15",
+      "title": "Current CareerFit diagram for Figure 2.6",
+      "descr": "Current CareerFit diagram for Figure 2.6"
+    },
+    {
+      "id": "16",
+      "name": "Picture 16",
+      "title": "Figure 2.7. Local and containerized deployment topology",
+      "descr": "Figure 2.7. Local and containerized deployment topology"
+    },
+    {
+      "id": "17",
+      "name": "Picture 17",
+      "title": "Figure 1.3. Backend module structure and request flow",
+      "descr": "Figure 1.3. Backend module structure and request flow"
+    },
+    {
+      "id": "18",
+      "name": "Picture 18",
+      "title": "Figure 1.4. JWT authentication and authorization boundaries",
+      "descr": "Figure 1.4. JWT authentication and authorization boundaries"
+    },
+    {
+      "id": "19",
+      "name": "Picture 19",
+      "title": "Current CareerFit diagram for Figure 3.3",
+      "descr": "Current CareerFit diagram for Figure 3.3"
+    },
+    {
+      "id": "20",
+      "name": "Picture 20",
+      "title": "Figure 1.6. Seed-corpus initialization and TF-IDF construction",
+      "descr": "Figure 1.6. Seed-corpus initialization and TF-IDF construction"
+    },
+    {
+      "id": "21",
+      "name": "Picture 21",
+      "title": "Current CareerFit diagram for Figure 3.5",
+      "descr": "Current CareerFit diagram for Figure 3.5"
+    },
+    {
+      "id": "22",
+      "name": "Picture 22",
+      "title": "Figure 1.8. Feedback processing and post-commit learning",
+      "descr": "Figure 1.8. Feedback processing and post-commit learning"
+    },
+    {
+      "id": "23",
+      "name": "Picture 23",
+      "title": "Figure 2.5. Application and invitation state transitions",
+      "descr": "Figure 2.5. Application and invitation state transitions"
+    },
+    {
+      "id": "24",
+      "name": "Picture 24",
+      "title": "Current CareerFit diagram for Figure 3.8",
+      "descr": "Current CareerFit diagram for Figure 3.8"
+    },
+    {
+      "id": "25",
+      "name": "Picture 25",
+      "title": "Figure 2.7. Hashed email-action token and confirm-then-POST flow",
+      "descr": "Figure 2.7. Hashed email-action token and confirm-then-POST flow"
+    },
+    {
+      "id": "26",
+      "name": "Picture 26",
+      "title": "Current CareerFit diagram for Figure 3.10",
+      "descr": "Current CareerFit diagram for Figure 3.10"
+    },
+    {
+      "id": "30",
+      "name": "Picture 30",
+      "title": "Screen 3.1. Candidate urgent-job catalogue",
+      "descr": "Screen 3.1. Candidate urgent-job catalogue"
+    },
+    {
+      "id": "31",
+      "name": "Picture 31",
+      "title": "Screen 3.2. Candidate AutoFit policy settings",
+      "descr": "Screen 3.2. Candidate AutoFit policy settings"
+    },
+    {
+      "id": "32",
+      "name": "Picture 32",
+      "title": "Screen 3.3. Candidate CV upload entry point",
+      "descr": "Screen 3.3. Candidate CV upload entry point"
+    },
+    {
+      "id": "33",
+      "name": "Picture 33",
+      "title": "Screen 3.4. Recruiter Jobs and applicant workspace",
+      "descr": "Screen 3.4. Recruiter Jobs and applicant workspace"
+    },
+    {
+      "id": "34",
+      "name": "Picture 34",
+      "title": "Screen 3.5. Recruiter Talent Pool and Potential CV",
+      "descr": "Screen 3.5. Recruiter Talent Pool and Potential CV"
+    },
+    {
+      "id": "35",
+      "name": "Picture 35",
+      "title": "Screen 3.6. Administrator audit logs",
+      "descr": "Screen 3.6. Administrator audit logs"
+    },
+    {
+      "id": "27",
+      "name": "Picture 27",
+      "title": "Figure 1.3. Evaluation environments and evidence sources",
+      "descr": "Figure 1.3. Evaluation environments and evidence sources"
+    },
+    {
+      "id": "28",
+      "name": "Picture 28",
+      "title": "Figure 1.4. Baseline and Rocchio benchmark metrics at K = 5",
+      "descr": "Figure 1.4. Baseline and Rocchio benchmark metrics at K = 5"
+    },
+    {
+      "id": "29",
+      "name": "Picture 29",
+      "title": "Figure 1.5. P0 end-to-end workflow coverage",
+      "descr": "Figure 1.5. P0 end-to-end workflow coverage"
+    },
+    {
+      "id": "36",
+      "name": "Picture 36",
+      "title": "Figure 1.6. Local Job-search latency distribution",
+      "descr": "Figure 1.6. Local Job-search latency distribution"
+    }
+  ]
+}

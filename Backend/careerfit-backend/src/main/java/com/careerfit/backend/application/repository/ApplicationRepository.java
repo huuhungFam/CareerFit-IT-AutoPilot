@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
+    boolean existsByCvIdAndJobId(UUID cvId, UUID jobId);
 
     @EntityGraph(attributePaths = {"candidate", "candidate.user", "job", "job.recruiter", "cv", "matching"})
     @Query("SELECT a FROM Application a WHERE a.id = :id")

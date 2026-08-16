@@ -1,0 +1,126 @@
+P0001	STYLE='Heading 2'	DRAWINGS=0	IMAGES=	Functional Design
+P0002	STYLE='Heading 3'	DRAWINGS=0	IMAGES=	Function Design for Patient
+P0003	STYLE='Heading 4'	DRAWINGS=0	IMAGES=	Book Appointment
+P0004	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Purpose: This function enables patients to conveniently schedule their own visits by selecting preferred services, dentists, and available time slots through a user-friendly interface.
+P0005	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface:
+P0006	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image1.png	
+P0007	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 7. Interface Book Appointment
+P0008	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface Components:
+TABLE 1: rows=6 cols=4
+  R1: No || Control Type || Description || Note
+  R2: 1 || Select || Choose Service || 
+  R3: 2 || Select || Choose Date || Past dates cannot be selected
+  R4: 3 || Select || Choose Time || Choose Date before choose Time
+  R5: 4 || Input || Enter symptoms, requests, or information || Optional
+  R6: 5 || Button || Make an appointment || 
+P0010	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Data Used:
+TABLE 2: rows=5 cols=6
+  R1: STT || Table Name / Data Structure || Method || Method || Method || Method
+  R2: STT || Table Name / Data Structure || Add || Modify || Delete || Query
+  R3: 1 || appointments || X ||  ||  || X
+  R4: 2 || clinicsettings ||  ||  ||  || X
+  R5: 3 || procedures ||  ||  ||  || X
+P0012	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Processing Logic:
+P0013	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image2.png	
+P0014	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 8. Sequence Diagram for Book Appointment
+P0015	STYLE='Heading 4'	DRAWINGS=0	IMAGES=	Chat with Chatbot
+P0016	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Purpose: Provide an instant communication channel between patients and the clinic, utilizing an AI Agent for automated 24/7 support and seamless escalation to human operators for complex inquiries.
+P0017	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface:
+P0018	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image3.png	
+P0019	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 9. Interface for Chat with Chatbot
+P0020	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface Components:
+TABLE 3: rows=4 cols=4
+  R1: No || Control Type || Description || Note
+  R2: 1 || Image || Show patient’s avatar || 
+  R3: 2 || Input || Enter message || 
+  R4: 3 || Button || Send message || 
+P0022	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Data Used:
+TABLE 4: rows=7 cols=6
+  R1: STT || Table Name / Data Structure || Method || Method || Method || Method
+  R2: STT || Table Name / Data Structure || Add || Modify || Delete || Query
+  R3: 1 || chats || X ||  ||  || 
+  R4: 2 || chatmessages || X ||  ||  || X
+  R5: 3 || users ||  ||  ||  || X
+  R6: 4 || appointments || X ||  ||  || X
+  R7: 5 || procedures ||  ||  ||  || 
+P0024	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Processing Logic:
+P0026	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image4.png	
+P0027	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 10. Sequence Diagram for Chat with Chatbot
+P0028	STYLE='Heading 3'	DRAWINGS=0	IMAGES=	Function Design for Admin
+P0029	STYLE='Heading 4'	DRAWINGS=0	IMAGES=	Manage Appointment
+P0030	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Purpose: This function enables the Receptionist and Admin to efficiently handle the entire lifecycle of appointments, including scheduling, rescheduling, and cancellation, ensuring optimized resource allocation and minimizing scheduling conflicts.
+P0031	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface:
+P0032	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image5.png	
+P0033	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 11. Interface of Manage Appointment
+P0034	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface Components:
+TABLE 5: rows=6 cols=4
+  R1: No || Control Type || Description || Note
+  R2: 1 || Image || Show patient’s avatar || 
+  R3: 2 || Input || Enter message || 
+  R4: 3 || Button || Send message || 
+  R5: 4 || Button || Show “Details” card view of that appointment || 
+  R6: 5 || Button || Show action depend on what that stage is: Requested: Action (Call/Accept/Deny) Scheduled: Open a modal for assigning dentist and marking patient arrival Arrived: Start a treatment with the related dentist and redirect to the treatment page In Treatment: fallback for when the in treatment failed to forward the data to the next stage Awaiting Payment: Open a payment modal which handle payments || 
+P0036	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Data Used:
+TABLE 6: rows=8 cols=6
+  R1: STT || Table Name / Data Structure || Method || Method || Method || Method
+  R2: STT || Table Name / Data Structure || Add || Modify || Delete || Query
+  R3: 1 || appointment || X || X ||  || X
+  R4: 2 || chatmessages || X || X ||  || X
+  R5: 3 || medicalrecords || X || X ||  || 
+  R6: 4 || procedures ||  ||  ||  || X
+  R7: 5 || treatmentplans || X || X ||  || X
+  R8: 6 || users ||  ||  ||  || X
+P0038	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Processing Logic:
+P0039	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image6.png	
+P0040	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 12. Sequence Diagram of Manage Appointment
+P0041	STYLE='Heading 4'	DRAWINGS=0	IMAGES=	Manage Patient Record
+P0042	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Purpose: Maintain comprehensive and secure digital medical histories, allowing dentists to accurately record diagnoses and treatments while granting patients read-only access to their verified health records.
+P0043	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface:
+P0044	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image7.png	
+P0045	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 13. Interface of Manage Patient Record
+P0046	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface Components:
+TABLE 7: rows=13 cols=4
+  R1: No || Control Type || Description || Note
+  R2: 1 || Button || Add new medical record || 
+  R3: 2 || Input || Search medical record || 
+  R4: 3 || Select || Select by patient or dentist || 
+  R5: 4 || Button || Sort by Latest appointment || 
+  R6: 5 || Button || Sort by Patient || 
+  R7: 6 || Button || Sort by Number of appointment || 
+  R8: 7 || Label || Show treating dentist || 
+  R9: 8 || Label || Show total appointments || 
+  R10: 9 || Label || Hide/Show appointment list || Disable if no appointment
+  R11: 10 || Label || Show dentist of specific appointment || 
+  R12: 11 || Label || Show service of specific appointment || 
+  R13: 12 || Button || Hide/Show detailed appointment || 
+P0048	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Data Used:
+TABLE 8: rows=4 cols=6
+  R1: STT || Table Name / Data Structure || Method || Method || Method || Method
+  R2: STT || Table Name / Data Structure || Add || Modify || Delete || Query
+  R3: 1 || medicalrecord || X ||  ||  || X
+  R4: 2 || users ||  ||  ||  || X
+P0050	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Processing Logic:
+P0051	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image8.png	
+P0052	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 14. Sequence Diagram of Manage Patient Record
+P0053	STYLE='Heading 4'	DRAWINGS=0	IMAGES=	Manage Billings and Payments
+P0054	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Purpose: Its purpose is to streamline the financial workflow by automatically generating accurate invoices based on services rendered, tracking payment statuses in real-time, and maintaining financial records for auditing.
+P0055	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface:
+P0056	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image9.png	
+P0057	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 15. Interface for Manage Billings and Payments
+P0058	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Interface Components:
+TABLE 9: rows=5 cols=4
+  R1: No || Control Type || Description || Note
+  R2: 1 || Image || Open form Create bill || 
+  R3: 2 || Input || View bill detail || 
+  R4: 3 || Button || View bill detail || 
+  R5: 4 || Button || Open form Quick pay || 
+P0060	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Data Used:
+TABLE 10: rows=4 cols=6
+  R1: STT || Table Name / Data Structure || Method || Method || Method || Method
+  R2: STT || Table Name / Data Structure || Add || Modify || Delete || Query
+  R3: 1 || billings || X ||  ||  || X
+  R4: 2 || users ||  ||  ||  || X
+P0062	STYLE='List Paragraph'	DRAWINGS=0	IMAGES=	Processing Logic:
+P0063	STYLE='Normal'	DRAWINGS=1	IMAGES=media/image10.png	
+P0064	STYLE='Caption'	DRAWINGS=0	IMAGES=	Figure 16. Sequence Diagram for Manage Billings and Payments
+SUMMARY paragraphs=64 tables=10 inline_shapes=10

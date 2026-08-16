@@ -2254,6 +2254,28 @@ small {
   line-height: 1.04;
 }
 
+.jd-company-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jd-company-line .eyebrow {
+  margin: 0;
+}
+
+.recruiter-login {
+  padding: 3px 8px;
+  border: 1px solid rgba(0, 113, 104, 0.18);
+  border-radius: 999px;
+  background: #eef8f5;
+  color: #176c63;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .jd-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

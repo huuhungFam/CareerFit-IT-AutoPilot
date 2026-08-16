@@ -1,17 +1,17 @@
 {
   "schemaVersion" : "1.2",
-  "timestamp" : "Sat Jul 18 14:45:49 ICT 2026",
+  "timestamp" : "Sun Aug 16 17:55:05 ICT 2026",
   "dataset" : {
-    "jobs" : 50,
-    "hash" : "6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2",
     "cvs" : 100,
     "trainPairs" : 300,
-    "holdoutPairs" : 300
+    "holdoutPairs" : 300,
+    "jobs" : 50,
+    "hash" : "6e935639ba6d3290dca8ad91a35d714c5e30c7e69a59af23ddbcf89fcc5cc2f2"
   },
   "rocchioParams" : {
+    "alpha" : 1.0,
     "beta" : 0.75,
-    "gamma" : 0.15,
-    "alpha" : 1.0
+    "gamma" : 0.15
   },
   "scoringThreshold" : "Similarity > 0.0 before feedback",
   "limitations" : [ "Only evaluate tf-idf representation, not advanced semantic vectors yet.", "Simulated data lacks organic recruiter feedback randomness.", "This is a synthetic causal benchmark. It demonstrates mathematical correctness of the Rocchio algorithm, but does not claim real-world production superiority without UAT." ],

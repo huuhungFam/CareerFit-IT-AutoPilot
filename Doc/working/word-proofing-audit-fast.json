@@ -1,0 +1,2874 @@
+{
+    "document":  "C:\\CODING\\Thesis\\Doc\\CareerFit-Thesis-Report.docx",
+    "spelling_count":  451,
+    "grammar_count":  122,
+    "spelling":  [
+                     {
+                         "text":  "Khoa",
+                         "start":  334,
+                         "end":  338
+                     },
+                     {
+                         "text":  "Huu",
+                         "start":  353,
+                         "end":  356
+                     },
+                     {
+                         "text":  "Tho",
+                         "start":  382,
+                         "end":  385
+                     },
+                     {
+                         "text":  "Khoa",
+                         "start":  484,
+                         "end":  488
+                     },
+                     {
+                         "text":  "Tho",
+                         "start":  842,
+                         "end":  845
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  1084,
+                         "end":  1093
+                     },
+                     {
+                         "text":  "Tho",
+                         "start":  1382,
+                         "end":  1385
+                     },
+                     {
+                         "text":  "Huu",
+                         "start":  1404,
+                         "end":  1407
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  1801,
+                         "end":  1810
+                     },
+                     {
+                         "text":  "AutoPilot",
+                         "start":  1814,
+                         "end":  1823
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  2306,
+                         "end":  2313
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  2806,
+                         "end":  2815
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  2956,
+                         "end":  2966
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  3309,
+                         "end":  3316
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  4094,
+                         "end":  4101
+                     },
+                     {
+                         "text":  "nDCG",
+                         "start":  25833,
+                         "end":  25837
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  27066,
+                         "end":  27075
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  27516,
+                         "end":  27525
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  27661,
+                         "end":  27670
+                     },
+                     {
+                         "text":  "AutoPilot",
+                         "start":  27674,
+                         "end":  27683
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  27789,
+                         "end":  27796
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  28011,
+                         "end":  28020
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  28328,
+                         "end":  28337
+                     },
+                     {
+                         "text":  "explainability",
+                         "start":  28462,
+                         "end":  28476
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  28983,
+                         "end":  28990
+                     },
+                     {
+                         "text":  "explainability",
+                         "start":  29531,
+                         "end":  29545
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  30366,
+                         "end":  30373
+                     },
+                     {
+                         "text":  "recompute",
+                         "start":  30438,
+                         "end":  30447
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  31835,
+                         "end":  31842
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  32051,
+                         "end":  32061
+                     },
+                     {
+                         "text":  "microservices",
+                         "start":  32512,
+                         "end":  32525
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  32837,
+                         "end":  32844
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  33260,
+                         "end":  33269
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  33966,
+                         "end":  33973
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  34076,
+                         "end":  34089
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  35037,
+                         "end":  35044
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  35075,
+                         "end":  35088
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  35309,
+                         "end":  35319
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  35682,
+                         "end":  35689
+                     },
+                     {
+                         "text":  "Djinni",
+                         "start":  37893,
+                         "end":  37899
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  38114,
+                         "end":  38123
+                     },
+                     {
+                         "text":  "tf",
+                         "start":  41289,
+                         "end":  41291
+                     },
+                     {
+                         "text":  "t,d",
+                         "start":  41292,
+                         "end":  41295
+                     },
+                     {
+                         "text":  "df",
+                         "start":  41409,
+                         "end":  41411
+                     },
+                     {
+                         "text":  "tfidf",
+                         "start":  41480,
+                         "end":  41485
+                     },
+                     {
+                         "text":  "t,d",
+                         "start":  41486,
+                         "end":  41489
+                     },
+                     {
+                         "text":  "tf",
+                         "start":  41493,
+                         "end":  41495
+                     },
+                     {
+                         "text":  "t,d",
+                         "start":  41496,
+                         "end":  41499
+                     },
+                     {
+                         "text":  "df",
+                         "start":  41511,
+                         "end":  41513
+                     },
+                     {
+                         "text":  "unnormalized",
+                         "start":  42155,
+                         "end":  42167
+                     },
+                     {
+                         "text":  "x,y",
+                         "start":  42222,
+                         "end":  42225
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  43008,
+                         "end":  43017
+                     },
+                     {
+                         "text":  "q,d",
+                         "start":  43456,
+                         "end":  43459
+                     },
+                     {
+                         "text":  "ConFit",
+                         "start":  44888,
+                         "end":  44894
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  45176,
+                         "end":  45185
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  45420,
+                         "end":  45427
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  45925,
+                         "end":  45932
+                     },
+                     {
+                         "text":  "hyperparameters",
+                         "start":  46431,
+                         "end":  46446
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  46728,
+                         "end":  46737
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  46738,
+                         "end":  46747
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  47538,
+                         "end":  47551
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  47613,
+                         "end":  47622
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  48316,
+                         "end":  48323
+                     },
+                     {
+                         "text":  "Precision@K",
+                         "start":  48727,
+                         "end":  48738
+                     },
+                     {
+                         "text":  "Recall@K",
+                         "start":  48740,
+                         "end":  48748
+                     },
+                     {
+                         "text":  "HitRate@K",
+                         "start":  48754,
+                         "end":  48763
+                     },
+                     {
+                         "text":  "Precision@K",
+                         "start":  48764,
+                         "end":  48775
+                     },
+                     {
+                         "text":  "Recall@K",
+                         "start":  48834,
+                         "end":  48842
+                     },
+                     {
+                         "text":  "HitRate@K",
+                         "start":  48915,
+                         "end":  48924
+                     },
+                     {
+                         "text":  "HitRate",
+                         "start":  49091,
+                         "end":  49098
+                     },
+                     {
+                         "text":  "nDCG",
+                         "start":  50015,
+                         "end":  50019
+                     },
+                     {
+                         "text":  "Järvelin",
+                         "start":  50063,
+                         "end":  50071
+                     },
+                     {
+                         "text":  "Kekäläinen",
+                         "start":  50076,
+                         "end":  50086
+                     },
+                     {
+                         "text":  "i",
+                         "start":  50246,
+                         "end":  50247
+                     },
+                     {
+                         "text":  "i",
+                         "start":  50274,
+                         "end":  50275
+                     },
+                     {
+                         "text":  "nDCG@K",
+                         "start":  50286,
+                         "end":  50292
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  51447,
+                         "end":  51456
+                     },
+                     {
+                         "text":  "Explainability",
+                         "start":  51848,
+                         "end":  51862
+                     },
+                     {
+                         "text":  "Explainability",
+                         "start":  51880,
+                         "end":  51894
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  52675,
+                         "end":  52684
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  52947,
+                         "end":  52956
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  53266,
+                         "end":  53275
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  53359,
+                         "end":  53368
+                     },
+                     {
+                         "text":  "cacheability",
+                         "start":  53924,
+                         "end":  53936
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  54236,
+                         "end":  54245
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  55495,
+                         "end":  55504
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  56962,
+                         "end":  56971
+                     },
+                     {
+                         "text":  "ConFit",
+                         "start":  57317,
+                         "end":  57323
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  57752,
+                         "end":  57761
+                     },
+                     {
+                         "text":  "inspectable",
+                         "start":  57887,
+                         "end":  57898
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  58218,
+                         "end":  58227
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  58303,
+                         "end":  58312
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  58319,
+                         "end":  58328
+                     },
+                     {
+                         "text":  "inspectable",
+                         "start":  58821,
+                         "end":  58832
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  59212,
+                         "end":  59221
+                     },
+                     {
+                         "text":  "inspectability",
+                         "start":  59306,
+                         "end":  59320
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  59612,
+                         "end":  59621
+                     },
+                     {
+                         "text":  "inspectable",
+                         "start":  59663,
+                         "end":  59674
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  59699,
+                         "end":  59706
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  60022,
+                         "end":  60031
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  60875,
+                         "end":  60884
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  60928,
+                         "end":  60937
+                     },
+                     {
+                         "text":  "user_account",
+                         "start":  61122,
+                         "end":  61134
+                     },
+                     {
+                         "text":  "Recompute",
+                         "start":  62175,
+                         "end":  62184
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  62357,
+                         "end":  62369
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  62448,
+                         "end":  62457
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  62993,
+                         "end":  63002
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  63407,
+                         "end":  63419
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  64444,
+                         "end":  64451
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  64483,
+                         "end":  64496
+                     },
+                     {
+                         "text":  "api",
+                         "start":  64983,
+                         "end":  64986
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65001,
+                         "end":  65004
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65017,
+                         "end":  65020
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65040,
+                         "end":  65043
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65067,
+                         "end":  65070
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65086,
+                         "end":  65089
+                     },
+                     {
+                         "text":  "jobId",
+                         "start":  65106,
+                         "end":  65111
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65126,
+                         "end":  65129
+                     },
+                     {
+                         "text":  "api",
+                         "start":  65154,
+                         "end":  65157
+                     },
+                     {
+                         "text":  "BCrypt",
+                         "start":  65807,
+                         "end":  65813
+                     },
+                     {
+                         "text":  "idempotency",
+                         "start":  66239,
+                         "end":  66250
+                     },
+                     {
+                         "text":  "reconstructable",
+                         "start":  67002,
+                         "end":  67017
+                     },
+                     {
+                         "text":  "audit_log",
+                         "start":  67018,
+                         "end":  67027
+                     },
+                     {
+                         "text":  "Explainability",
+                         "start":  67141,
+                         "end":  67155
+                     },
+                     {
+                         "text":  "vectorizes",
+                         "start":  69746,
+                         "end":  69756
+                     },
+                     {
+                         "text":  "recruiter_id",
+                         "start":  69793,
+                         "end":  69805
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  70445,
+                         "end":  70452
+                     },
+                     {
+                         "text":  "needs_recompute",
+                         "start":  70541,
+                         "end":  70556
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  70799,
+                         "end":  70812
+                     },
+                     {
+                         "text":  "timezone",
+                         "start":  71091,
+                         "end":  71099
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  71501,
+                         "end":  71514
+                     },
+                     {
+                         "text":  "Ho_Chi_Minh",
+                         "start":  71560,
+                         "end":  71571
+                     },
+                     {
+                         "text":  "cron",
+                         "start":  71786,
+                         "end":  71790
+                     },
+                     {
+                         "text":  "EmailAction",
+                         "start":  72030,
+                         "end":  72041
+                     },
+                     {
+                         "text":  "api",
+                         "start":  72165,
+                         "end":  72168
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  72927,
+                         "end":  72936
+                     },
+                     {
+                         "text":  "microservice",
+                         "start":  73127,
+                         "end":  73139
+                     },
+                     {
+                         "text":  "async",
+                         "start":  73957,
+                         "end":  73962
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  74566,
+                         "end":  74575
+                     },
+                     {
+                         "text":  "Auth",
+                         "start":  74731,
+                         "end":  74735
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  74770,
+                         "end":  74782
+                     },
+                     {
+                         "text":  "AuthService",
+                         "start":  74842,
+                         "end":  74853
+                     },
+                     {
+                         "text":  "JwtService",
+                         "start":  74855,
+                         "end":  74865
+                     },
+                     {
+                         "text":  "CandidateProfileService",
+                         "start":  74982,
+                         "end":  75005
+                     },
+                     {
+                         "text":  "CvManagementService",
+                         "start":  75007,
+                         "end":  75026
+                     },
+                     {
+                         "text":  "CvIngestionService",
+                         "start":  75028,
+                         "end":  75046
+                     },
+                     {
+                         "text":  "PdfExtractionService",
+                         "start":  75048,
+                         "end":  75068
+                     },
+                     {
+                         "text":  "JobService",
+                         "start":  75164,
+                         "end":  75174
+                     },
+                     {
+                         "text":  "EmployerService",
+                         "start":  75176,
+                         "end":  75191
+                     },
+                     {
+                         "text":  "TfIdfService",
+                         "start":  75296,
+                         "end":  75308
+                     },
+                     {
+                         "text":  "ScoringService",
+                         "start":  75310,
+                         "end":  75324
+                     },
+                     {
+                         "text":  "MatchingService",
+                         "start":  75326,
+                         "end":  75341
+                     },
+                     {
+                         "text":  "MatchingBatchService",
+                         "start":  75343,
+                         "end":  75363
+                     },
+                     {
+                         "text":  "MatchingQueryService",
+                         "start":  75365,
+                         "end":  75385
+                     },
+                     {
+                         "text":  "RecommendationService",
+                         "start":  75459,
+                         "end":  75480
+                     },
+                     {
+                         "text":  "ApplicationService",
+                         "start":  75580,
+                         "end":  75598
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  75643,
+                         "end":  75650
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  75659,
+                         "end":  75672
+                     },
+                     {
+                         "text":  "FeedbackService",
+                         "start":  75683,
+                         "end":  75698
+                     },
+                     {
+                         "text":  "RocchioService",
+                         "start":  75700,
+                         "end":  75714
+                     },
+                     {
+                         "text":  "AutomationPolicyService",
+                         "start":  75806,
+                         "end":  75829
+                     },
+                     {
+                         "text":  "AutoApplyService",
+                         "start":  75831,
+                         "end":  75847
+                     },
+                     {
+                         "text":  "AutomationScheduler",
+                         "start":  75849,
+                         "end":  75868
+                     },
+                     {
+                         "text":  "NotificationPolicyGuard",
+                         "start":  75948,
+                         "end":  75971
+                     },
+                     {
+                         "text":  "NotificationEmailService",
+                         "start":  75973,
+                         "end":  75997
+                     },
+                     {
+                         "text":  "EmailActionService",
+                         "start":  75999,
+                         "end":  76017
+                     },
+                     {
+                         "text":  "AnalyticsService",
+                         "start":  76123,
+                         "end":  76139
+                     },
+                     {
+                         "text":  "AdvancedAnalyticsService",
+                         "start":  76141,
+                         "end":  76165
+                     },
+                     {
+                         "text":  "user_account",
+                         "start":  76780,
+                         "end":  76792
+                     },
+                     {
+                         "text":  "employer_profile",
+                         "start":  77009,
+                         "end":  77025
+                     },
+                     {
+                         "text":  "recruiter_id",
+                         "start":  77043,
+                         "end":  77055
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  77331,
+                         "end":  77344
+                     },
+                     {
+                         "text":  "recommendation_interaction",
+                         "start":  77514,
+                         "end":  77540
+                     },
+                     {
+                         "text":  "automation_policy",
+                         "start":  77695,
+                         "end":  77712
+                     },
+                     {
+                         "text":  "email_action",
+                         "start":  77741,
+                         "end":  77753
+                     },
+                     {
+                         "text":  "email_token",
+                         "start":  77758,
+                         "end":  77769
+                     },
+                     {
+                         "text":  "audit_log",
+                         "start":  77906,
+                         "end":  77915
+                     },
+                     {
+                         "text":  "upsert",
+                         "start":  78990,
+                         "end":  78996
+                     },
+                     {
+                         "text":  "ddl",
+                         "start":  79069,
+                         "end":  79072
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  79403,
+                         "end":  79412
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  80894,
+                         "end":  80907
+                     },
+                     {
+                         "text":  "app.scheduler",
+                         "start":  82170,
+                         "end":  82183
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  83207,
+                         "end":  83211
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  84608,
+                         "end":  84617
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  84822,
+                         "end":  84832
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  84848,
+                         "end":  84852
+                     },
+                     {
+                         "text":  "PDFBox",
+                         "start":  85802,
+                         "end":  85808
+                     },
+                     {
+                         "text":  "springdoc-openapi",
+                         "start":  85925,
+                         "end":  85942
+                     },
+                     {
+                         "text":  "OpenAPI",
+                         "start":  85949,
+                         "end":  85956
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  86100,
+                         "end":  86110
+                     },
+                     {
+                         "text":  "Recharts",
+                         "start":  86246,
+                         "end":  86254
+                     },
+                     {
+                         "text":  "Lucide",
+                         "start":  86259,
+                         "end":  86265
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  86322,
+                         "end":  86325
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  86326,
+                         "end":  86330
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  86339,
+                         "end":  86353
+                     },
+                     {
+                         "text":  "com.careerfit.backend",
+                         "start":  86480,
+                         "end":  86501
+                     },
+                     {
+                         "text":  "auth",
+                         "start":  86527,
+                         "end":  86531
+                     },
+                     {
+                         "text":  "AuthController",
+                         "start":  87069,
+                         "end":  87083
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  87122,
+                         "end":  87134
+                     },
+                     {
+                         "text":  "AuthService",
+                         "start":  87189,
+                         "end":  87200
+                     },
+                     {
+                         "text":  "JwtService",
+                         "start":  87273,
+                         "end":  87283
+                     },
+                     {
+                         "text":  "BCryptPasswordEncoder",
+                         "start":  87311,
+                         "end":  87332
+                     },
+                     {
+                         "text":  "JwtAuthenticationFilter",
+                         "start":  87501,
+                         "end":  87524
+                     },
+                     {
+                         "text":  "OncePerRequestFilter",
+                         "start":  87528,
+                         "end":  87548
+                     },
+                     {
+                         "text":  "UserIdResolutionFilter",
+                         "start":  88020,
+                         "end":  88042
+                     },
+                     {
+                         "text":  "userId",
+                         "start":  88167,
+                         "end":  88173
+                     },
+                     {
+                         "text":  "SecurityConfig",
+                         "start":  88510,
+                         "end":  88524
+                     },
+                     {
+                         "text":  "OpenAPI",
+                         "start":  88702,
+                         "end":  88709
+                     },
+                     {
+                         "text":  "ApplicationService",
+                         "start":  89143,
+                         "end":  89161
+                     },
+                     {
+                         "text":  "CvController",
+                         "start":  90067,
+                         "end":  90079
+                     },
+                     {
+                         "text":  "CvIngestionService",
+                         "start":  90197,
+                         "end":  90215
+                     },
+                     {
+                         "text":  "StorageService",
+                         "start":  90299,
+                         "end":  90313
+                     },
+                     {
+                         "text":  "PdfExtractionService",
+                         "start":  91203,
+                         "end":  91223
+                     },
+                     {
+                         "text":  "PDFBox",
+                         "start":  91412,
+                         "end":  91418
+                     },
+                     {
+                         "text":  "vie+eng",
+                         "start":  91710,
+                         "end":  91717
+                     },
+                     {
+                         "text":  "QualityValidationService",
+                         "start":  92241,
+                         "end":  92265
+                     },
+                     {
+                         "text":  "TextNormalizationService",
+                         "start":  92695,
+                         "end":  92719
+                     },
+                     {
+                         "text":  "segmenter",
+                         "start":  93207,
+                         "end":  93216
+                     },
+                     {
+                         "text":  "TfIdfService",
+                         "start":  93590,
+                         "end":  93602
+                     },
+                     {
+                         "text":  "idf",
+                         "start":  94124,
+                         "end":  94127
+                     },
+                     {
+                         "text":  "df",
+                         "start":  94150,
+                         "end":  94152
+                     },
+                     {
+                         "text":  "ScoringService",
+                         "start":  94966,
+                         "end":  94980
+                     },
+                     {
+                         "text":  "extractedTermsJson",
+                         "start":  95006,
+                         "end":  95024
+                     },
+                     {
+                         "text":  "learnedProfileVectorJson",
+                         "start":  95050,
+                         "end":  95074
+                     },
+                     {
+                         "text":  "tfidfVectorJson",
+                         "start":  95146,
+                         "end":  95161
+                     },
+                     {
+                         "text":  "isPotential",
+                         "start":  95558,
+                         "end":  95569
+                     },
+                     {
+                         "text":  "isPotential",
+                         "start":  95658,
+                         "end":  95669
+                     },
+                     {
+                         "text":  "assignLabel",
+                         "start":  95758,
+                         "end":  95769
+                     },
+                     {
+                         "text":  "enum",
+                         "start":  95936,
+                         "end":  95940
+                     },
+                     {
+                         "text":  "boolean",
+                         "start":  96058,
+                         "end":  96065
+                     },
+                     {
+                         "text":  "AfterCommitExecutor",
+                         "start":  96604,
+                         "end":  96623
+                     },
+                     {
+                         "text":  "MatchingService.scoreAllJobsForCv",
+                         "start":  96632,
+                         "end":  96665
+                     },
+                     {
+                         "text":  "ScoringService",
+                         "start":  96787,
+                         "end":  96801
+                     },
+                     {
+                         "text":  "cv_id",
+                         "start":  96944,
+                         "end":  96949
+                     },
+                     {
+                         "text":  "job_id",
+                         "start":  96951,
+                         "end":  96957
+                     },
+                     {
+                         "text":  "MatchingQueryService",
+                         "start":  97234,
+                         "end":  97254
+                     },
+                     {
+                         "text":  "CandidatePortfolioVisibilityService",
+                         "start":  97398,
+                         "end":  97433
+                     },
+                     {
+                         "text":  "showPortfolioAfterApply",
+                         "start":  97486,
+                         "end":  97509
+                     },
+                     {
+                         "text":  "RecommendationService",
+                         "start":  97742,
+                         "end":  97763
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  98321,
+                         "end":  98328
+                     },
+                     {
+                         "text":  "FeedbackService.submitFeedback",
+                         "start":  98329,
+                         "end":  98359
+                     },
+                     {
+                         "text":  "upserts",
+                         "start":  98472,
+                         "end":  98479
+                     },
+                     {
+                         "text":  "matching_id",
+                         "start":  98493,
+                         "end":  98504
+                     },
+                     {
+                         "text":  "actor_id",
+                         "start":  98506,
+                         "end":  98514
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  98744,
+                         "end":  98751
+                     },
+                     {
+                         "text":  "RocchioService",
+                         "start":  98899,
+                         "end":  98913
+                     },
+                     {
+                         "text":  "q_new",
+                         "start":  99165,
+                         "end":  99170
+                     },
+                     {
+                         "text":  "positive_centroid",
+                         "start":  99185,
+                         "end":  99202
+                     },
+                     {
+                         "text":  "negative_centroid",
+                         "start":  99210,
+                         "end":  99227
+                     },
+                     {
+                         "text":  "learnedProfileVectorJson",
+                         "start":  99313,
+                         "end":  99337
+                     },
+                     {
+                         "text":  "needsRecompute",
+                         "start":  99393,
+                         "end":  99407
+                     },
+                     {
+                         "text":  "AutomationScheduler.recomputeStaleMatchings",
+                         "start":  99414,
+                         "end":  99457
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  99618,
+                         "end":  99631
+                     },
+                     {
+                         "text":  "FeedbackService",
+                         "start":  99677,
+                         "end":  99692
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  99743,
+                         "end":  99750
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  100019,
+                         "end":  100026
+                     },
+                     {
+                         "text":  "ApplicationService.submit",
+                         "start":  100284,
+                         "end":  100309
+                     },
+                     {
+                         "text":  "saveAndFlush",
+                         "start":  100591,
+                         "end":  100603
+                     },
+                     {
+                         "text":  "Async",
+                         "start":  101822,
+                         "end":  101827
+                     },
+                     {
+                         "text":  "AsyncConfig",
+                         "start":  101851,
+                         "end":  101862
+                     },
+                     {
+                         "text":  "ThreadPoolTaskExecutor",
+                         "start":  101881,
+                         "end":  101903
+                     },
+                     {
+                         "text":  "AfterCommitExecutor",
+                         "start":  101981,
+                         "end":  102000
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  102127,
+                         "end":  102134
+                     },
+                     {
+                         "text":  "AutomationScheduler",
+                         "start":  102255,
+                         "end":  102274
+                     },
+                     {
+                         "text":  "cron",
+                         "start":  102336,
+                         "end":  102340
+                     },
+                     {
+                         "text":  "app.scheduler",
+                         "start":  102382,
+                         "end":  102395
+                     },
+                     {
+                         "text":  "AutoApplyService.runForPolicy",
+                         "start":  102574,
+                         "end":  102603
+                     },
+                     {
+                         "text":  "NotificationPolicyGuard",
+                         "start":  103564,
+                         "end":  103587
+                     },
+                     {
+                         "text":  "MailService",
+                         "start":  103979,
+                         "end":  103990
+                     },
+                     {
+                         "text":  "NoOpMailService",
+                         "start":  104053,
+                         "end":  104068
+                     },
+                     {
+                         "text":  "EmailActionService",
+                         "start":  104222,
+                         "end":  104240
+                     },
+                     {
+                         "text":  "EmailActionController",
+                         "start":  104587,
+                         "end":  104608
+                     },
+                     {
+                         "text":  "AuditLogRepository",
+                         "start":  105309,
+                         "end":  105327
+                     },
+                     {
+                         "text":  "readOnly",
+                         "start":  106058,
+                         "end":  106066
+                     },
+                     {
+                         "text":  "ddl",
+                         "start":  106223,
+                         "end":  106226
+                     },
+                     {
+                         "text":  "OpenAPI",
+                         "start":  107053,
+                         "end":  107060
+                     },
+                     {
+                         "text":  "springdoc",
+                         "start":  107082,
+                         "end":  107091
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107341,
+                         "end":  107344
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107450,
+                         "end":  107453
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107540,
+                         "end":  107543
+                     },
+                     {
+                         "text":  "Upsert",
+                         "start":  107566,
+                         "end":  107572
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  107594,
+                         "end":  107601
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107658,
+                         "end":  107661
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107753,
+                         "end":  107756
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107845,
+                         "end":  107848
+                     },
+                     {
+                         "text":  "api",
+                         "start":  107978,
+                         "end":  107981
+                     },
+                     {
+                         "text":  "App.tsx",
+                         "start":  108082,
+                         "end":  108089
+                     },
+                     {
+                         "text":  "protectedRoute",
+                         "start":  108154,
+                         "end":  108168
+                     },
+                     {
+                         "text":  "api",
+                         "start":  108233,
+                         "end":  108236
+                     },
+                     {
+                         "text":  "auth",
+                         "start":  108237,
+                         "end":  108241
+                     },
+                     {
+                         "text":  "Passwordless",
+                         "start":  108276,
+                         "end":  108288
+                     },
+                     {
+                         "text":  "src",
+                         "start":  108689,
+                         "end":  108692
+                     },
+                     {
+                         "text":  "api.ts",
+                         "start":  108697,
+                         "end":  108703
+                     },
+                     {
+                         "text":  "api",
+                         "start":  108762,
+                         "end":  108765
+                     },
+                     {
+                         "text":  "sessionStorage",
+                         "start":  108813,
+                         "end":  108827
+                     },
+                     {
+                         "text":  "FormData",
+                         "start":  108871,
+                         "end":  108879
+                     },
+                     {
+                         "text":  "refetching",
+                         "start":  109083,
+                         "end":  109093
+                     },
+                     {
+                         "text":  "sessionStorage",
+                         "start":  109206,
+                         "end":  109220
+                     },
+                     {
+                         "text":  "HttpOnly",
+                         "start":  109481,
+                         "end":  109489
+                     },
+                     {
+                         "text":  "retryable",
+                         "start":  109653,
+                         "end":  109662
+                     },
+                     {
+                         "text":  "api",
+                         "start":  110822,
+                         "end":  110825
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  111415,
+                         "end":  111429
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  111461,
+                         "end":  111471
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  111488,
+                         "end":  111492
+                     },
+                     {
+                         "text":  "boolean",
+                         "start":  112345,
+                         "end":  112352
+                     },
+                     {
+                         "text":  "app.scheduler",
+                         "start":  112476,
+                         "end":  112489
+                     },
+                     {
+                         "text":  "Async",
+                         "start":  112556,
+                         "end":  112561
+                     },
+                     {
+                         "text":  "sessionStorage",
+                         "start":  112728,
+                         "end":  112742
+                     },
+                     {
+                         "text":  "HttpOnly",
+                         "start":  112752,
+                         "end":  112760
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  113647,
+                         "end":  113654
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  114021,
+                         "end":  114028
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  114740,
+                         "end":  114747
+                     },
+                     {
+                         "text":  "Git",
+                         "start":  115049,
+                         "end":  115052
+                     },
+                     {
+                         "text":  "worktree",
+                         "start":  115112,
+                         "end":  115120
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  115587,
+                         "end":  115590
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  115624,
+                         "end":  115628
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  115648,
+                         "end":  115658
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  115767,
+                         "end":  115781
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  115794,
+                         "end":  115808
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  115970,
+                         "end":  115974
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  116110,
+                         "end":  116124
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  116231,
+                         "end":  116240
+                     },
+                     {
+                         "text":  "result.json",
+                         "start":  116657,
+                         "end":  116668
+                     },
+                     {
+                         "text":  "AlgorithmEvaluatorTest",
+                         "start":  116831,
+                         "end":  116853
+                     },
+                     {
+                         "text":  "dataset.json",
+                         "start":  116882,
+                         "end":  116894
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  117468,
+                         "end":  117475
+                     },
+                     {
+                         "text":  "reranks",
+                         "start":  117515,
+                         "end":  117522
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  118723,
+                         "end":  118737
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  119275,
+                         "end":  119282
+                     },
+                     {
+                         "text":  "AlgorithmEvaluatorTest",
+                         "start":  119361,
+                         "end":  119383
+                     },
+                     {
+                         "text":  "StaleObjectStateException",
+                         "start":  119725,
+                         "end":  119750
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  119821,
+                         "end":  119828
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  119985,
+                         "end":  119992
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  120057,
+                         "end":  120064
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  120954,
+                         "end":  120961
+                     },
+                     {
+                         "text":  "AlgorithmEvaluatorTest",
+                         "start":  121009,
+                         "end":  121031
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  121210,
+                         "end":  121217
+                     },
+                     {
+                         "text":  "StaleObjectStateException",
+                         "start":  121338,
+                         "end":  121363
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  121517,
+                         "end":  121530
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  122388,
+                         "end":  122391
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  122411,
+                         "end":  122421
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  122498,
+                         "end":  122502
+                     },
+                     {
+                         "text":  "Gzip",
+                         "start":  122647,
+                         "end":  122651
+                     },
+                     {
+                         "text":  "Vite\u0027s",
+                         "start":  123016,
+                         "end":  123022
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  123266,
+                         "end":  123270
+                     },
+                     {
+                         "text":  "Passwordless",
+                         "start":  123952,
+                         "end":  123964
+                     },
+                     {
+                         "text":  "Retryable",
+                         "start":  124107,
+                         "end":  124116
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  124289,
+                         "end":  124301
+                     },
+                     {
+                         "text":  "retryable",
+                         "start":  124428,
+                         "end":  124437
+                     },
+                     {
+                         "text":  "WebKit",
+                         "start":  124641,
+                         "end":  124647
+                     },
+                     {
+                         "text":  "api",
+                         "start":  126338,
+                         "end":  126341
+                     },
+                     {
+                         "text":  "search?page",
+                         "start":  126347,
+                         "end":  126358
+                     },
+                     {
+                         "text":  "prometheus",
+                         "start":  126481,
+                         "end":  126491
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  126966,
+                         "end":  126968
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  126983,
+                         "end":  126985
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  127000,
+                         "end":  127002
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  127021,
+                         "end":  127023
+                     },
+                     {
+                         "text":  "ms.",
+                         "start":  127046,
+                         "end":  127049
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  127528,
+                         "end":  127535
+                     },
+                     {
+                         "text":  "WebKit",
+                         "start":  127955,
+                         "end":  127961
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  129105,
+                         "end":  129118
+                     },
+                     {
+                         "text":  "Testcontainers",
+                         "start":  129843,
+                         "end":  129857
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  130433,
+                         "end":  130440
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  130819,
+                         "end":  130828
+                     },
+                     {
+                         "text":  "AutoPilot",
+                         "start":  130832,
+                         "end":  130841
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  130988,
+                         "end":  130995
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  131396,
+                         "end":  131406
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  131420,
+                         "end":  131424
+                     },
+                     {
+                         "text":  "passwordless",
+                         "start":  131640,
+                         "end":  131652
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  131725,
+                         "end":  131732
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  132891,
+                         "end":  132898
+                     },
+                     {
+                         "text":  "TypeScript",
+                         "start":  132969,
+                         "end":  132979
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  132984,
+                         "end":  132988
+                     },
+                     {
+                         "text":  "Vite",
+                         "start":  133045,
+                         "end":  133049
+                     },
+                     {
+                         "text":  "WebKit",
+                         "start":  133166,
+                         "end":  133172
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  133492,
+                         "end":  133494
+                     },
+                     {
+                         "text":  "ms",
+                         "start":  133509,
+                         "end":  133511
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  135137,
+                         "end":  135146
+                     },
+                     {
+                         "text":  "vectorizer",
+                         "start":  135181,
+                         "end":  135191
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  136060,
+                         "end":  136067
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  136347,
+                         "end":  136354
+                     },
+                     {
+                         "text":  "recomputation",
+                         "start":  136564,
+                         "end":  136577
+                     },
+                     {
+                         "text":  "timezone",
+                         "start":  136845,
+                         "end":  136853
+                     },
+                     {
+                         "text":  "recompute",
+                         "start":  136902,
+                         "end":  136911
+                     },
+                     {
+                         "text":  "app.scheduler",
+                         "start":  137341,
+                         "end":  137354
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  138695,
+                         "end":  138702
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  139347,
+                         "end":  139356
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  140179,
+                         "end":  140188
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  140986,
+                         "end":  140993
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  141211,
+                         "end":  141218
+                     },
+                     {
+                         "text":  "StaleObjectStateException",
+                         "start":  141893,
+                         "end":  141918
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  142569,
+                         "end":  142578
+                     },
+                     {
+                         "text":  "sessionStorage",
+                         "start":  144463,
+                         "end":  144477
+                     },
+                     {
+                         "text":  "localStorage",
+                         "start":  144501,
+                         "end":  144513
+                     },
+                     {
+                         "text":  "localStorage",
+                         "start":  145063,
+                         "end":  145075
+                     },
+                     {
+                         "text":  "worktree",
+                         "start":  146181,
+                         "end":  146189
+                     },
+                     {
+                         "text":  "embeddings",
+                         "start":  146952,
+                         "end":  146962
+                     },
+                     {
+                         "text":  "CareerFit",
+                         "start":  148049,
+                         "end":  148058
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  148430,
+                         "end":  148437
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  148707,
+                         "end":  148710
+                     },
+                     {
+                         "text":  "Raghavan",
+                         "start":  148757,
+                         "end":  148765
+                     },
+                     {
+                         "text":  "Schütze",
+                         "start":  148774,
+                         "end":  148781
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  149083,
+                         "end":  149086
+                     },
+                     {
+                         "text":  "Rocchio",
+                         "start":  149120,
+                         "end":  149127
+                     },
+                     {
+                         "text":  "Järvelin",
+                         "start":  149336,
+                         "end":  149344
+                     },
+                     {
+                         "text":  "Kekäläinen",
+                         "start":  149352,
+                         "end":  149362
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  149492,
+                         "end":  149495
+                     },
+                     {
+                         "text":  "Drushchak",
+                         "start":  149527,
+                         "end":  149536
+                     },
+                     {
+                         "text":  "Romanyshyn",
+                         "start":  149544,
+                         "end":  149554
+                     },
+                     {
+                         "text":  "Djinni",
+                         "start":  149573,
+                         "end":  149579
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  149754,
+                         "end":  149757
+                     },
+                     {
+                         "text":  "Xue",
+                         "start":  149803,
+                         "end":  149806
+                     },
+                     {
+                         "text":  "ConFit",
+                         "start":  149837,
+                         "end":  149843
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  150063,
+                         "end":  150066
+                     },
+                     {
+                         "text":  "Vaishampayan",
+                         "start":  150110,
+                         "end":  150122
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  150311,
+                         "end":  150314
+                     },
+                     {
+                         "text":  "Tabassi",
+                         "start":  150360,
+                         "end":  150367
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  150525,
+                         "end":  150528
+                     },
+                     {
+                         "text":  "Raghavan",
+                         "start":  150561,
+                         "end":  150569
+                     },
+                     {
+                         "text":  "Barocas",
+                         "start":  150574,
+                         "end":  150581
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  150806,
+                         "end":  150809
+                     },
+                     {
+                         "text":  "Sakimura",
+                         "start":  151039,
+                         "end":  151047
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  151126,
+                         "end":  151129
+                     },
+                     {
+                         "text":  "Souppaya",
+                         "start":  151169,
+                         "end":  151177
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  151315,
+                         "end":  151318
+                     },
+                     {
+                         "text":  "BlackboxNLP",
+                         "start":  151492,
+                         "end":  151503
+                     },
+                     {
+                         "text":  "doi",
+                         "start":  151541,
+                         "end":  151544
+                     },
+                     {
+                         "text":  "SecurityHardeningTest",
+                         "start":  151707,
+                         "end":  151728
+                     },
+                     {
+                         "text":  "AlgorithmEvaluatorTest",
+                         "start":  151850,
+                         "end":  151872
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152092,
+                         "end":  152095
+                     },
+                     {
+                         "text":  "auth",
+                         "start":  152096,
+                         "end":  152100
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152122,
+                         "end":  152125
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152138,
+                         "end":  152141
+                     },
+                     {
+                         "text":  "cvs",
+                         "start":  152142,
+                         "end":  152145
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152159,
+                         "end":  152162
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152180,
+                         "end":  152183
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152209,
+                         "end":  152212
+                     },
+                     {
+                         "text":  "api",
+                         "start":  152252,
+                         "end":  152255
+                     },
+                     {
+                         "text":  "AutomationPolicy",
+                         "start":  152606,
+                         "end":  152622
+                     },
+                     {
+                         "text":  "EmailAction",
+                         "start":  152624,
+                         "end":  152635
+                     },
+                     {
+                         "text":  "EmailToken",
+                         "start":  152637,
+                         "end":  152647
+                     },
+                     {
+                         "text":  "AuditLog",
+                         "start":  152663,
+                         "end":  152671
+                     },
+                     {
+                         "text":  "result.json",
+                         "start":  153034,
+                         "end":  153045
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  153814,
+                         "end":  153817
+                     },
+                     {
+                         "text":  "Git",
+                         "start":  153839,
+                         "end":  153842
+                     },
+                     {
+                         "text":  "docker",
+                         "start":  153866,
+                         "end":  153872
+                     },
+                     {
+                         "text":  "postgres",
+                         "start":  153887,
+                         "end":  153895
+                     },
+                     {
+                         "text":  "careerfit",
+                         "start":  153910,
+                         "end":  153919
+                     },
+                     {
+                         "text":  "spring-boot:run",
+                         "start":  153942,
+                         "end":  153957
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  153978,
+                         "end":  153981
+                     },
+                     {
+                         "text":  "npm",
+                         "start":  153994,
+                         "end":  153997
+                     }
+                 ],
+    "grammar":  [
+                    {
+                        "text":  "CHAPTER 1. ",
+                        "start":  26473,
+                        "end":  26484
+                    },
+                    {
+                        "text":  "Figure 1.1. ",
+                        "start":  27999,
+                        "end":  28011
+                    },
+                    {
+                        "text":  "The implemented system follows a client–server architecture with a React and TypeScript frontend and a Spring Boot backend exposing REST APIs.",
+                        "start":  31974,
+                        "end":  32116
+                    },
+                    {
+                        "text":  "Figure 1.2. ",
+                        "start":  33226,
+                        "end":  33238
+                    },
+                    {
+                        "text":  "Table 1.1. ",
+                        "start":  35389,
+                        "end":  35400
+                    },
+                    {
+                        "text":  "CHAPTER 2. ",
+                        "start":  36066,
+                        "end":  36077
+                    },
+                    {
+                        "text":  "A curriculum vitae usually describes education, work history, projects, technical skills, certifications, languages, and contact information. ",
+                        "start":  36329,
+                        "end":  36471
+                    },
+                    {
+                        "text":  "Figure 2.1. ",
+                        "start":  38282,
+                        "end":  38294
+                    },
+                    {
+                        "text":  "Let tf(t,d) denote the frequency of term t in document d, let N be the number of documents in the reference corpus, and let df(t) be the number of documents containing t. ",
+                        "start":  41285,
+                        "end":  41456
+                    },
+                    {
+                        "text":  "tfidf(t,d) = tf(t,d) × log(N / df(t)).",
+                        "start":  41480,
+                        "end":  41518
+                    },
+                    {
+                        "text":  "The exact formulation changes numeric scores, so a thesis must document the implemented formula rather than referring to TF-IDF as if it were a single universal function. ",
+                        "start":  41651,
+                        "end":  41822
+                    },
+                    {
+                        "text":  "A controlled or static reference corpus can improve score stability because the IDF of a term does not change whenever a user adds one document; however, it may become less representative as technologies and hiring terminology evolve.",
+                        "start":  41822,
+                        "end":  42056
+                    },
+                    {
+                        "text":  "cos(x,y) = (x · y) / (||x||₂ ||y||₂).",
+                        "start":  42218,
+                        "end":  42255
+                    },
+                    {
+                        "text":  "If a JD uses “container orchestration” while a CV only uses “Kubernetes,” the vectors may not overlap unless the vocabulary or normalization layer establishes that relationship. ",
+                        "start":  42714,
+                        "end":  42892
+                    },
+                    {
+                        "text":  "Figure 2.2. ",
+                        "start":  43192,
+                        "end":  43204
+                    },
+                    {
+                        "text":  "Given a query representation q and a candidate set D, the system computes a relevance score s(q,d) for each d ∈ D and orders the results by decreasing score. ",
+                        "start":  43362,
+                        "end":  43520
+                    },
+                    {
+                        "text":  "qₘ = αq₀ + (β / |Dᵣ|) Σ(d ∈ Dᵣ) d − (γ / |Dₙᵣ|) Σ(d ∈ Dₙᵣ) d.",
+                        "start":  46200,
+                        "end":  46261
+                    },
+                    {
+                        "text":  "The parameters α, β, and γ control retention of the original representation, attraction toward relevant examples, and movement away from non-relevant examples. ",
+                        "start":  46262,
+                        "end":  46422
+                    },
+                    {
+                        "text":  "Figure 2.3. ",
+                        "start":  48304,
+                        "end":  48316
+                    },
+                    {
+                        "text":  "DCG@K = Σ(i=1..K) (2^relᵢ − 1) / log₂(i + 1),     nDCG@K = DCG@K / IDCG@K.",
+                        "start":  50236,
+                        "end":  50310
+                    },
+                    {
+                        "text":  "Human involvement can occur during data validation, model configuration, review of recommendations, approval of actions, exception handling, and post-action feedback. ",
+                        "start":  50852,
+                        "end":  51019
+                    },
+                    {
+                        "text":  "Figure 2.4. ",
+                        "start":  53219,
+                        "end":  53231
+                    },
+                    {
+                        "text":  "REST is an architectural style characterized by constraints including client–server separation, stateless interaction, cacheability where appropriate, a uniform interface, layered components, and optional code-on-demand [11]. ",
+                        "start":  53805,
+                        "end":  54031
+                    },
+                    {
+                        "text":  "Table 2.1. ",
+                        "start":  58192,
+                        "end":  58203
+                    },
+                    {
+                        "text":  "CHAPTER 3. ",
+                        "start":  59956,
+                        "end":  59967
+                    },
+                    {
+                        "text":  "These concepts must remain separate: a high similarity score must not silently become an application, and an application status must not be interpreted as a relevance label.",
+                        "start":  60687,
+                        "end":  60860
+                    },
+                    {
+                        "text":  "Figure 3.1. ",
+                        "start":  60863,
+                        "end":  60875
+                    },
+                    {
+                        "text":  "Table 3.1. ",
+                        "start":  61251,
+                        "end":  61262
+                    },
+                    {
+                        "text":  "Figure 3.2. ",
+                        "start":  62981,
+                        "end":  62993
+                    },
+                    {
+                        "text":  "Table 3.2. ",
+                        "start":  63262,
+                        "end":  63273
+                    },
+                    {
+                        "text":  "Table 3.3. ",
+                        "start":  65536,
+                        "end":  65547
+                    },
+                    {
+                        "text":  "Figure 3.3. ",
+                        "start":  68864,
+                        "end":  68876
+                    },
+                    {
+                        "text":  "The backend normalizes and vectorizes the job, persists ownership through recruiter_id, and makes eligible jobs available for matching. ",
+                        "start":  69719,
+                        "end":  69855
+                    },
+                    {
+                        "text":  "Figure 3.4. ",
+                        "start":  70765,
+                        "end":  70777
+                    },
+                    {
+                        "text":  "Figure 3.5. ",
+                        "start":  71911,
+                        "end":  71923
+                    },
+                    {
+                        "text":  "Figure 3.6. ",
+                        "start":  72834,
+                        "end":  72846
+                    },
+                    {
+                        "text":  "This is not a microservice architecture: modules share one process, one primary PostgreSQL database, common security and exception handling, and direct in-process service calls. ",
+                        "start":  73113,
+                        "end":  73291
+                    },
+                    {
+                        "text":  "Figure 3.7. ",
+                        "start":  74554,
+                        "end":  74566
+                    },
+                    {
+                        "text":  "Table 3.4. ",
+                        "start":  74631,
+                        "end":  74642
+                    },
+                    {
+                        "text":  "user_account stores identity, role, activation, verification, language, and password hash. ",
+                        "start":  76780,
+                        "end":  76871
+                    },
+                    {
+                        "text":  "job stores the original JD, structured recruitment attributes, salary mode, language, status, source provenance, and vector data.",
+                        "start":  77057,
+                        "end":  77186
+                    },
+                    {
+                        "text":  "matching is the unique association between one CV and one job. ",
+                        "start":  77187,
+                        "end":  77250
+                    },
+                    {
+                        "text":  "application links Candidate and Job and may reference the CV and Matching used at application time. ",
+                        "start":  77353,
+                        "end":  77453
+                    },
+                    {
+                        "text":  "feedback links a Matching with its actor and source channel. ",
+                        "start":  77453,
+                        "end":  77514
+                    },
+                    {
+                        "text":  "recommendation_interaction records behavioral events such as viewed, skipped, applied, saved, not interested, or show similar.",
+                        "start":  77514,
+                        "end":  77640
+                    },
+                    {
+                        "text":  "automation_policy stores one policy per user. ",
+                        "start":  77695,
+                        "end":  77741
+                    },
+                    {
+                        "text":  "email_action and email_token currently represent two distinct tokenized workflows. ",
+                        "start":  77741,
+                        "end":  77824
+                    },
+                    {
+                        "text":  "audit_log stores actor, action, target, result, source channel, request metadata, and structured metadata. ",
+                        "start":  77906,
+                        "end":  78013
+                    },
+                    {
+                        "text":  "Table 3.5. ",
+                        "start":  78161,
+                        "end":  78172
+                    },
+                    {
+                        "text":  "Figure 3.8. ",
+                        "start":  79391,
+                        "end":  79403
+                    },
+                    {
+                        "text":  "Table 3.6. ",
+                        "start":  81458,
+                        "end":  81469
+                    },
+                    {
+                        "text":  "A backend process running directly on the host connects to localhost:5433; the backend container connects through the Compose network to postgres:5432. ",
+                        "start":  82858,
+                        "end":  83010
+                    },
+                    {
+                        "text":  "Environment variables override database credentials, JWT secret, application base URL, CORS origins, mail settings, OCR executable and languages, and storage path. ",
+                        "start":  83307,
+                        "end":  83471
+                    },
+                    {
+                        "text":  "Figure 3.9. ",
+                        "start":  84153,
+                        "end":  84165
+                    },
+                    {
+                        "text":  "CHAPTER 4. ",
+                        "start":  84547,
+                        "end":  84558
+                    },
+                    {
+                        "text":  "Table 4.1. ",
+                        "start":  85239,
+                        "end":  85250
+                    },
+                    {
+                        "text":  "Domain packages include auth, candidate, cv, job, employer, matching, recommendation, application, feedback, automation, notification, analytics, admin, audit, and settings. ",
+                        "start":  86503,
+                        "end":  86677
+                    },
+                    {
+                        "text":  "Figure 4.1. ",
+                        "start":  86932,
+                        "end":  86944
+                    },
+                    {
+                        "text":  "Each authenticated request passes through JwtAuthenticationFilter, a OncePerRequestFilter. ",
+                        "start":  87459,
+                        "end":  87550
+                    },
+                    {
+                        "text":  "Figure 4.2. ",
+                        "start":  89942,
+                        "end":  89954
+                    },
+                    {
+                        "text":  "Table 4.2. ",
+                        "start":  90621,
+                        "end":  90632
+                    },
+                    {
+                        "text":  "The default OCR language set is vie+eng, the default maximum is eight pages, and each OCR process has a timeout.",
+                        "start":  91678,
+                        "end":  91790
+                    },
+                    {
+                        "text":  "Figure 4.3. ",
+                        "start":  92572,
+                        "end":  92584
+                    },
+                    {
+                        "text":  "idf(t) = log(1 + N / (1 + df(t))).",
+                        "start":  94124,
+                        "end":  94158
+                    },
+                    {
+                        "text":  "An unknown term receives log(1 + N), which treats it as rare and informative. ",
+                        "start":  94159,
+                        "end":  94237
+                    },
+                    {
+                        "text":  "Figure 4.4. ",
+                        "start":  94834,
+                        "end":  94846
+                    },
+                    {
+                        "text":  "Table 4.3. ",
+                        "start":  95315,
+                        "end":  95326
+                    },
+                    {
+                        "text":  "Figure 4.5. ",
+                        "start":  98244,
+                        "end":  98256
+                    },
+                    {
+                        "text":  "Table 4.4. ",
+                        "start":  99971,
+                        "end":  99982
+                    },
+                    {
+                        "text":  "Figure 4.6. ",
+                        "start":  100188,
+                        "end":  100200
+                    },
+                    {
+                        "text":  "saveAndFlush exposes uniqueness conflicts within the service transaction, which are converted into an HTTP conflict response. ",
+                        "start":  100591,
+                        "end":  100717
+                    },
+                    {
+                        "text":  "Figure 4.7. ",
+                        "start":  101721,
+                        "end":  101733
+                    },
+                    {
+                        "text":  "AfterCommitExecutor registers CV and Job matching work with Spring transaction synchronization and submits it only after commit. ",
+                        "start":  101981,
+                        "end":  102110
+                    },
+                    {
+                        "text":  "This distinction must remain explicit: notification gating and application authorization are related but not identical mechanisms.",
+                        "start":  103395,
+                        "end":  103525
+                    },
+                    {
+                        "text":  "Figure 4.8. ",
+                        "start":  104125,
+                        "end":  104137
+                    },
+                    {
+                        "text":  "Figure 4.9. ",
+                        "start":  105736,
+                        "end":  105748
+                    },
+                    {
+                        "text":  "Table 4.5. ",
+                        "start":  107218,
+                        "end":  107229
+                    },
+                    {
+                        "text":  "protectedRoute checks the loaded account role, while reload restoration calls /api/auth/me and clears an invalid session. ",
+                        "start":  108154,
+                        "end":  108276
+                    },
+                    {
+                        "text":  "It reads VITE_API_BASE_URL with /api as the default, attaches the bearer token from sessionStorage, selects JSON headers except for multipart FormData, unwraps the shared response envelope, and throws a normalized error for unsuccessful responses. ",
+                        "start":  108729,
+                        "end":  108977
+                    },
+                    {
+                        "text":  "Figure 4.10. ",
+                        "start":  110055,
+                        "end":  110068
+                    },
+                    {
+                        "text":  "Screen 4.1. ",
+                        "start":  110104,
+                        "end":  110116
+                    },
+                    {
+                        "text":  "Screen 4.2. ",
+                        "start":  110136,
+                        "end":  110148
+                    },
+                    {
+                        "text":  "Screen 4.3. ",
+                        "start":  110179,
+                        "end":  110191
+                    },
+                    {
+                        "text":  "Screen 4.4. ",
+                        "start":  110223,
+                        "end":  110235
+                    },
+                    {
+                        "text":  "Screen 4.5. ",
+                        "start":  110267,
+                        "end":  110279
+                    },
+                    {
+                        "text":  "Screen 4.6. ",
+                        "start":  110308,
+                        "end":  110320
+                    },
+                    {
+                        "text":  "Host execution connects to localhost:5433; container execution connects to postgres:5432. ",
+                        "start":  110514,
+                        "end":  110604
+                    },
+                    {
+                        "text":  "The frontend development server runs on 127.0.0.1:5173 and uses /api or a configured API base URL.",
+                        "start":  110757,
+                        "end":  110855
+                    },
+                    {
+                        "text":  "Table 4.6. ",
+                        "start":  111746,
+                        "end":  111757
+                    },
+                    {
+                        "text":  "It covered security, post-commit CV and Job processing, TF-IDF scoring, Candidate feedback with Rocchio, privacy-gated portfolios, application workflows, AutoFit notifications, hardened email actions, frontend integration, and runtime monitoring. ",
+                        "start":  113551,
+                        "end":  113798
+                    },
+                    {
+                        "text":  "CHAPTER 5. ",
+                        "start":  113873,
+                        "end":  113884
+                    },
+                    {
+                        "text":  "Table 5.1. ",
+                        "start":  115368,
+                        "end":  115379
+                    },
+                    {
+                        "text":  "Figure 5.1. ",
+                        "start":  116705,
+                        "end":  116717
+                    },
+                    {
+                        "text":  "Table 5.2. ",
+                        "start":  118821,
+                        "end":  118832
+                    },
+                    {
+                        "text":  "Table 5.3. ",
+                        "start":  119961,
+                        "end":  119972
+                    },
+                    {
+                        "text":  "Figure 5.2. ",
+                        "start":  121185,
+                        "end":  121197
+                    },
+                    {
+                        "text":  "Feedback learning is registered after transaction commit, and benchmark setup removes prior Matchings in bulk and clears the persistence context before recomputation. ",
+                        "start":  121365,
+                        "end":  121532
+                    },
+                    {
+                        "text":  "npm run build performs TypeScript checking with no output emission and then builds the production assets with Vite 6.4.3. ",
+                        "start":  122388,
+                        "end":  122510
+                    },
+                    {
+                        "text":  "Table 5.4. ",
+                        "start":  122584,
+                        "end":  122595
+                    },
+                    {
+                        "text":  "Table 5.5. ",
+                        "start":  123420,
+                        "end":  123431
+                    },
+                    {
+                        "text":  "Figure 5.3. ",
+                        "start":  124793,
+                        "end":  124805
+                    },
+                    {
+                        "text":  "Table 5.6. ",
+                        "start":  125065,
+                        "end":  125076
+                    },
+                    {
+                        "text":  "Table 5.7. ",
+                        "start":  126274,
+                        "end":  126285
+                    },
+                    {
+                        "text":  "Figure 5.4. ",
+                        "start":  127343,
+                        "end":  127355
+                    },
+                    {
+                        "text":  "Table 5.8. ",
+                        "start":  127438,
+                        "end":  127449
+                    },
+                    {
+                        "text":  "Scripted E2E success measures workflow execution, not usability or user trust.",
+                        "start":  128766,
+                        "end":  128844
+                    },
+                    {
+                        "text":  "The benchmark runs inside a Spring context, so asynchronous work and persisted Matching records can affect repeatability if they are not controlled. ",
+                        "start":  128870,
+                        "end":  129019
+                    },
+                    {
+                        "text":  "CHAPTER 6. ",
+                        "start":  130750,
+                        "end":  130761
+                    },
+                    {
+                        "text":  "Table 6.1. ",
+                        "start":  132626,
+                        "end":  132637
+                    },
+                    {
+                        "text":  "CV–JD matching and profile-oriented recommendation remain separate workflows, and Matching state remains separate from Application state. ",
+                        "start":  135301,
+                        "end":  135439
+                    },
+                    {
+                        "text":  "AutoFit policies store thresholds, enablement, notification preferences, cooldown, quota, quiet-hour, timezone, digest, and pause settings. ",
+                        "start":  136743,
+                        "end":  136883
+                    },
+                    {
+                        "text":  "Auto-apply validates the default CV, Job status, threshold, and duplicate state and limits creation to three applications per run.",
+                        "start":  137023,
+                        "end":  137153
+                    },
+                    {
+                        "text":  "Table 6.2. ",
+                        "start":  138255,
+                        "end":  138266
+                    },
+                    {
+                        "text":  "Human-in-the-Loop in CareerFit is expressed through multiple control points: users supply and validate data, inspect reasons, configure policy, apply or invite, provide feedback, pause automation, and review audit history. ",
+                        "start":  140158,
+                        "end":  140381
+                    },
+                    {
+                        "text":  "Audit records are still written directly by multiple services, and the evaluated working tree is not a fixed release commit. ",
+                        "start":  145160,
+                        "end":  145285
+                    },
+                    {
+                        "text":  "Table 6.3. ",
+                        "start":  145378,
+                        "end":  145389
+                    },
+                    {
+                        "text":  "A controlled user study should measure task completion, time, comprehension of explanations, trust calibration, and ability to override automation. ",
+                        "start":  147336,
+                        "end":  147484
+                    },
+                    {
+                        "text":  "[4] J. J. Rocchio, “Relevance feedback in information retrieval,” in The SMART Retrieval System: Experiments in Automatic Document Processing, G. Salton, Ed. Englewood Cliffs, NJ, USA: Prentice-Hall, 1971, pp. 313–323.",
+                        "start":  149110,
+                        "end":  149328
+                    },
+                    {
+                        "text":  "[9] E. Tabassi, Artificial Intelligence Risk Management Framework (AI RMF 1.0), NIST AI 100-1. ",
+                        "start":  150353,
+                        "end":  150448
+                    },
+                    {
+                        "text":  "[11] R. T. Fielding, “Architectural styles and the design of network-based software architectures,” Ph.D. dissertation, University of California, Irvine, CA, USA, 2000.",
+                        "start":  150836,
+                        "end":  151004
+                    },
+                    {
+                        "text":  "From Backend/careerfit-backend, run mvnw.cmd spring-boot:run. ",
+                        "start":  153897,
+                        "end":  153959
+                    },
+                    {
+                        "text":  "From Frontend, run npm install and npm run dev. Host-mode PostgreSQL is localhost:5433; services inside the Compose network use postgres:5432. ",
+                        "start":  153959,
+                        "end":  154102
+                    }
+                ]
+}

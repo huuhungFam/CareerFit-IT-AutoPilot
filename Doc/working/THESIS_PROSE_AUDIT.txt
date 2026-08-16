@@ -1,0 +1,55 @@
+paragraphs=727 tables=27 images=35
+
+LONG PARAGRAPHS
+242	123	CHAPTER 1. INTRODUCTION	Most job portals effectively support vacancy publication, search, and application submission, but these functions do not by themselves address the complete decision workflow. A can
+637	120	CHAPTER 5. EXPERIMENTAL EVALUATION	Fresh evaluation showed that all 63 registered backend tests passed, the frontend production build succeeded, and four Chromium P0 workflows executed end to end. The controlled Roc
+569	115	CHAPTER 4. SYSTEM IMPLEMENTATION	This chapter described how CareerFit implements the architecture from Chapter 3. The backend uses Spring Boot modules, stateless JWT security, service transactions, JPA repositorie
+29	107	Front matter	CareerFit is implemented as a role-based web platform for guests, candidates, recruiters, and administrators using a Spring Boot backend, a React and TypeScript frontend, and Postg
+293	107	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recruitment data also has domain-specific ambiguity. A technology may be expressed by an abbreviation, a product name, or a broader skill family; job titles vary across companies; 
+251	106	CHAPTER 1. INTRODUCTION	The third motivation is controlled automation. CareerFit introduces AutoFit as a policy layer between a computed score and an action. A high score does not automatically imply that
+243	104	CHAPTER 1. INTRODUCTION	Automation can reduce repetitive work, but fully automatic decisions introduce additional risks. A similarity score alone is not sufficient evidence for consequential actions such 
+291	96	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Recruitment matching is an information-retrieval and decision-support problem in which heterogeneous evidence about candidates and vacancies must be compared. A curriculum vitae co
+292	95	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	The same information supports different user tasks. From the candidate perspective, the system retrieves and ranks jobs that fit a CV or desired profile. From the recruiter perspec
+302	95	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	In a bag-of-words representation, a document is represented by the terms it contains and their weights; word order is not modeled directly. If the vocabulary contains |V| terms, ea
+360	94	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	An actionable email link can be opened by the intended user, forwarded accidentally, or visited automatically by a mail-security scanner. A safer target pattern lets a GET request 
+450	93	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	This chapter translated the CareerFit objectives into actors, functional groups, quality requirements, use cases, architecture, modules, data relationships, security boundaries, fa
+28	92	Front matter	The system processes candidate profiles, curricula vitae, job descriptions, preferences, and user feedback. Textual information is normalized and represented with Term Frequency–In
+317	92	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Matching and recommendation can be formalized as ranking tasks. Given a query representation q and a candidate set D, the system computes a relevance score s(q,d) for each d ∈ D an
+373	92	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	CareerFit IT AutoPilot is analyzed as a role-based recruitment information system whose principal domain is information technology employment. The system combines public job discov
+370	91	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	This chapter established the foundations for CareerFit. Recruitment matching was framed as a family of ranking and decision-support tasks rather than a single hiring decision. TF-I
+474	91	CHAPTER 4. SYSTEM IMPLEMENTATION	`PdfExtractionService` accepts PDF, PNG, JPG/JPEG, and DOCX. It checks the extension, MIME type, and leading magic bytes rather than trusting the filename alone. Empty input and mi
+269	90	CHAPTER 1. INTRODUCTION	The thesis does not attempt to implement a complete enterprise applicant tracking system. Interview scheduling, offer management, payroll, and full employee lifecycle management ar
+393	89	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	Preconditions are an active Candidate account and an authenticated request. The candidate uploads a supported document or submits manual CV data. The backend validates file type, s
+328	86	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	CareerFit distinguishes feedback such as GOOD_MATCH, POTENTIAL, BAD_MATCH, and NOT_INTERESTED. These labels should not be collapsed without a documented mapping. GOOD_MATCH provide
+572	86	CHAPTER 5. EXPERIMENTAL EVALUATION	The evaluation was designed to answer four questions. First, does the lexical scoring and Rocchio feedback pipeline behave deterministically and change holdout rankings in the inte
+647	86	CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION	The objective of providing role-specific workflows was achieved at prototype level. Guests can browse public Jobs and employer information. Candidates can maintain profiles, CVs, a
+27	85	Front matter	Recruitment in the information technology sector requires candidates and recruiters to process large amounts of heterogeneous information from curricula vitae and job descriptions.
+365	85	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Prior work can be grouped into lexical retrieval, learned resume–job representation, explainable recommendation, and human-centered governance. The classical vector-space and relev
+400	85	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	An authenticated Recruiter creates a JD with structured fields and free text. Validation checks required content and conditional salary rules. The backend normalizes and vectorizes
+338	84	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	For a query, reciprocal rank is 1/r, where r is the rank of the first relevant result; it is zero if no relevant result is retrieved. Mean Reciprocal Rank (MRR) averages this value
+453	84	CHAPTER 4. SYSTEM IMPLEMENTATION	CareerFit is implemented as two application projects and a shared runtime environment. The backend is a Java 21 application based on Spring Boot 3.2.5. The frontend is a React 18 s
+543	84	CHAPTER 4. SYSTEM IMPLEMENTATION	`App.tsx` defines public, Candidate, Recruiter, and Administrator routes. `protectedRoute` checks the locally loaded account role and redirects or blocks an incompatible workspace.
+270	82	CHAPTER 1. INTRODUCTION	The evaluation scope is also bounded. Controlled or synthetic datasets may be used to demonstrate whether the Rocchio feedback mechanism changes rankings in the expected direction,
+308	82	CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK	Implementations often use logarithmic TF scaling, smoothed IDF, or vector normalization to handle repeated terms and unseen values. The exact formulation changes numeric scores, so
+402	81	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	A Candidate or Recruiter submits feedback for a matching record. The system validates the actor and matching context, stores one current feedback judgment per actor and matching, a
+250	80	CHAPTER 1. INTRODUCTION	The second motivation is explainability. The project uses a controlled lexical representation based on TF-IDF and cosine similarity. Although this approach does not capture semanti
+398	80	CHAPTER 3. SYSTEM ANALYSIS AND DESIGN	A Guest or Candidate can search public jobs and open job details. Personalized scores and application actions require a Candidate account. When the candidate applies, the service r
+584	80	CHAPTER 5. EXPERIMENTAL EVALUATION	The benchmark is intentionally synthetic. Each Job is associated with a training-positive CV and a separate holdout-positive CV sharing a latent skill that is not emphasized in the
+241	79	CHAPTER 1. INTRODUCTION	Recruitment in the information technology sector involves matching candidates with positions that differ considerably in required technical skills, experience levels, languages, lo
+
+REPEATED PHRASES
+7x	4-gram	candidate recruiter and administrator
+4x	4-gram	but it is not
+4x	4-gram	it is not a
+4x	4-gram	in proceedings of the
+3x	4-gram	recruitment in the information
+3x	4-gram	in the information technology
+3x	5-gram	recruitment in the information technology
+3x	4-gram	careerfit is implemented as
+3x	4-gram	four chromium p workflows
+3x	4-gram	and should not be
+
+NEAR-DUPLICATE PARAGRAPHS
+0.38	267/640	CHAPTER 1. INTRODUCTION <> CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION
+  A This thesis focuses on an academic prototype for recruitment in the information technology domain. Its functional scope includes a public job portal; authentica
+  B This thesis designed, implemented, and evaluated CareerFit IT AutoPilot as a Human-in-the-Loop recruitment automation platform for the information technology do

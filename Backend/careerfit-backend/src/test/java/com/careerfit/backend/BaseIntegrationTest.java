@@ -4,8 +4,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for Integration Tests.
@@ -18,14 +16,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
     }
 )
 @org.springframework.context.annotation.Import(com.careerfit.backend.config.TestAsyncConfig.class)
-@Testcontainers(disabledWithoutDocker = true)
 public abstract class BaseIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+    static final PostgreSQLContainer<?> postgres;
+    
+    static {
+        postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("careerfit_test")
             .withUsername("test")
             .withPassword("test");
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

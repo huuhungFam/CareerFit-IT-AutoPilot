@@ -1,0 +1,293 @@
+analytics_event|id|uuid|NO|
+analytics_event|actor_user_id|uuid|YES|
+analytics_event|actor_role|character varying(30)|YES|
+analytics_event|event_type|character varying(60)|NO|
+analytics_event|subject_type|character varying(60)|YES|
+analytics_event|subject_id|uuid|YES|
+analytics_event|metadata|jsonb|YES|
+analytics_event|occurred_at|timestamp with time zone|NO|now()
+analytics_event|created_at|timestamp with time zone|NO|now()
+application|id|uuid|NO|gen_random_uuid()
+application|candidate_id|uuid|NO|
+application|job_id|uuid|NO|
+application|matching_id|uuid|YES|
+application|cv_id|uuid|YES|
+application|status|character varying(30)|NO|'PENDING'::character varying
+application|is_auto_applied|boolean|NO|false
+application|applied_at|timestamp with time zone|NO|now()
+application|updated_at|timestamp with time zone|NO|now()
+application|cover_letter|text|YES|
+application|recruiter_notes|text|YES|
+application|version|bigint|NO|0
+audit_log|id|uuid|NO|gen_random_uuid()
+audit_log|actor_type|character varying(20)|NO|
+audit_log|actor_id|uuid|YES|
+audit_log|action_type|character varying(100)|NO|
+audit_log|target_type|character varying(50)|YES|
+audit_log|target_id|uuid|YES|
+audit_log|result|character varying(20)|YES|
+audit_log|source_channel|character varying(20)|YES|
+audit_log|ip_address|character varying(45)|YES|
+audit_log|user_agent|character varying(500)|YES|
+audit_log|metadata|jsonb|YES|
+audit_log|created_at|timestamp with time zone|NO|now()
+automation_policy|id|uuid|NO|gen_random_uuid()
+automation_policy|user_id|uuid|NO|
+automation_policy|auto_apply_enabled|boolean|NO|false
+automation_policy|auto_apply_threshold|numeric(5,2)|NO|90.00
+automation_policy|auto_invite_enabled|boolean|NO|false
+automation_policy|daily_digest_enabled|boolean|NO|true
+automation_policy|daily_digest_time|time without time zone|NO|'08:00:00'::time without time zone
+automation_policy|user_timezone|character varying(50)|NO|'Asia/Ho_Chi_Minh'::character varying
+automation_policy|quiet_hours_enabled|boolean|NO|false
+automation_policy|quiet_hours_start|time without time zone|NO|'22:00:00'::time without time zone
+automation_policy|quiet_hours_end|time without time zone|NO|'07:00:00'::time without time zone
+automation_policy|job_scan_enabled|boolean|NO|false
+automation_policy|job_scan_frequency_hours|integer|NO|1
+automation_policy|high_match_email_enabled|boolean|NO|false
+automation_policy|high_match_threshold|numeric(5,2)|NO|90.00
+automation_policy|max_email_per_day|integer|NO|5
+automation_policy|notification_cooldown_hours|integer|NO|24
+automation_policy|replacement_after_skip_enabled|boolean|NO|false
+automation_policy|replacement_delay_minutes|integer|NO|45
+automation_policy|email_action_enabled|boolean|NO|true
+automation_policy|created_at|timestamp with time zone|NO|now()
+automation_policy|updated_at|timestamp with time zone|NO|now()
+automation_policy|version|bigint|NO|0
+automation_policy|email_notifications_enabled|boolean|NO|true
+automation_policy|paused_until|timestamp with time zone|YES|
+candidate|id|uuid|NO|gen_random_uuid()
+candidate|user_id|uuid|NO|
+candidate|phone|character varying(30)|YES|
+candidate|location|character varying(255)|YES|
+candidate|desired_title|character varying(255)|YES|
+candidate|desired_seniority|character varying(50)|YES|
+candidate|desired_skills|jsonb|YES|
+candidate|desired_work_model|character varying(50)|YES|
+candidate|desired_salary_min|numeric(15,2)|YES|
+candidate|desired_salary_max|numeric(15,2)|YES|
+candidate|desired_salary_currency|character varying(10)|YES|
+candidate|years_of_experience|integer|YES|
+candidate|about_me|text|YES|
+candidate|auto_apply_enabled|boolean|NO|false
+candidate|auto_apply_threshold|numeric(5,2)|NO|90.00
+candidate|preferred_language|character varying(10)|NO|'vi'::character varying
+candidate|created_at|timestamp with time zone|NO|now()
+candidate|updated_at|timestamp with time zone|NO|now()
+candidate|avatar_url|character varying(500)|YES|
+candidate|version|bigint|NO|0
+candidate_portfolio_link|id|uuid|NO|gen_random_uuid()
+candidate_portfolio_link|candidate_id|uuid|NO|
+candidate_portfolio_link|type|character varying(50)|YES|
+candidate_portfolio_link|url|character varying(500)|NO|
+candidate_portfolio_link|created_at|timestamp with time zone|NO|now()
+candidate_portfolio_link|updated_at|timestamp with time zone|NO|now()
+candidate_portfolio_project|id|uuid|NO|gen_random_uuid()
+candidate_portfolio_project|candidate_id|uuid|NO|
+candidate_portfolio_project|name|character varying(255)|NO|
+candidate_portfolio_project|role|character varying(255)|YES|
+candidate_portfolio_project|summary|text|YES|
+candidate_portfolio_project|tech_stack|jsonb|YES|
+candidate_portfolio_project|project_url|character varying(500)|YES|
+candidate_portfolio_project|impact|text|YES|
+candidate_portfolio_project|created_at|timestamp with time zone|NO|now()
+candidate_portfolio_project|updated_at|timestamp with time zone|NO|now()
+content_report|id|uuid|NO|
+content_report|reporter_id|uuid|NO|
+content_report|target_type|character varying(10)|NO|
+content_report|target_id|uuid|NO|
+content_report|reason|character varying(40)|NO|
+content_report|comment|character varying(1000)|YES|
+content_report|status|character varying(20)|NO|'PENDING'::character varying
+content_report|resolved_by|uuid|YES|
+content_report|resolution_note|character varying(500)|YES|
+content_report|created_at|timestamp with time zone|NO|CURRENT_TIMESTAMP
+content_report|resolved_at|timestamp with time zone|YES|
+cv|id|uuid|NO|gen_random_uuid()
+cv|candidate_id|uuid|NO|
+cv|display_name|character varying(255)|NO|
+cv|source|character varying(20)|NO|
+cv|is_default|boolean|NO|false
+cv|raw_text|text|YES|
+cv|parsed_summary|text|YES|
+cv|top_skills|jsonb|YES|
+cv|extracted_terms|jsonb|YES|
+cv|language|character varying(10)|YES|
+cv|status|character varying(30)|NO|'UPLOADED'::character varying
+cv|file_path|character varying(500)|YES|
+cv|file_original_name|character varying(255)|YES|
+cv|failure_reason|character varying(500)|YES|
+cv|last_scored_at|timestamp with time zone|YES|
+cv|created_at|timestamp with time zone|NO|now()
+cv|updated_at|timestamp with time zone|NO|now()
+cv|version|bigint|NO|0
+cv|original_raw_text|text|YES|
+cv|review_sections|jsonb|YES|
+cv|review_issues|jsonb|YES|
+cv|pending_report_count|integer|NO|0
+email_action|id|uuid|NO|gen_random_uuid()
+email_action|recipient_user_id|uuid|NO|
+email_action|action_type|character varying(50)|NO|
+email_action|target_type|character varying(50)|YES|
+email_action|target_id|uuid|YES|
+email_action|subject|character varying(500)|YES|
+email_action|template_name|character varying(100)|YES|
+email_action|status|character varying(20)|NO|'CREATED'::character varying
+email_action|created_at|timestamp with time zone|NO|now()
+email_action|sent_at|timestamp with time zone|YES|
+email_action|opened_at|timestamp with time zone|YES|
+email_action|executed_at|timestamp with time zone|YES|
+email_action_token|id|uuid|NO|gen_random_uuid()
+email_action_token|token_hash|character varying(64)|NO|
+email_action_token|recipient_id|uuid|NO|
+email_action_token|matching_id|uuid|YES|
+email_action_token|action_type|character varying(50)|NO|
+email_action_token|status|character varying(20)|NO|'PENDING'::character varying
+email_action_token|expires_at|timestamp with time zone|NO|
+email_action_token|redeemed_at|timestamp with time zone|YES|
+email_action_token|created_at|timestamp with time zone|NO|now()
+email_action_token|application_id|uuid|YES|
+employer_profile|id|uuid|NO|gen_random_uuid()
+employer_profile|recruiter_id|uuid|NO|
+employer_profile|company_name|character varying(255)|NO|
+employer_profile|slug|character varying(255)|NO|
+employer_profile|logo_url|character varying(500)|YES|
+employer_profile|cover_url|character varying(500)|YES|
+employer_profile|summary|text|YES|
+employer_profile|description|text|YES|
+employer_profile|industry|character varying(100)|YES|
+employer_profile|company_size|character varying(50)|YES|
+employer_profile|location|character varying(255)|YES|
+employer_profile|website_url|character varying(500)|YES|
+employer_profile|benefits|jsonb|YES|
+employer_profile|is_featured|boolean|NO|false
+employer_profile|created_at|timestamp with time zone|NO|now()
+employer_profile|updated_at|timestamp with time zone|NO|now()
+employer_profile|version|bigint|NO|0
+feedback|id|uuid|NO|gen_random_uuid()
+feedback|matching_id|uuid|NO|
+feedback|actor_id|uuid|NO|
+feedback|actor_role|character varying(20)|NO|
+feedback|feedback_type|character varying(30)|NO|
+feedback|source_channel|character varying(20)|NO|'WEB'::character varying
+feedback|metadata|jsonb|YES|
+feedback|created_at|timestamp with time zone|NO|now()
+job|id|uuid|NO|gen_random_uuid()
+job|recruiter_id|uuid|NO|
+job|title|character varying(255)|NO|
+job|company|character varying(255)|NO|
+job|original_text|text|NO|
+job|required_skills|jsonb|YES|
+job|nice_to_have_skills|jsonb|YES|
+job|seniority_level|character varying(50)|YES|
+job|employment_type|character varying(50)|YES|
+job|location|character varying(255)|YES|
+job|remote_type|character varying(50)|YES|
+job|domain|character varying(100)|YES|
+job|salary_mode|character varying(20)|NO|
+job|salary_min|numeric(15,2)|YES|
+job|salary_max|numeric(15,2)|YES|
+job|salary_currency|character varying(10)|YES|
+job|salary_type|character varying(20)|YES|
+job|salary_is_visible|boolean|NO|true
+job|salary_display_text|character varying(255)|YES|
+job|learned_profile_vector|jsonb|YES|
+job|tfidf_vector|jsonb|YES|
+job|language|character varying(10)|NO|'vi'::character varying
+job|status|character varying(20)|NO|'ACTIVE'::character varying
+job|created_at|timestamp with time zone|NO|now()
+job|updated_at|timestamp with time zone|NO|now()
+job|deadline|date|YES|
+job|applicant_count|integer|NO|0
+job|view_count|integer|NO|0
+job|version|bigint|NO|0
+job|source_platform|character varying(50)|YES|
+job|source_url|character varying(1000)|YES|
+job|scraped_at|timestamp with time zone|YES|
+job|external_hash|character varying(64)|YES|
+job|application_count|integer|NO|0
+job|is_urgent|boolean|NO|false
+job|application_deadline|timestamp with time zone|YES|
+job|pending_report_count|integer|NO|0
+job_market_snapshot|id|uuid|NO|gen_random_uuid()
+job_market_snapshot|snapshot_date|date|NO|
+job_market_snapshot|total_posted_jobs|integer|NO|0
+job_market_snapshot|active_jobs|integer|NO|0
+job_market_snapshot|new_jobs|integer|NO|0
+job_market_snapshot|employer_count|integer|NO|0
+job_market_snapshot|distribution_by_role|jsonb|YES|
+job_market_snapshot|distribution_by_salary|jsonb|YES|
+job_market_snapshot|created_at|timestamp with time zone|NO|now()
+job_trend_snapshot|id|uuid|NO|gen_random_uuid()
+job_trend_snapshot|job_id|uuid|NO|
+job_trend_snapshot|snapshot_date|date|NO|
+job_trend_snapshot|view_count|integer|NO|0
+job_trend_snapshot|application_count|integer|NO|0
+job_trend_snapshot|created_at|timestamp with time zone|NO|now()
+matching|id|uuid|NO|gen_random_uuid()
+matching|cv_id|uuid|NO|
+matching|job_id|uuid|NO|
+matching|raw_score|numeric(10,6)|NO|
+matching|normalized_score|numeric(5,2)|NO|
+matching|label|character varying(20)|NO|
+matching|is_potential|boolean|NO|false
+matching|match_reasons|jsonb|YES|
+matching|potential_reason|jsonb|YES|
+matching|needs_recompute|boolean|NO|false
+matching|created_at|timestamp with time zone|NO|now()
+matching|updated_at|timestamp with time zone|NO|now()
+matching|recruiter_label|character varying(30)|YES|
+matching|version|bigint|NO|0
+notification_delivery_log|id|uuid|NO|
+notification_delivery_log|recipient_user_id|uuid|NO|
+notification_delivery_log|email_type|character varying(80)|NO|
+notification_delivery_log|context_key|character varying(120)|YES|
+notification_delivery_log|status|character varying(20)|NO|
+notification_delivery_log|reason|character varying(255)|YES|
+notification_delivery_log|created_at|timestamp with time zone|NO|now()
+notification_job|id|uuid|NO|gen_random_uuid()
+notification_job|job_type|character varying(50)|NO|
+notification_job|payload|jsonb|NO|
+notification_job|status|character varying(20)|NO|'PENDING'::character varying
+notification_job|retry_count|integer|NO|0
+notification_job|next_retry_at|timestamp with time zone|YES|
+notification_job|created_at|timestamp with time zone|NO|now()
+notification_job|updated_at|timestamp with time zone|NO|now()
+recommendation_interaction|id|uuid|NO|gen_random_uuid()
+recommendation_interaction|candidate_id|uuid|NO|
+recommendation_interaction|job_id|uuid|NO|
+recommendation_interaction|action|character varying(30)|NO|
+recommendation_interaction|source|character varying(20)|NO|'WEB'::character varying
+recommendation_interaction|metadata|jsonb|YES|
+recommendation_interaction|created_at|timestamp with time zone|NO|now()
+recruiter_cv_bookmark|id|uuid|NO|gen_random_uuid()
+recruiter_cv_bookmark|job_id|uuid|NO|
+recruiter_cv_bookmark|candidate_id|uuid|NO|
+recruiter_cv_bookmark|cv_id|uuid|NO|
+recruiter_cv_bookmark|created_at|timestamp with time zone|NO|now()
+skills|id|uuid|NO|gen_random_uuid()
+skills|canonical_key|character varying(100)|NO|
+skills|name|character varying(100)|NO|
+skills|normalized_name|character varying(100)|NO|
+skills|search_text|text|NO|
+skills|category|character varying(50)|NO|
+skills|popularity|integer|NO|0
+skills|is_active|boolean|NO|true
+skills|created_at|timestamp with time zone|NO|now()
+skills|updated_at|timestamp with time zone|NO|now()
+user_account|id|uuid|NO|gen_random_uuid()
+user_account|email|character varying(255)|NO|
+user_account|password_hash|character varying(255)|YES|
+user_account|role|character varying(20)|NO|
+user_account|full_name|character varying(255)|YES|
+user_account|is_active|boolean|NO|true
+user_account|email_verified|boolean|NO|false
+user_account|preferred_language|character varying(10)|NO|'vi'::character varying
+user_account|created_at|timestamp with time zone|NO|now()
+user_account|updated_at|timestamp with time zone|NO|now()
+user_account|version|bigint|NO|0
+user_settings|id|uuid|NO|gen_random_uuid()
+user_settings|user_id|uuid|NO|
+user_settings|settings|jsonb|NO|'{}'::jsonb
+user_settings|created_at|timestamp with time zone|NO|now()
+user_settings|updated_at|timestamp with time zone|NO|now()

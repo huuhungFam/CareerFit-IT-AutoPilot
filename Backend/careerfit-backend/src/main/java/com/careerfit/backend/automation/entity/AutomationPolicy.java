@@ -27,6 +27,9 @@ public class AutomationPolicy {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserAccount user;
 
+    @Column(name = "demo_mode_enabled", nullable = false)
+    private boolean demoModeEnabled = false;
+
     // ── Auto-apply ────────────────────────────────────────────────────────
 
     @Column(name = "auto_apply_enabled", nullable = false)
@@ -34,6 +37,7 @@ public class AutomationPolicy {
 
     @Column(name = "auto_apply_threshold", nullable = false, precision = 5, scale = 2)
     private BigDecimal autoApplyThreshold = new BigDecimal("90.00");
+
 
     // ── Auto-invite (recruiter) ───────────────────────────────────────────
 
@@ -97,13 +101,10 @@ public class AutomationPolicy {
     @Column(name = "replacement_delay_minutes", nullable = false)
     private int replacementDelayMinutes = 45;
 
-    // ── Email / passwordless ──────────────────────────────────────────────
 
     @Column(name = "email_action_enabled", nullable = false)
     private boolean emailActionEnabled = true;
 
-    @Column(name = "passwordless_enabled", nullable = false)
-    private boolean passwordlessEnabled = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -127,6 +128,8 @@ public class AutomationPolicy {
 
     public UUID getId()                                   { return id; }
     public UserAccount getUser()                          { return user; }
+    public boolean isDemoModeEnabled()                    { return demoModeEnabled; }
+    public void setDemoModeEnabled(boolean b)             { this.demoModeEnabled = b; }
     public boolean isAutoApplyEnabled()                   { return autoApplyEnabled; }
     public void setAutoApplyEnabled(boolean b)            { this.autoApplyEnabled = b; }
     public BigDecimal getAutoApplyThreshold()             { return autoApplyThreshold; }
@@ -165,8 +168,6 @@ public class AutomationPolicy {
     public void setReplacementDelayMinutes(int m)         { this.replacementDelayMinutes = m; }
     public boolean isEmailActionEnabled()                 { return emailActionEnabled; }
     public void setEmailActionEnabled(boolean b)          { this.emailActionEnabled = b; }
-    public boolean isPasswordlessEnabled()                { return passwordlessEnabled; }
-    public void setPasswordlessEnabled(boolean b)         { this.passwordlessEnabled = b; }
     public Instant getCreatedAt()                         { return createdAt; }
     public Instant getUpdatedAt()                         { return updatedAt; }
     public long getVersion()                              { return version; }
@@ -180,8 +181,18 @@ public class AutomationPolicy {
     public boolean isDigestEnabled()                      { return dailyDigestEnabled; }
     public void setDigestEnabled(boolean b)               { this.dailyDigestEnabled = b; }
 
-    public String getDigestFrequency()                    { return jobScanFrequencyHours + "h"; }
-    public void setDigestFrequency(String freq)           { /* stored in dailyDigestTime */ }
+    public String getDigestFrequency() {
+        if (jobScanFrequencyHours == 24) return "DAILY";
+        if (jobScanFrequencyHours == 168) return "WEEKLY";
+        return jobScanFrequencyHours + "h";
+    }
+    public void setDigestFrequency(String freq) {
+        if ("DAILY".equals(freq)) {
+            this.jobScanFrequencyHours = 24;
+        } else if ("WEEKLY".equals(freq)) {
+            this.jobScanFrequencyHours = 168;
+        }
+    }
 
     public Double getMinScoreToNotify()                   { return highMatchThreshold.doubleValue(); }
     public void setMinScoreToNotify(Double d)             {
@@ -203,6 +214,7 @@ public class AutomationPolicy {
     // ── Policy Summary record ─────────────────────────────────────────────
 
     public record PolicySummary(
+        boolean demoModeEnabled,
         boolean autopilotEnabled,
         boolean autoApplyEnabled,
         Double autoApplyThreshold,

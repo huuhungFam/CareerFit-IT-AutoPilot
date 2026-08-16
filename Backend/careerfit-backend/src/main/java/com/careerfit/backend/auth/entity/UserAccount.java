@@ -24,7 +24,7 @@ public class UserAccount {
     @Column(nullable = false, length = 255)
     private String email;
 
-    /** Nullable – users with passwordless login have no password hash. */
+    /** Nullable for accounts that have no password (e.g. some imported accounts or 3rd-party auth). */
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
@@ -57,6 +57,11 @@ public class UserAccount {
     private long version;
 
     public enum Role { CANDIDATE, RECRUITER, ADMIN }
+    public enum AccountSource { LOCAL, IMPORTED }
+
+    @Column(name = "account_source", length = 20, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AccountSource source = AccountSource.LOCAL;
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -78,6 +83,8 @@ public class UserAccount {
     public void setPasswordHash(String h)        { this.passwordHash = h; }
     public Role getRole()                        { return role; }
     public void setRole(Role role)               { this.role = role; }
+    public AccountSource getSource()             { return source; }
+    public void setSource(AccountSource s)       { this.source = s; }
     public String getFullName()                  { return fullName; }
     public void setFullName(String fullName)     { this.fullName = fullName; }
     public boolean isActive()                    { return isActive; }
@@ -89,4 +96,14 @@ public class UserAccount {
     public Instant getCreatedAt()                { return createdAt; }
     public Instant getUpdatedAt()                { return updatedAt; }
     public long getVersion()                     { return version; }
+
+    @Transient
+    public boolean isImported() {
+        return source == AccountSource.IMPORTED;
+    }
+
+    @Transient
+    public boolean isLocal() {
+        return source == AccountSource.LOCAL;
+    }
 }

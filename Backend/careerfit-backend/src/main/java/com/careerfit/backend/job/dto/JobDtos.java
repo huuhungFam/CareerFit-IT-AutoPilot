@@ -117,6 +117,7 @@ public class JobDtos {
         String company,
         String companyLogoUrl,
         String companyId,
+        String recruiterLogin,
         String location,
         String remoteType,
         String seniorityLevel,

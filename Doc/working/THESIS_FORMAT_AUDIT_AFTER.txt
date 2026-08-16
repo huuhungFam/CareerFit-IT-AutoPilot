@@ -1,0 +1,498 @@
+
+===== Thesis-Report.docx =====
+paragraphs=238 tables=2 images=1 sections=3
+section 0: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+section 1: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+section 2: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+STYLES
+Normal: font=Times New Roman size=13.0 bold=None italic=None align=JUSTIFY (3) line=None before/after=None/None keepNext=None keepTogether=None pageBefore=None
+Title: font=None size=28.0 bold=None italic=None align=None line=1.0 before/after=None/4.0 keepNext=None keepTogether=None pageBefore=None
+Subtitle: font=None size=14.0 bold=None italic=None align=None line=None before/after=None/None keepNext=None keepTogether=None pageBefore=None
+Heading 1: font=None size=None bold=True italic=None align=CENTER (1) line=1.5 before/after=18.0/4.0 keepNext=True keepTogether=True pageBefore=None
+Heading 2: font=None size=None bold=True italic=None align=None line=None before/after=8.0/4.0 keepNext=True keepTogether=True pageBefore=None
+Heading 3: font=None size=None bold=True italic=None align=None line=None before/after=8.0/4.0 keepNext=True keepTogether=True pageBefore=None
+List Paragraph: font=None size=None bold=None italic=None align=None line=None before/after=None/None keepNext=None keepTogether=None pageBefore=None
+Caption: font=None size=None bold=None italic=None align=CENTER (1) line=1.0 before/after=None/10.0 keepNext=None keepTogether=None pageBefore=None
+STYLE COUNTS [('Normal', 150), ('Heading 2', 31), ('Heading 3', 27), ('Heading 1', 13), ('table of figures', 12), ('List Paragraph', 5)]
+DIRECT FONTS Counter()
+DIRECT SIZES Counter({14.0: 4, 18.0: 3})
+MIXED RUN FORMAT 0
+HEADINGS
+19 Heading 1 'ACKNOWLEDGEMENTS' pageBefore None keepNext None
+29 Heading 1 'ABSTRACT' pageBefore None keepNext None
+36 Heading 1 'TABLE OF CONTENTS' pageBefore None keepNext None
+38 Heading 1 'TABLE OF FIGURES' pageBefore None keepNext None
+44 Heading 1 'TABLE OF TABLES' pageBefore None keepNext None
+54 Heading 1 'TABLE OF ABBREVIATION' pageBefore None keepNext None
+56 Heading 1 'INTRODUCTION' pageBefore None keepNext None
+57 Heading 2 'Problem Statement' pageBefore None keepNext None
+61 Heading 2 'Motivation' pageBefore None keepNext None
+65 Heading 2 'Objectives' pageBefore None keepNext None
+66 Heading 3 'Overall Objectives' pageBefore None keepNext None
+68 Heading 3 'Specific Objectives' pageBefore None keepNext None
+76 Heading 2 'Scope of the research' pageBefore None keepNext None
+106 Heading 2 'Research Contributions' pageBefore None keepNext None
+118 Heading 2 'Thesis Organization' pageBefore None keepNext None
+129 Heading 1 'FUNDAMENTAL OF THEORY' pageBefore None keepNext None
+130 Heading 2 'Vietnamese Sign Language' pageBefore None keepNext None
+131 Heading 3 'Overview of Vietnamese Sign Language' pageBefore None keepNext None
+132 Heading 3 'Multi-Dialect Characteristics of Vietnamese Sign Language' pageBefore None keepNext None
+133 Heading 3 'Challenges in Multi-Dialect Sign Language Recognition' pageBefore None keepNext None
+134 Heading 2 '2.2 Fundamentals of Sign Language Recognition' pageBefore None keepNext None
+135 Heading 3 'Sign Language Recognition Pipeline' pageBefore None keepNext None
+136 Heading 3 'Static and Dynamic Sign Recognition' pageBefore None keepNext None
+137 Heading 3 'Hand Landmark Representation Using MediaPipe Hands' pageBefore None keepNext None
+138 Heading 2 'Deep Learning Models for Sign Language Recognition' pageBefore None keepNext None
+139 Heading 3 'Convolutional Neural Network (CNN)' pageBefore None keepNext None
+140 Heading 3 'Long Short-Term Memory (LSTM)' pageBefore None keepNext None
+141 Heading 3 'Temporal Convolutional Network (TCN)' pageBefore None keepNext None
+142 Heading 3 'Graph Convolutional Network (GCN)' pageBefore None keepNext None
+143 Heading 3 'Comparison of Deep Learning Models' pageBefore None keepNext None
+144 Heading 2 'Web-Based AI Training Platform Technologies' pageBefore None keepNext None
+145 Heading 3 'Client–Server Architecture' pageBefore None keepNext None
+146 Heading 3 'RESTful API' pageBefore None keepNext None
+147 Heading 3 'React Frontend Framework' pageBefore None keepNext None
+148 Heading 3 'FastAPI Backend Framework' pageBefore None keepNext None
+149 Heading 3 'PostgreSQL Database' pageBefore None keepNext None
+150 Heading 3 'Docker Containerization' pageBefore None keepNext None
+151 Heading 3 'Machine Learning Training Workflow' pageBefore None keepNext None
+152 Heading 3 'Experiment Tracking and Model Management' pageBefore None keepNext None
+153 Heading 3 'Real-Time Inference Workflow' pageBefore None keepNext None
+156 Heading 1 'SYSTEM ANALYSIS AND DESIGN' pageBefore None keepNext None
+157 Heading 2 'Requirement Analysis' pageBefore None keepNext None
+158 Heading 3 'Functional Requirements' pageBefore None keepNext None
+164 Heading 3 'Non-functional Requirements' pageBefore None keepNext None
+171 Heading 2 'Use Case Analysis' pageBefore None keepNext None
+172 Heading 2 'System Architecture' pageBefore None keepNext None
+173 Heading 2 'System Modules' pageBefore None keepNext None
+174 Heading 3 'Model Training Module' pageBefore None keepNext None
+175 Heading 3 'Experiment Management Module' pageBefore None keepNext None
+176 Heading 3 'Real-time Recognition Module' pageBefore None keepNext None
+177 Heading 2 'Database Design' pageBefore None keepNext None
+178 Heading 2 'System Workflow' pageBefore None keepNext None
+179 Heading 2 'Deployment Architecture' pageBefore None keepNext None
+188 Heading 1 'SYSTEM IMPLEMENTATION' pageBefore None keepNext None
+189 Heading 2 'Overall Platform Implementation' pageBefore None keepNext None
+190 Heading 2 'Web-Based Dataset Management' pageBefore None keepNext None
+191 Heading 2 'Web-Based Model Training Module' pageBefore None keepNext None
+192 Heading 2 'Data Preprocessing Pipeline' pageBefore None keepNext None
+193 Heading 2 'Sign Language Recognition Models' pageBefore None keepNext None
+208 Heading 2 'Real-Time Recognition Pipeline' pageBefore None keepNext None
+209 Heading 2 'Model Management' pageBefore None keepNext None
+212 Heading 1 'EXPERIMENTAL EVALUATION' pageBefore None keepNext None
+213 Heading 2 'Experimental Setup' pageBefore None keepNext None
+217 Heading 2 'Model Comparison' pageBefore None keepNext None
+218 Heading 2 'Performance on Different Dialects' pageBefore None keepNext None
+219 Heading 2 'Web Platform Evaluation' pageBefore None keepNext None
+220 Heading 1 'RESULTS, DISCUSSION & CONCLUSION' pageBefore None keepNext None
+221 Heading 2 'Results' pageBefore None keepNext None
+222 Heading 2 'Discussion' pageBefore None keepNext None
+223 Heading 2 'Conclusion' pageBefore None keepNext None
+224 Heading 1 'REFERENCES' pageBefore None keepNext None
+PAGE BREAK MARKERS 30
+(19, 'Heading 1', 'ACKNOWLEDGEMENTS', 0, 1)
+(28, 'Normal', '', 1, 0)
+(29, 'Heading 1', 'ABSTRACT', 0, 1)
+(35, 'Normal', '', 1, 0)
+(36, 'Heading 1', 'TABLE OF CONTENTS', 0, 1)
+(37, 'Normal', '', 1, 0)
+(38, 'Heading 1', 'TABLE OF FIGURES', 0, 1)
+(43, 'Normal', '', 1, 0)
+(44, 'Heading 1', 'TABLE OF TABLES', 0, 1)
+(53, 'Normal', '', 1, 0)
+(54, 'Heading 1', 'TABLE OF ABBREVIATION', 0, 1)
+(56, 'Heading 1', 'INTRODUCTION', 0, 1)
+(64, 'Normal', 'To address these challenges, the CTU.SignBridge project aims to establish an open and extensible eco', 0, 1)
+(77, 'Normal', 'This thesis focuses on the design, development, and evaluation of the model training subsystem withi', 0, 1)
+(102, 'Normal', 'Text-to-sign translation and three-dimensional avatar animation.', 0, 1)
+(121, 'Normal', 'Chapter 2 reviews the fundamental concepts of sign language recognition, deep learning techniques fo', 0, 1)
+(128, 'Normal', '', 1, 0)
+(129, 'Heading 1', 'FUNDAMENTAL OF THEORY', 0, 1)
+(155, 'Normal', '', 1, 0)
+(156, 'Heading 1', 'SYSTEM ANALYSIS AND DESIGN', 0, 1)
+(184, 'Normal', 'Redis', 0, 1)
+(187, 'Normal', '', 1, 0)
+(188, 'Heading 1', 'SYSTEM IMPLEMENTATION', 0, 1)
+(211, 'Normal', '', 1, 0)
+(212, 'Heading 1', 'EXPERIMENTAL EVALUATION', 0, 1)
+(219, 'Heading 2', 'Web Platform Evaluation', 1, 0)
+(220, 'Heading 1', 'RESULTS, DISCUSSION & CONCLUSION', 0, 1)
+(223, 'Heading 2', 'Conclusion', 1, 0)
+(224, 'Heading 1', 'REFERENCES', 0, 1)
+(230, 'Normal', '[24] C.-H. Lai, Y. Song, D. Kim, Y. Mitsufuji, and S. Ermon, “The Principles of Diffusion Models,” O', 0, 1)
+EMPTY OR CONSECUTIVE HEADINGS
+36 Heading 1 'TABLE OF CONTENTS' -> Normal ''
+54 Heading 1 'TABLE OF ABBREVIATION' -> Normal ''
+56 Heading 1 'INTRODUCTION' -> Heading 2 'Problem Statement'
+65 Heading 2 'Objectives' -> Heading 3 'Overall Objectives'
+129 Heading 1 'FUNDAMENTAL OF THEORY' -> Heading 2 'Vietnamese Sign Language'
+130 Heading 2 'Vietnamese Sign Language' -> Heading 3 'Overview of Vietnamese Sign Language'
+131 Heading 3 'Overview of Vietnamese Sign Language' -> Heading 3 'Multi-Dialect Characteristics of Vietnamese Sign Language'
+132 Heading 3 'Multi-Dialect Characteristics of Vietnamese Sign Language' -> Heading 3 'Challenges in Multi-Dialect Sign Language Recognition'
+133 Heading 3 'Challenges in Multi-Dialect Sign Language Recognition' -> Heading 2 '2.2 Fundamentals of Sign Language Recognition'
+134 Heading 2 '2.2 Fundamentals of Sign Language Recognition' -> Heading 3 'Sign Language Recognition Pipeline'
+135 Heading 3 'Sign Language Recognition Pipeline' -> Heading 3 'Static and Dynamic Sign Recognition'
+136 Heading 3 'Static and Dynamic Sign Recognition' -> Heading 3 'Hand Landmark Representation Using MediaPipe Hands'
+137 Heading 3 'Hand Landmark Representation Using MediaPipe Hands' -> Heading 2 'Deep Learning Models for Sign Language Recognition'
+138 Heading 2 'Deep Learning Models for Sign Language Recognition' -> Heading 3 'Convolutional Neural Network (CNN)'
+139 Heading 3 'Convolutional Neural Network (CNN)' -> Heading 3 'Long Short-Term Memory (LSTM)'
+140 Heading 3 'Long Short-Term Memory (LSTM)' -> Heading 3 'Temporal Convolutional Network (TCN)'
+141 Heading 3 'Temporal Convolutional Network (TCN)' -> Heading 3 'Graph Convolutional Network (GCN)'
+142 Heading 3 'Graph Convolutional Network (GCN)' -> Heading 3 'Comparison of Deep Learning Models'
+143 Heading 3 'Comparison of Deep Learning Models' -> Heading 2 'Web-Based AI Training Platform Technologies'
+144 Heading 2 'Web-Based AI Training Platform Technologies' -> Heading 3 'Client–Server Architecture'
+145 Heading 3 'Client–Server Architecture' -> Heading 3 'RESTful API'
+146 Heading 3 'RESTful API' -> Heading 3 'React Frontend Framework'
+147 Heading 3 'React Frontend Framework' -> Heading 3 'FastAPI Backend Framework'
+148 Heading 3 'FastAPI Backend Framework' -> Heading 3 'PostgreSQL Database'
+149 Heading 3 'PostgreSQL Database' -> Heading 3 'Docker Containerization'
+150 Heading 3 'Docker Containerization' -> Heading 3 'Machine Learning Training Workflow'
+151 Heading 3 'Machine Learning Training Workflow' -> Heading 3 'Experiment Tracking and Model Management'
+152 Heading 3 'Experiment Tracking and Model Management' -> Heading 3 'Real-Time Inference Workflow'
+153 Heading 3 'Real-Time Inference Workflow' -> Normal ''
+156 Heading 1 'SYSTEM ANALYSIS AND DESIGN' -> Heading 2 'Requirement Analysis'
+157 Heading 2 'Requirement Analysis' -> Heading 3 'Functional Requirements'
+171 Heading 2 'Use Case Analysis' -> Heading 2 'System Architecture'
+172 Heading 2 'System Architecture' -> Heading 2 'System Modules'
+173 Heading 2 'System Modules' -> Heading 3 'Model Training Module'
+174 Heading 3 'Model Training Module' -> Heading 3 'Experiment Management Module'
+175 Heading 3 'Experiment Management Module' -> Heading 3 'Real-time Recognition Module'
+176 Heading 3 'Real-time Recognition Module' -> Heading 2 'Database Design'
+177 Heading 2 'Database Design' -> Heading 2 'System Workflow'
+178 Heading 2 'System Workflow' -> Heading 2 'Deployment Architecture'
+188 Heading 1 'SYSTEM IMPLEMENTATION' -> Heading 2 'Overall Platform Implementation'
+189 Heading 2 'Overall Platform Implementation' -> Heading 2 'Web-Based Dataset Management'
+190 Heading 2 'Web-Based Dataset Management' -> Heading 2 'Web-Based Model Training Module'
+191 Heading 2 'Web-Based Model Training Module' -> Heading 2 'Data Preprocessing Pipeline'
+192 Heading 2 'Data Preprocessing Pipeline' -> Heading 2 'Sign Language Recognition Models'
+208 Heading 2 'Real-Time Recognition Pipeline' -> Heading 2 'Model Management'
+209 Heading 2 'Model Management' -> Normal ''
+212 Heading 1 'EXPERIMENTAL EVALUATION' -> Heading 2 'Experimental Setup'
+217 Heading 2 'Model Comparison' -> Heading 2 'Performance on Different Dialects'
+218 Heading 2 'Performance on Different Dialects' -> Heading 2 'Web Platform Evaluation'
+219 Heading 2 'Web Platform Evaluation' -> Heading 1 'RESULTS, DISCUSSION & CONCLUSION'
+220 Heading 1 'RESULTS, DISCUSSION & CONCLUSION' -> Heading 2 'Results'
+221 Heading 2 'Results' -> Heading 2 'Discussion'
+222 Heading 2 'Discussion' -> Heading 2 'Conclusion'
+223 Heading 2 'Conclusion' -> Heading 1 'REFERENCES'
+IMAGE/CAPTION PAIRS
+4 image paragraph align CENTER (1) next ''
+TOC/LIST COUNTS
+toc1 0 toc2 0 toc3 0
+figure entries 0
+table entries 0
+
+===== CareerFit-Thesis-Report.docx =====
+paragraphs=722 tables=27 images=36 sections=3
+section 0: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+section 1: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+section 2: page=21.01x29.69 margins L/R/T/B=3.0/2.01/2.01/2.01 header/footer=1.27/1.27 start=NEW_PAGE (2) differentFirst=False
+STYLES
+Normal: font=Times New Roman size=13.0 bold=None italic=None align=JUSTIFY (3) line=1.5 before/after=None/0.0 keepNext=None keepTogether=None pageBefore=None
+Title: font=None size=28.0 bold=None italic=None align=None line=1.0 before/after=None/4.0 keepNext=None keepTogether=None pageBefore=None
+Subtitle: font=None size=14.0 bold=None italic=None align=None line=None before/after=None/None keepNext=None keepTogether=None pageBefore=None
+Heading 1: font=None size=16.0 bold=True italic=None align=CENTER (1) line=None before/after=18.0/6.0 keepNext=True keepTogether=True pageBefore=None
+Heading 2: font=None size=14.0 bold=True italic=None align=LEFT (0) line=None before/after=12.0/6.0 keepNext=True keepTogether=True pageBefore=None
+Heading 3: font=None size=None bold=True italic=None align=LEFT (0) line=None before/after=8.0/4.0 keepNext=True keepTogether=True pageBefore=None
+List Paragraph: font=None size=None bold=None italic=None align=None line=None before/after=None/None keepNext=None keepTogether=None pageBefore=None
+Caption: font=None size=None bold=None italic=None align=CENTER (1) line=1.0 before/after=None/10.0 keepNext=None keepTogether=None pageBefore=None
+Figure Caption: font=Times New Roman size=11.0 bold=None italic=True align=CENTER (1) line=1.0 before/after=3.0/None keepNext=None keepTogether=True pageBefore=None
+Table Caption: font=Times New Roman size=11.0 bold=None italic=True align=CENTER (1) line=1.0 before/after=8.0/3.0 keepNext=True keepTogether=True pageBefore=None
+STYLE COUNTS [('Normal', 306), ('toc 1', 74), ('toc 2', 66), ('Heading 2', 66), ('toc 3', 60), ('Heading 3', 60), ('Figure Caption', 35), ('Table Caption', 25), ('Heading 1', 16), ('List Paragraph', 14)]
+DIRECT FONTS Counter()
+DIRECT SIZES Counter({14.0: 4, 16.0: 2})
+MIXED RUN FORMAT 0
+HEADINGS
+20 Heading 1 '' pageBefore True keepNext None
+21 Heading 1 'ACKNOWLEDGEMENTS' pageBefore None keepNext None
+27 Heading 1 'ABSTRACT' pageBefore True keepNext None
+33 Heading 1 'TABLE OF CONTENTS' pageBefore True keepNext None
+175 Heading 1 'LIST OF FIGURES' pageBefore True keepNext None
+212 Heading 1 'LIST OF TABLES' pageBefore True keepNext None
+238 Heading 1 'LIST OF ABBREVIATIONS' pageBefore True keepNext None
+239 Heading 1 '' pageBefore True keepNext None
+240 Heading 1 'CHAPTER 1. INTRODUCTION' pageBefore None keepNext None
+241 Heading 2 '1.1 Problem Statement' pageBefore None keepNext None
+248 Heading 2 '1.2 Motivation' pageBefore None keepNext None
+252 Heading 2 '1.3 Objectives' pageBefore None keepNext None
+253 Heading 3 '1.3.1 Overall Objective' pageBefore None keepNext None
+255 Heading 3 '1.3.2 Specific Objectives' pageBefore None keepNext None
+265 Heading 2 '1.4 Scope of the Thesis' pageBefore None keepNext None
+272 Heading 2 '1.5 Contributions of the Thesis' pageBefore None keepNext None
+282 Heading 2 '1.6 Thesis Organization' pageBefore None keepNext None
+285 Heading 1 'CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK' pageBefore True keepNext None
+286 Heading 2 '2.1 Recruitment Information and CV–Job Description Matching' pageBefore None keepNext None
+292 Heading 2 '2.2 Text Representation and Preprocessing' pageBefore None keepNext None
+293 Heading 3 '2.2.1 Document Normalization' pageBefore None keepNext None
+297 Heading 3 '2.2.2 Bag-of-Words Representation' pageBefore None keepNext None
+299 Heading 2 '2.3 TF-IDF and Cosine Similarity' pageBefore None keepNext None
+300 Heading 3 '2.3.1 Term Frequency and Inverse Document Frequency' pageBefore None keepNext None
+305 Heading 3 '2.3.2 Cosine Similarity' pageBefore None keepNext None
+312 Heading 2 '2.4 Matching, Recommendation, and Ranking' pageBefore None keepNext None
+317 Heading 2 '2.5 Relevance Feedback and the Rocchio Method' pageBefore None keepNext None
+318 Heading 3 '2.5.1 Relevance Feedback' pageBefore None keepNext None
+323 Heading 3 '2.5.2 Feedback Semantics in CareerFit' pageBefore None keepNext None
+329 Heading 2 '2.6 Evaluation Metrics for Ranked Results' pageBefore None keepNext None
+331 Heading 3 '2.6.1 Precision@K, Recall@K, and HitRate@K' pageBefore None keepNext None
+333 Heading 3 '2.6.2 Mean Reciprocal Rank' pageBefore None keepNext None
+335 Heading 3 '2.6.3 Discounted Cumulative Gain' pageBefore None keepNext None
+339 Heading 2 '2.7 Human-in-the-Loop and Explainable Automation' pageBefore None keepNext None
+340 Heading 3 '2.7.1 Levels of Human Involvement' pageBefore None keepNext None
+343 Heading 3 '2.7.2 Explainability and Auditability' pageBefore None keepNext None
+349 Heading 2 '2.8 Web Architecture, Security, and Audit Foundations' pageBefore None keepNext None
+350 Heading 3 '2.8.1 Client–Server and REST' pageBefore None keepNext None
+353 Heading 3 '2.8.2 Authentication, Authorization, and Action Tokens' pageBefore None keepNext None
+357 Heading 3 '2.8.3 Audit Logging' pageBefore None keepNext None
+360 Heading 2 '2.9 Related Work and Research Gap' pageBefore None keepNext None
+365 Heading 2 '2.10 Chapter Summary' pageBefore None keepNext None
+367 Heading 1 'CHAPTER 3. SYSTEM ANALYSIS AND DESIGN' pageBefore True keepNext None
+368 Heading 2 '3.1 System Analysis Context' pageBefore None keepNext None
+373 Heading 2 '3.2 Stakeholders and Actors' pageBefore None keepNext None
+379 Heading 2 '3.3 Functional Requirements' pageBefore None keepNext None
+383 Heading 2 '3.4 Non-Functional Requirements' pageBefore None keepNext None
+387 Heading 2 '3.5 Use-Case Analysis' pageBefore None keepNext None
+388 Heading 3 '3.5.1 Candidate Uploads a CV and Receives Matches' pageBefore None keepNext None
+393 Heading 3 '3.5.2 Candidate Searches and Applies for a Job' pageBefore None keepNext None
+395 Heading 3 '3.5.3 Recruiter Creates a Job and Reviews Candidates' pageBefore None keepNext None
+397 Heading 3 '3.5.4 User Feedback Changes Later Ranking' pageBefore None keepNext None
+401 Heading 3 '3.5.5 AutoFit Executes a Policy-Governed Action' pageBefore None keepNext None
+406 Heading 3 '3.5.6 Email Feedback Action' pageBefore None keepNext None
+411 Heading 2 '3.6 System Architecture' pageBefore None keepNext None
+417 Heading 2 '3.7 Module Design' pageBefore None keepNext None
+420 Heading 2 '3.8 Data Design' pageBefore None keepNext None
+421 Heading 3 '3.8.1 Core Identity and Recruitment Data' pageBefore None keepNext None
+424 Heading 3 '3.8.2 Automation, Communication, and Operational Data' pageBefore None keepNext None
+430 Heading 2 '3.9 Security, Failure, and Consistency Design' pageBefore None keepNext None
+431 Heading 3 '3.9.1 Authentication and Authorization' pageBefore None keepNext None
+434 Heading 3 '3.9.2 Failure Handling' pageBefore None keepNext None
+437 Heading 3 '3.9.3 Identified Design Risks' pageBefore None keepNext None
+439 Heading 2 '3.10 Deployment Architecture' pageBefore None keepNext None
+445 Heading 2 '3.11 Chapter Summary' pageBefore None keepNext None
+447 Heading 1 'CHAPTER 4. SYSTEM IMPLEMENTATION' pageBefore True keepNext None
+448 Heading 2 '4.1 Implementation Overview' pageBefore None keepNext None
+454 Heading 2 '4.2 Authentication and Authorization Implementation' pageBefore None keepNext None
+455 Heading 3 '4.2.1 Login and JWT Processing' pageBefore None keepNext None
+459 Heading 3 '4.2.2 URL Rules and Ownership Checks' pageBefore None keepNext None
+465 Heading 2 '4.3 CV Ingestion and Validation' pageBefore None keepNext None
+466 Heading 3 '4.3.1 Upload and Manual Creation' pageBefore None keepNext None
+469 Heading 3 '4.3.2 File Validation and Extraction' pageBefore None keepNext None
+475 Heading 2 '4.4 Text Normalization and TF-IDF Implementation' pageBefore None keepNext None
+476 Heading 3 '4.4.1 Text Normalization' pageBefore None keepNext None
+479 Heading 3 '4.4.2 Static Corpus and Vector Construction' pageBefore None keepNext None
+487 Heading 2 '4.5 Matching and Recommendation Implementation' pageBefore None keepNext None
+488 Heading 3 '4.5.1 Scoring Service' pageBefore None keepNext None
+493 Heading 3 '4.5.2 Matching Orchestration and Persistence' pageBefore None keepNext None
+496 Heading 3 '4.5.3 Recommendation Service' pageBefore None keepNext None
+500 Heading 2 '4.6 Feedback Learning with Rocchio' pageBefore None keepNext None
+509 Heading 2 '4.7 Application and Recruiter Workflow' pageBefore None keepNext None
+515 Heading 2 '4.8 AutoFit and Background Processing' pageBefore None keepNext None
+516 Heading 3 '4.8.1 Async Executor and Scheduler' pageBefore None keepNext None
+519 Heading 3 '4.8.2 Auto-Apply' pageBefore None keepNext None
+522 Heading 3 '4.8.3 Notification Guard and Delivery' pageBefore None keepNext None
+526 Heading 2 '4.9 Email Action and Audit Implementation' pageBefore None keepNext None
+533 Heading 2 '4.10 Persistence and API Implementation' pageBefore None keepNext None
+538 Heading 2 '4.11 Frontend Integration' pageBefore None keepNext None
+557 Heading 2 '4.12 Deployment and Observability Implementation' pageBefore None keepNext None
+561 Heading 2 '4.13 Implementation Limitations' pageBefore None keepNext None
+564 Heading 2 '4.14 Chapter Summary' pageBefore None keepNext None
+566 Heading 1 'CHAPTER 5. EXPERIMENTAL EVALUATION' pageBefore True keepNext None
+567 Heading 2 '5.1 Evaluation Objectives' pageBefore None keepNext None
+571 Heading 2 '5.2 Evaluation Environment' pageBefore None keepNext None
+577 Heading 2 '5.3 Dataset and Evaluation Design' pageBefore None keepNext None
+578 Heading 3 '5.3.1 Controlled Algorithm Dataset' pageBefore None keepNext None
+582 Heading 3 '5.3.2 Local Runtime Data' pageBefore None keepNext None
+584 Heading 2 '5.4 Backend Automated Testing' pageBefore None keepNext None
+589 Heading 2 '5.5 Controlled Algorithm Results' pageBefore None keepNext None
+596 Heading 2 '5.6 Concurrency Observation in Benchmark Runs' pageBefore None keepNext None
+600 Heading 2 '5.7 Frontend Build Evaluation' pageBefore None keepNext None
+604 Heading 2 '5.8 Browser End-to-End Evaluation' pageBefore None keepNext None
+610 Heading 2 '5.9 Security-Oriented API Checks' pageBefore None keepNext None
+614 Heading 2 '5.10 Runtime Health, Monitoring, and Local Latency' pageBefore None keepNext None
+621 Heading 2 '5.11 Evaluation Summary by Research Question' pageBefore None keepNext None
+623 Heading 2 '5.12 Threats to Validity' pageBefore None keepNext None
+624 Heading 3 '5.12.1 Construct Validity' pageBefore None keepNext None
+626 Heading 3 '5.12.2 Internal Validity' pageBefore None keepNext None
+628 Heading 3 '5.12.3 External Validity' pageBefore None keepNext None
+630 Heading 3 '5.12.4 Reproducibility' pageBefore None keepNext None
+632 Heading 2 '5.13 Chapter Summary' pageBefore None keepNext None
+634 Heading 1 'CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION' pageBefore True keepNext None
+635 Heading 2 '6.1 Summary of Results' pageBefore None keepNext None
+641 Heading 2 '6.2 Achievement of Thesis Objectives' pageBefore None keepNext None
+642 Heading 3 '6.2.1 Role-Based Recruitment Platform' pageBefore None keepNext None
+644 Heading 3 '6.2.2 CV and Job-Description Processing' pageBefore None keepNext None
+647 Heading 3 '6.2.3 Matching and Recommendation' pageBefore None keepNext None
+650 Heading 3 '6.2.4 Feedback Learning' pageBefore None keepNext None
+653 Heading 3 '6.2.5 Policy-Driven Automation and Email Action' pageBefore None keepNext None
+656 Heading 3 '6.2.6 Auditability and Evaluation' pageBefore None keepNext None
+660 Heading 2 '6.3 Discussion' pageBefore None keepNext None
+661 Heading 3 '6.3.1 Value of an Interpretable Baseline' pageBefore None keepNext None
+664 Heading 3 '6.3.2 Human-in-the-Loop as System Structure' pageBefore None keepNext None
+667 Heading 3 '6.3.3 Meaning of the Rocchio Improvement' pageBefore None keepNext None
+670 Heading 3 '6.3.4 Green Assertions versus Operational Cleanliness' pageBefore None keepNext None
+673 Heading 3 '6.3.5 Product Positioning' pageBefore None keepNext None
+676 Heading 2 '6.4 Limitations' pageBefore None keepNext None
+677 Heading 3 '6.4.1 Data and Algorithm Limitations' pageBefore None keepNext None
+679 Heading 3 '6.4.2 Evaluation Limitations' pageBefore None keepNext None
+681 Heading 3 '6.4.3 Security and Privacy Limitations' pageBefore None keepNext None
+683 Heading 3 '6.4.4 Reliability and Maintainability Limitations' pageBefore None keepNext None
+686 Heading 2 '6.5 Future Work' pageBefore None keepNext None
+691 Heading 2 '6.6 Conclusion' pageBefore None keepNext None
+694 Heading 1 'REFERENCES' pageBefore True keepNext None
+709 Heading 1 'APPENDICES' pageBefore True keepNext None
+710 Heading 2 'Appendix A. Requirement–Test Traceability Matrix' pageBefore None keepNext None
+712 Heading 2 'Appendix B. Selected API Contracts' pageBefore None keepNext None
+714 Heading 2 'Appendix C. Data Model Summary' pageBefore None keepNext None
+716 Heading 2 'Appendix D. Evaluation Summary' pageBefore None keepNext None
+718 Heading 2 'Appendix E. UAT and Demonstration Script' pageBefore None keepNext None
+720 Heading 2 'Appendix F. Local Deployment Instructions' pageBefore None keepNext None
+PAGE BREAK MARKERS 79
+(21, 'Heading 1', 'ACKNOWLEDGEMENTS', 0, 1)
+(27, 'Heading 1', 'ABSTRACT', 0, 1)
+(31, 'Normal', 'The project demonstrates a practical approach to recruitment automation in which explainable scoring', 0, 1)
+(33, 'Heading 1', 'TABLE OF CONTENTS', 0, 1)
+(175, 'Heading 1', 'LIST OF FIGURES', 0, 1)
+(212, 'Heading 1', 'LIST OF TABLES', 0, 1)
+(238, 'Heading 1', 'LIST OF ABBREVIATIONS', 0, 1)
+(240, 'Heading 1', 'CHAPTER 1. INTRODUCTION', 0, 1)
+(246, 'Normal', '', 0, 1)
+(252, 'Heading 2', '1.3 Objectives', 0, 1)
+(265, 'Heading 2', '1.4 Scope of the Thesis', 0, 1)
+(270, 'Normal', '', 0, 1)
+(279, 'List Paragraph', '• A traceable evaluation structure that distinguishes algorithm experiments from functional, integra', 0, 1)
+(285, 'Heading 1', 'CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK', 0, 1)
+(290, 'Normal', '', 0, 1)
+(296, 'Normal', 'Preprocessing quality directly affects every later score. Missing OCR text, malformed documents, ext', 0, 1)
+(304, 'Normal', 'Implementations often use logarithmic TF scaling, smoothed IDF, or vector normalization to handle re', 0, 1)
+(312, 'Heading 2', '2.4 Matching, Recommendation, and Ranking', 0, 1)
+(317, 'Heading 2', '2.5 Relevance Feedback and the Rocchio Method', 0, 1)
+(325, 'Normal', 'A robust update process retains the immutable base vector and recomputes the learned vector from the', 0, 1)
+(331, 'Heading 3', '2.6.1 Precision@K, Recall@K, and HitRate@K', 0, 1)
+(339, 'Heading 2', '2.7 Human-in-the-Loop and Explainable Automation', 0, 1)
+(346, 'Normal', 'The NIST AI Risk Management Framework organizes AI risk work around governance, mapping, measurement', 0, 1)
+(352, 'Normal', 'REST is an architectural style characterized by constraints including client–server separation, stat', 0, 1)
+(358, 'Normal', 'Audit logging records security-relevant and business-relevant events so that operations can be monit', 0, 1)
+(367, 'Heading 1', 'CHAPTER 3. SYSTEM ANALYSIS AND DESIGN', 0, 1)
+(375, 'Table Caption', 'Table 3.1. Actors and responsibilities', 0, 1)
+(377, 'Normal', '', 0, 1)
+(389, 'Normal', 'Preconditions are an active Candidate account and an authenticated request. The candidate uploads a ', 0, 1)
+(396, 'Normal', 'An authenticated Recruiter creates a JD with structured fields and free text. Validation checks requ', 0, 1)
+(402, 'Normal', 'Automation begins with a persisted policy associated with a user. Candidate-oriented policy data inc', 0, 1)
+(408, 'Normal', 'The email-action design uses two steps. GET hashes and validates the supplied high-entropy token and', 0, 1)
+(414, 'Normal', 'The backend stores relational business state in PostgreSQL. JSONB is used for naturally variable col', 0, 1)
+(424, 'Heading 3', '3.8.2 Automation, Communication, and Operational Data', 0, 1)
+(428, 'Normal', '', 0, 1)
+(435, 'Normal', 'CV processing represents long-running work with statuses rather than holding a browser request open ', 0, 1)
+(439, 'Heading 2', '3.10 Deployment Architecture', 0, 1)
+(443, 'Normal', '', 0, 1)
+(447, 'Heading 1', 'CHAPTER 4. SYSTEM IMPLEMENTATION', 0, 1)
+(451, 'Normal', 'The backend package root is com.careerfit.backend. Domain packages include auth, candidate, cv, job,', 0, 1)
+(458, 'Normal', 'UserIdResolutionFilter runs after JWT authentication. It resolves the persisted account ID from the ', 0, 1)
+(463, 'Normal', '', 0, 1)
+(469, 'Heading 3', '4.3.2 File Validation and Extraction', 0, 1)
+(475, 'Heading 2', '4.4 Text Normalization and TF-IDF Implementation', 0, 1)
+(484, 'Normal', 'The unknown-term policy has a practical trade-off. It preserves project-specific technology terms ab', 0, 1)
+(491, 'Normal', 'Although configuration contains low, medium, and high boundary names, the current assignLabel method', 0, 1)
+(498, 'Normal', '', 0, 1)
+(505, 'Normal', 'Using the immutable base vector and the complete current feedback history makes recomputation idempo', 0, 1)
+(511, 'Normal', 'A Candidate lists owned applications through a paginated response and can withdraw an application un', 0, 1)
+(519, 'Heading 3', '4.8.2 Auto-Apply', 0, 1)
+(524, 'Normal', '', 0, 1)
+(530, 'Normal', 'Audit records are written directly through AuditLogRepository in major services. An audit entry can ', 0, 1)
+(536, 'Normal', 'Controllers return shared API envelopes and DTOs instead of exposing entities. Validation annotation', 0, 1)
+(541, 'Normal', 'The frontend stores the access token and account summary in sessionStorage, limiting persistence to ', 0, 1)
+(547, 'Normal', '', 0, 1)
+(551, 'Normal', '', 0, 1)
+(555, 'Normal', '', 0, 1)
+(561, 'Heading 2', '4.13 Implementation Limitations', 0, 1)
+(563, 'Normal', 'These limitations are included because the purpose of an implementation chapter is to explain the sy', 0, 1)
+(566, 'Heading 1', 'CHAPTER 5. EXPERIMENTAL EVALUATION', 0, 1)
+(579, 'Normal', 'AlgorithmEvaluatorTest loads evaluation/controlled-dataset.json. The dataset contains 50 Jobs and 10', 0, 1)
+(594, 'Normal', '', 0, 1)
+(600, 'Heading 2', '5.7 Frontend Build Evaluation', 0, 1)
+(607, 'Normal', 'The result demonstrates integration for the four scripted paths in Chromium. It is not a full UAT st', 0, 1)
+(613, 'Normal', 'These checks confirm selected URL-layer outcomes, not a complete penetration test. They do not evalu', 0, 1)
+(619, 'Normal', '', 0, 1)
+(623, 'Heading 2', '5.12 Threats to Validity', 0, 1)
+(633, 'Normal', 'The final evaluation passed all 63 backend tests, completed the frontend production build, and passe', 0, 1)
+(634, 'Heading 1', 'CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION', 0, 1)
+(645, 'Normal', 'The project implements uploaded and manually created CVs, explicit processing statuses, file-type an', 0, 1)
+(653, 'Heading 3', '6.2.5 Policy-Driven Automation and Email Action', 0, 1)
+(668, 'Normal', 'The large benchmark delta is expected from the experimental design: a latent skill is deliberately s', 0, 1)
+(676, 'Heading 2', '6.4 Limitations', 0, 1)
+(685, 'Table Caption', 'Table 6.3. Principal limitations and impact', 0, 1)
+(689, 'Normal', 'Evaluation should expand to recruiter-labeled CV–JD pairs, temporal holdout sets, inter-rater agreem', 0, 1)
+(694, 'Heading 1', 'REFERENCES', 0, 1)
+(706, 'Normal', '[12] M. Jones, J. Bradley, and N. Sakimura, “JSON Web Token (JWT),” Internet Engineering Task Force,', 0, 1)
+(709, 'Heading 1', 'APPENDICES', 0, 1)
+(718, 'Heading 2', 'Appendix E. UAT and Demonstration Script', 0, 1)
+EMPTY OR CONSECUTIVE HEADINGS
+20 Heading 1 '' -> Heading 1 'ACKNOWLEDGEMENTS'
+238 Heading 1 'LIST OF ABBREVIATIONS' -> Heading 1 ''
+239 Heading 1 '' -> Heading 1 'CHAPTER 1. INTRODUCTION'
+240 Heading 1 'CHAPTER 1. INTRODUCTION' -> Heading 2 '1.1 Problem Statement'
+252 Heading 2 '1.3 Objectives' -> Heading 3 '1.3.1 Overall Objective'
+285 Heading 1 'CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK' -> Heading 2 '2.1 Recruitment Information and CV–Job Description Matching'
+292 Heading 2 '2.2 Text Representation and Preprocessing' -> Heading 3 '2.2.1 Document Normalization'
+299 Heading 2 '2.3 TF-IDF and Cosine Similarity' -> Heading 3 '2.3.1 Term Frequency and Inverse Document Frequency'
+317 Heading 2 '2.5 Relevance Feedback and the Rocchio Method' -> Heading 3 '2.5.1 Relevance Feedback'
+339 Heading 2 '2.7 Human-in-the-Loop and Explainable Automation' -> Heading 3 '2.7.1 Levels of Human Involvement'
+349 Heading 2 '2.8 Web Architecture, Security, and Audit Foundations' -> Heading 3 '2.8.1 Client–Server and REST'
+367 Heading 1 'CHAPTER 3. SYSTEM ANALYSIS AND DESIGN' -> Heading 2 '3.1 System Analysis Context'
+387 Heading 2 '3.5 Use-Case Analysis' -> Heading 3 '3.5.1 Candidate Uploads a CV and Receives Matches'
+420 Heading 2 '3.8 Data Design' -> Heading 3 '3.8.1 Core Identity and Recruitment Data'
+430 Heading 2 '3.9 Security, Failure, and Consistency Design' -> Heading 3 '3.9.1 Authentication and Authorization'
+447 Heading 1 'CHAPTER 4. SYSTEM IMPLEMENTATION' -> Heading 2 '4.1 Implementation Overview'
+454 Heading 2 '4.2 Authentication and Authorization Implementation' -> Heading 3 '4.2.1 Login and JWT Processing'
+465 Heading 2 '4.3 CV Ingestion and Validation' -> Heading 3 '4.3.1 Upload and Manual Creation'
+475 Heading 2 '4.4 Text Normalization and TF-IDF Implementation' -> Heading 3 '4.4.1 Text Normalization'
+487 Heading 2 '4.5 Matching and Recommendation Implementation' -> Heading 3 '4.5.1 Scoring Service'
+515 Heading 2 '4.8 AutoFit and Background Processing' -> Heading 3 '4.8.1 Async Executor and Scheduler'
+566 Heading 1 'CHAPTER 5. EXPERIMENTAL EVALUATION' -> Heading 2 '5.1 Evaluation Objectives'
+577 Heading 2 '5.3 Dataset and Evaluation Design' -> Heading 3 '5.3.1 Controlled Algorithm Dataset'
+623 Heading 2 '5.12 Threats to Validity' -> Heading 3 '5.12.1 Construct Validity'
+634 Heading 1 'CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION' -> Heading 2 '6.1 Summary of Results'
+641 Heading 2 '6.2 Achievement of Thesis Objectives' -> Heading 3 '6.2.1 Role-Based Recruitment Platform'
+660 Heading 2 '6.3 Discussion' -> Heading 3 '6.3.1 Value of an Interpretable Baseline'
+676 Heading 2 '6.4 Limitations' -> Heading 3 '6.4.1 Data and Algorithm Limitations'
+709 Heading 1 'APPENDICES' -> Heading 2 'Appendix A. Requirement–Test Traceability Matrix'
+IMAGE/CAPTION PAIRS
+5 image paragraph align CENTER (1) next ''
+246 image paragraph align CENTER (1) next 'Figure 1.1. CareerFit problem context and principal information flows'
+270 image paragraph align CENTER (1) next 'Figure 1.2. Scope boundary of the CareerFit thesis'
+290 image paragraph align CENTER (1) next 'Figure 2.1. Distinction between matching, recommendation, and recruitment action'
+310 image paragraph align CENTER (1) next 'Figure 2.2. TF-IDF vectorization and cosine-similarity pipeline'
+327 image paragraph align CENTER (1) next 'Figure 2.3. Rocchio relevance-feedback vector update'
+347 image paragraph align CENTER (1) next 'Figure 2.4. Human-in-the-Loop control cycle in CareerFit'
+371 image paragraph align CENTER (1) next 'Figure 3.1. CareerFit system context'
+377 image paragraph align CENTER (1) next 'Figure 3.2. CareerFit use-case overview'
+391 image paragraph align CENTER (1) next 'Figure 3.3. CV ingestion and matching sequence'
+399 image paragraph align CENTER (1) next 'Figure 3.4. Feedback learning and recomputation sequence'
+404 image paragraph align CENTER (1) next 'Figure 3.5. AutoFit decision flow'
+409 image paragraph align CENTER (1) next 'Figure 3.6. Secure email-action confirmation and redemption sequence'
+415 image paragraph align CENTER (1) next 'Figure 3.7. CareerFit container and component architecture'
+428 image paragraph align CENTER (1) next 'Figure 3.8. CareerFit logical entity relationships'
+443 image paragraph align CENTER (1) next 'Figure 3.9. Local and containerized deployment topology'
+452 image paragraph align CENTER (1) next 'Figure 4.1. Backend module structure and request flow'
+463 image paragraph align CENTER (1) next 'Figure 4.2. JWT authentication and authorization boundaries'
+473 image paragraph align CENTER (1) next 'Figure 4.3. CV ingestion implementation pipeline'
+485 image paragraph align CENTER (1) next 'Figure 4.4. Seed-corpus initialization and TF-IDF construction'
+498 image paragraph align CENTER (1) next 'Figure 4.5. Scoring and Matching persistence flow'
+507 image paragraph align CENTER (1) next 'Figure 4.6. Feedback processing and post-commit learning'
+513 image paragraph align CENTER (1) next 'Figure 4.7. Application and invitation state transitions'
+524 image paragraph align CENTER (1) next 'Figure 4.8. Scheduler and AutoFit execution boundaries'
+531 image paragraph align CENTER (1) next 'Figure 4.9. Hashed email-action token and confirm-then-POST flow'
+543 image paragraph align CENTER (1) next 'Figure 4.10. Frontend routes and API data flow'
+545 image paragraph align CENTER (1) next 'Screen 4.1. Public Job search'
+547 image paragraph align CENTER (1) next 'Screen 4.2. Candidate matching workspace'
+549 image paragraph align CENTER (1) next 'Screen 4.3. Candidate CV upload interface'
+551 image paragraph align CENTER (1) next 'Screen 4.4. Recruiter candidate workspace'
+553 image paragraph align CENTER (1) next 'Screen 4.5. Candidate AutoFit settings'
+555 image paragraph align CENTER (1) next 'Screen 4.6. Administrator audit view'
+575 image paragraph align CENTER (1) next 'Figure 5.1. Evaluation environments and evidence sources'
+594 image paragraph align CENTER (1) next 'Figure 5.2. Baseline and Rocchio benchmark metrics at K = 5'
+608 image paragraph align CENTER (1) next 'Figure 5.3. P0 end-to-end workflow coverage'
+619 image paragraph align CENTER (1) next 'Figure 5.4. Local Job-search latency distribution'
+TOC/LIST COUNTS
+toc1 74 toc2 66 toc3 60
+figure entries 35
+table entries 24

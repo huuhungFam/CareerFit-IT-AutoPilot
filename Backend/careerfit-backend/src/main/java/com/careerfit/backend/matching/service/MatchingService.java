@@ -202,7 +202,7 @@ public class MatchingService {
         }
         double bestScore = best.getNormalizedScore().doubleValue();
         var policy = automationPolicyService.getOrCreate(user.getId());
-        if (policy.isEmailNotificationsEnabled()
+        if (policy != null && policy.isEmailNotificationsEnabled()
                 && policy.isHighMatchEmailEnabled()
                 && bestScore >= policy.getMinScoreToNotify()
                 && best.getLabel() == Matching.MatchLabel.HIGH) {

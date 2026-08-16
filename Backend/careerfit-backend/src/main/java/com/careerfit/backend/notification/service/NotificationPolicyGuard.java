@@ -30,6 +30,9 @@ public class NotificationPolicyGuard {
         }
 
         AutomationPolicy policy = policyService.getOrCreate(recipient.getId());
+        if (policy == null) {
+            return Decision.skip("POLICY_NOT_FOUND");
+        }
         if (!policy.isEmailNotificationsEnabled()) {
             return Decision.skip("EMAIL_DISABLED");
         }

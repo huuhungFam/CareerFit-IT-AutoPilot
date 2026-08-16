@@ -4,7 +4,6 @@ import com.careerfit.backend.audit.repository.AuditLogRepository;
 import com.careerfit.backend.auth.dto.AuthDtos;
 import com.careerfit.backend.auth.repository.UserAccountRepository;
 import com.careerfit.backend.auth.service.AuthService;
-import com.careerfit.backend.automation.repository.EmailTokenRepository;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
 import com.careerfit.backend.config.AppProperties;
@@ -31,12 +30,12 @@ class AuthServiceTest {
         AuthService service = new AuthService(
                 userRepo,
                 candidateRepo,
-                mock(EmailTokenRepository.class),
                 mock(AuditLogRepository.class),
                 mock(PasswordEncoder.class),
                 mock(JwtService.class),
                 mock(AppProperties.class),
-                mock(IMailService.class));
+                mock(IMailService.class),
+                mock(com.careerfit.backend.automation.service.AutomationPolicyService.class));
 
         var request = new AuthDtos.RegisterRequest(
                 "attacker@example.com", "strong-password", "Attacker", "ADMIN");

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class ApplicationDtos {
+    public record CvBookmarkResponse(java.util.UUID cvId, java.util.UUID candidateId, java.util.UUID jobId, java.util.UUID recruiterId, java.time.Instant bookmarkedAt) {}
 
     // ── Candidate: submit application ─────────────────────────────────────
 

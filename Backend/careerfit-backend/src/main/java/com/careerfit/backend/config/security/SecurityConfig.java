@@ -77,12 +77,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
-                    "/api/auth/login",
-                    "/api/auth/passwordless/request",
-                    "/api/auth/passwordless/verify"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/api/auth/passwordless/verify"
+                    "/api/auth/login"
                 ).permitAll()
                 // Protected routes that would otherwise look like public slug/id routes.
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()

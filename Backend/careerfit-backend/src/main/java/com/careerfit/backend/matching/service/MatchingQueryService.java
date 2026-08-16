@@ -42,6 +42,7 @@ import java.util.UUID;
  */
 @Service
 public class MatchingQueryService {
+    public com.careerfit.backend.matching.dto.MatchingDtos.CandidateJobCardPageResponse getSavedJobCards(java.util.UUID userId, int page, int size) { return null; }
 
     private static final Logger log = LoggerFactory.getLogger(MatchingQueryService.class);
     private static final TypeReference<List<String>> LIST_TYPE = new TypeReference<>() {};

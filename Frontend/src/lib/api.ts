@@ -1,3 +1,10 @@
+
+export type JobSuggestionField = 'title' | 'company' | 'location';
+
+export interface AutomationPolicyDto {
+  demoModeEnabled: boolean;
+}
+
 import type { AutomationPolicy, Job, MatchFeedback, MatchLabel, MockAccount, RecruiterCandidateItem, Role } from '../types';
 
 const API_BASE_URL = ((import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api').replace(/\/$/, '');
@@ -761,8 +768,15 @@ export const careerfitApi = {
   },
 
   async getRecommendations(limit = 20) {
-    const payload = await request<JobRecommendationDto[]>(`/recommendations/jobs?limit=${limit}`);
-    return payload.map(mapRecommendation);
+    const payload = await request<any>(`/recommendations/jobs?limit=${limit}`);
+    if (Array.isArray(payload)) {
+      return { jobs: payload.map(mapRecommendation), cvStatus: 'ACTIVE', message: '' };
+    }
+    return {
+      jobs: (payload.jobs || []).map(mapRecommendation),
+      cvStatus: payload.cvStatus,
+      message: payload.message
+    };
   },
 
   async getCandidateJobsPage(params: CandidateJobPageParams = {}): Promise<CandidateJobPage> {
@@ -1069,10 +1083,14 @@ export const careerfitApi = {
     return request<any>('/settings/me');
   },
 
-  async updateSettings(payload: any) {
+  async updateSettings(payload: any, demoModeEnabled?: boolean) {
+    const body: any = { values: payload };
+    if (demoModeEnabled !== undefined) {
+      body.demoModeEnabled = demoModeEnabled;
+    }
     return request<any>('/settings/me', {
       method: 'PATCH',
-      body: JSON.stringify({ values: payload }),
+      body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
   },
@@ -1133,7 +1151,18 @@ export const careerfitApi = {
       method: 'POST',
     });
   },
+  async getJobFieldSuggestions(field: JobSuggestionField, keyword: string) {
+    const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
+    if (field === 'title') return payload.titles || [];
+    if (field === 'company') return payload.companies || [];
+    return [];
+  },
+  async getSkillSuggestions(keyword: string) {
+    const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
+    return payload.skills || [];
+  },
 };
+
 
 export type CandidateProfileDto = any;
 export type CreateJobPayload = any;

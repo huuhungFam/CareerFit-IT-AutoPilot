@@ -86,6 +86,10 @@ public class AppProperties {
     public int getOcrDpi()                          { return ocrDpi; }
     public int getOcrMaxPages()                     { return ocrMaxPages; }
     public int getOcrTimeoutSeconds()               { return ocrTimeoutSeconds; }
+
+    public int getOcrPreprocessingMinWidth() { return 1000; }
+    public int getOcrPreprocessingMaxPixels() { return 8000000; }
+
     public double getHighMatchThresholdCandidate()  { return highMatchThresholdCandidate; }
     public double getHighMatchThresholdRecruiter()  { return highMatchThresholdRecruiter; }
     public double getScoreLabelLowMax()             { return scoreLabelLowMax; }

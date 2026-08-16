@@ -64,34 +64,46 @@ public class RecommendationService {
      * Get personalized job recommendations for a candidate.
      * Returns up to {@code limit} ScoredJobRecommendations ordered by final score.
      */
+    public record CatalogResponse(
+        List<JobRecommendation> jobs,
+        String cvStatus,
+        String message
+    ) {}
+
     @Transactional(readOnly = true)
-    public List<JobRecommendation> getRecommendations(UUID userId, int limit) {
+    public CatalogResponse getRecommendations(UUID userId, int limit) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
 
         int effectiveLimit = Math.min(limit, 50);
 
-        // Get default CV — if none, return profile-based fallback
         Optional<CV> defaultCv = cvRepo.findByCandidateIdAndIsDefaultTrue(candidate.getId());
 
         if (defaultCv.isEmpty()) {
             log.info("No default CV for candidate={}, falling back to profile-based recs", candidate.getId());
-            return getProfileBasedRecommendations(candidate, effectiveLimit);
+            return new CatalogResponse(getProfileBasedRecommendations(candidate, effectiveLimit), "NO_CV", "Vui lòng tải lên CV để nhận gợi ý việc làm chính xác.");
         }
 
         CV cv = defaultCv.get();
+        if (cv.getStatus() != CV.CvStatus.SCORING_DONE ) {
+            String msg = cv.getStatus() == CV.CvStatus.FAILED 
+                ? "Xử lý CV thất bại: " + (cv.getFailureReason() != null ? cv.getFailureReason() : "Lỗi không xác định") 
+                : "Hệ thống đang phân tích CV của bạn để tìm việc làm phù hợp. Vui lòng đợi.";
+            return new CatalogResponse(getProfileBasedRecommendations(candidate, effectiveLimit), cv.getStatus().name(), msg);
+        }
+
         List<String> desiredSkills = parseList(candidate.getDesiredSkillsJson());
 
         // Step 1: Get top matches from matching table
         List<Matching> topMatchings = matchingRepo.findTopMatchesByCvId(
-                cv.getId(), PageRequest.of(0, effectiveLimit * 2));  // fetch more to allow filtering
+                cv.getId(), PageRequest.of(0, effectiveLimit * 2));
         if (topMatchings.isEmpty() || topMatchings.get(0).getNormalizedScore().doubleValue() < appProperties.getScoreLabelLowMax()) {
             log.info("No usable matches for candidate={}, falling back to profile-based recs", candidate.getId());
-            return getProfileBasedRecommendations(candidate, effectiveLimit);
+            return new CatalogResponse(getProfileBasedRecommendations(candidate, effectiveLimit), "SCORING_DONE", "Đang tính toán mức độ phù hợp...");
         }
 
         // Step 2: Score with content-based boost
-        return topMatchings.stream()
+        List<JobRecommendation> jobs = topMatchings.stream()
                 .filter(m -> m.getJob().getStatus() == Job.JobStatus.ACTIVE)
                 .map(m -> {
                     double baseScore = m.getNormalizedScore().doubleValue();
@@ -120,6 +132,8 @@ public class RecommendationService {
                 .sorted(Comparator.comparingDouble(JobRecommendation::finalScore).reversed())
                 .limit(effectiveLimit)
                 .toList();
+
+        return new CatalogResponse(jobs, "SCORING_DONE", "Hoàn tất");
     }
 
     /**

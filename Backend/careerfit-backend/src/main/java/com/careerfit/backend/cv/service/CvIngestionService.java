@@ -174,6 +174,33 @@ public class CvIngestionService {
         );
     }
 
+
+    // ─── Retry ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public void retryFailedCv(UUID cvId, UUID userId) {
+        Candidate candidate = candidateRepo.findByUserId(userId)
+                .orElseThrow(() -> AppException.notFound("Candidate", userId));
+        CV cv = cvRepo.findById(cvId)
+                .orElseThrow(() -> AppException.notFound("CV", cvId));
+        if (!cv.getCandidate().getId().equals(candidate.getId())) {
+            throw AppException.forbidden("Cannot retry another user's CV");
+        }
+        if (cv.getStatus() != CV.CvStatus.FAILED) {
+            throw AppException.badRequest("Only FAILED CVs can be retried");
+        }
+        
+        cv.setStatus(CV.CvStatus.UPLOADED);
+        cv.setFailureReason(null);
+        cvRepo.save(cv);
+
+        if (cv.getSource() == CV.CvSource.UPLOAD) {
+            afterCommitExecutor.execute(() -> processDocument(cv.getId()));
+        } else {
+            afterCommitExecutor.execute(() -> processManual(cv.getId()));
+        }
+    }
+
     // ── Async Workers ─────────────────────────────────────────────────────
 
     public void processDocument(UUID cvId) {

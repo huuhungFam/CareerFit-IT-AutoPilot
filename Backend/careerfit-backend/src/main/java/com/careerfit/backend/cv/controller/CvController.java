@@ -84,6 +84,16 @@ public class CvController {
         return ResponseEntity.ok(ApiResponse.ok(management.getStatus(cvId, userId)));
     }
 
+
+    @PostMapping("/{cvId}/retry")
+    @Operation(summary = "Retry processing a FAILED CV")
+    public ResponseEntity<ApiResponse<Void>> retry(
+            @PathVariable UUID cvId,
+            @RequestAttribute("userId") UUID userId) {
+        ingestion.retryFailedCv(cvId, userId);
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
     // ── Set Default ───────────────────────────────────────────────────────
 
     @PostMapping("/{cvId}/set-default")

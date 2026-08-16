@@ -11,6 +11,15 @@ export interface MockAccount {
 
 export type MatchLabel = 'Low' | 'Medium' | 'High' | 'Potential';
 export type MatchFeedback = 'GOOD_MATCH' | 'POTENTIAL' | 'BAD_MATCH' | 'NOT_INTERESTED';
+export type CandidateApplicationStatus =
+  | 'PENDING'
+  | 'AUTO_APPLIED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'INVITED'
+  | 'NOT_INTERESTED'
+  | 'INTERVIEW_RESCHEDULED'
+  | 'INTERVIEW_CANCELLED';
 
 export interface Job {
   id: string;
@@ -46,6 +55,7 @@ export interface Job {
   remoteType?: string;
   employmentType?: string;
   domain?: string;
+  recruiterLogin?: string;
 }
 
 export interface RankingTieMeta {

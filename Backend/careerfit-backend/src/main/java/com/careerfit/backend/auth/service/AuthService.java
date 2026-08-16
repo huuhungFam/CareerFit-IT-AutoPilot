@@ -6,8 +6,7 @@ import com.careerfit.backend.auth.dto.AuthDtos;
 import com.careerfit.backend.auth.entity.UserAccount;
 import com.careerfit.backend.auth.repository.UserAccountRepository;
 import com.careerfit.backend.automation.entity.AutomationPolicy;
-import com.careerfit.backend.automation.entity.EmailToken;
-import com.careerfit.backend.automation.repository.EmailTokenRepository;
+import com.careerfit.backend.automation.service.AutomationPolicyService;
 import com.careerfit.backend.candidate.entity.Candidate;
 import com.careerfit.backend.candidate.repository.CandidateRepository;
 import com.careerfit.backend.common.exception.AppException;
@@ -36,29 +35,29 @@ public class AuthService {
 
     private final UserAccountRepository userRepo;
     private final CandidateRepository candidateRepo;
-    private final EmailTokenRepository tokenRepo;
     private final AuditLogRepository auditRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AppProperties props;
     private final IMailService mailService;
+    private final AutomationPolicyService policyService;
 
     public AuthService(UserAccountRepository userRepo,
                        CandidateRepository candidateRepo,
-                       EmailTokenRepository tokenRepo,
                        AuditLogRepository auditRepo,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AppProperties props,
-                       IMailService mailService) {
+                       IMailService mailService,
+                       AutomationPolicyService policyService) {
         this.userRepo = userRepo;
         this.candidateRepo = candidateRepo;
-        this.tokenRepo = tokenRepo;
         this.auditRepo = auditRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.props = props;
         this.mailService = mailService;
+        this.policyService = policyService;
     }
 
     // ── Register ──────────────────────────────────────────────────────────
@@ -88,6 +87,7 @@ public class AuthService {
         );
         user.setEmailVerified(true); // skip email verification for MVP
         userRepo.save(user);
+        policyService.getOrCreate(user.getId());
 
         // Auto-create Candidate profile if role is CANDIDATE
         if (role == UserAccount.Role.CANDIDATE) {
@@ -132,94 +132,7 @@ public class AuthService {
             case "re" -> "re";
             default -> normalizeEmail(normalized);
         };
-    }
-
-    // ── Passwordless ──────────────────────────────────────────────────────
-
-    @Transactional
-    public AuthDtos.PasswordlessRequestResponse requestPasswordlessToken(String email) {
-        String normalizedEmail = normalizeEmail(email);
-        var maybeUser = userRepo.findByEmail(normalizedEmail);
-        if (maybeUser.isEmpty()) {
-            log.info("Passwordless token requested for unknown email: {}", normalizedEmail);
-            return new AuthDtos.PasswordlessRequestResponse(
-                    "Magic link sent if the account exists and mail is configured.",
-                    null,
-                    props.getMagicLinkExpirationMinutes()
-            );
-        }
-        var user = maybeUser.get();
-
-        // Revoke existing active PASSWORDLESS tokens for this user
-        tokenRepo.revokeActiveTokens(user.getId(),
-                EmailToken.TokenPurpose.PASSWORDLESS_LOGIN, Instant.now());
-
-        // Generate a random 32-byte token
-        byte[] rawBytes = new byte[32];
-        SECURE_RANDOM.nextBytes(rawBytes);
-        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(rawBytes);
-        String tokenHash = sha256Hex(rawToken);
-
-        var expiry = Instant.now().plusSeconds(props.getMagicLinkExpirationMinutes() * 60L);
-        var token = new EmailToken(tokenHash, EmailToken.TokenPurpose.PASSWORDLESS_LOGIN, user, expiry);
-        tokenRepo.save(token);
-
-        String magicLink = buildMagicLink(rawToken);
-        mailService.sendPlainText(
-                normalizedEmail,
-                "CareerFit magic login link",
-                """
-                Hello %s,
-
-                Use this link to sign in to CareerFit:
-                %s
-
-                This link expires in %d minutes. If you did not request it, you can ignore this email.
-                """.formatted(
-                        user.getFullName() != null ? user.getFullName() : normalizedEmail,
-                        magicLink,
-                        props.getMagicLinkExpirationMinutes()
-                )
-        );
-
-        log.info("Passwordless token issued for: {}", normalizedEmail);
-        return new AuthDtos.PasswordlessRequestResponse(
-                "Magic link sent if the account exists and mail is configured.",
-                props.isMagicLinkExposeTokenInResponse() ? rawToken : null,
-                props.getMagicLinkExpirationMinutes()
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public String inspectPasswordlessToken(String rawToken) {
-        var emailToken = findValidPasswordlessToken(rawToken);
-        String email = emailToken.getUser().getEmail();
-        return "Token is valid for " + email + ". POST to /api/auth/passwordless/verify to complete login.";
-    }
-
-    @Transactional
-    public AuthDtos.AuthResponse verifyPasswordlessToken(String rawToken) {
-        var emailToken = findValidPasswordlessToken(rawToken);
-
-        var user = emailToken.getUser();
-        if (!user.isActive()) {
-            throw AppException.unauthorized("Account has been suspended");
-        }
-
-        emailToken.markUsed();
-        tokenRepo.save(emailToken);
-
-        user.setEmailVerified(true);
-        userRepo.save(user);
-
-        auditRepo.save(new AuditLog(AuditLog.ActorType.USER, user.getId(), "PASSWORDLESS_LOGIN")
-                .withResult(AuditLog.Result.SUCCESS)
-                .withChannel(AuditLog.SourceChannel.EMAIL));
-
-        return buildAuthResponse(user);
-    }
-
-    // ── Current user ──────────────────────────────────────────────────────
+    } // ── Current user ──────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public AuthDtos.MeResponse getMe(String email) {
@@ -258,37 +171,4 @@ public class AuthService {
         return email == null ? null : email.trim().toLowerCase();
     }
 
-    private String buildMagicLink(String rawToken) {
-        String baseUrl = props.getBaseUrl();
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        }
-        return baseUrl + "/api/auth/passwordless/verify?token=" + rawToken;
-    }
-
-    private EmailToken findValidPasswordlessToken(String rawToken) {
-        String tokenHash = sha256Hex(rawToken);
-        var emailToken = tokenRepo.findByTokenHash(tokenHash)
-                .orElseThrow(AppException::tokenInvalid);
-
-        if (!emailToken.isValid()) {
-            if (emailToken.isExpired())  throw AppException.tokenExpired();
-            if (emailToken.isUsed())     throw AppException.tokenAlreadyUsed();
-            throw AppException.tokenInvalid();
-        }
-        if (emailToken.getPurpose() != EmailToken.TokenPurpose.PASSWORDLESS_LOGIN) {
-            throw AppException.tokenInvalid();
-        }
-        return emailToken;
-    }
-
-    private static String sha256Hex(String input) {
-        try {
-            var digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
-        }
-    }
 }

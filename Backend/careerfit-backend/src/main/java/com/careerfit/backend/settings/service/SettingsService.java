@@ -17,13 +17,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.careerfit.backend.automation.entity.AutomationPolicy;
+import com.careerfit.backend.automation.service.AutomationPolicyService;
+import com.careerfit.backend.automation.service.EffectiveAutomationPolicyResolver;
+
 @Service
 public class SettingsService {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private static final Set<String> CANDIDATE_KEYS = Set.of(
             "highMatchEmail", "dailyDigest", "recruiterInviteAlerts", "alertThreshold", "digestTime",
             "showPortfolioAfterApply", "allowPotentialDiscovery", "hidePhoneUntilInvite",
-            "passwordlessEnabled", "sessionTimeoutDays");
+            "sessionTimeoutDays");
     private static final Set<String> RECRUITER_KEYS = Set.of(
             "hiringManagerReview", "sharedCandidateNotes", "restrictSalaryVisibility",
             "defaultWorkingModel", "defaultSalaryMode", "candidateReviewSlaHours", "defaultLanguage",
@@ -32,12 +36,17 @@ public class SettingsService {
     private final UserSettingsRepository settingsRepo;
     private final UserAccountRepository userRepo;
     private final ObjectMapper objectMapper;
+    private final AutomationPolicyService policyService;
+    private final EffectiveAutomationPolicyResolver effectiveResolver;
 
     public SettingsService(UserSettingsRepository settingsRepo, UserAccountRepository userRepo,
-                           ObjectMapper objectMapper) {
+                           ObjectMapper objectMapper, AutomationPolicyService policyService,
+                           EffectiveAutomationPolicyResolver effectiveResolver) {
         this.settingsRepo = settingsRepo;
         this.userRepo = userRepo;
         this.objectMapper = objectMapper;
+        this.policyService = policyService;
+        this.effectiveResolver = effectiveResolver;
     }
 
     @Transactional(readOnly = true)
@@ -46,8 +55,23 @@ public class SettingsService {
         Map<String, Object> values = defaults(user.getRole());
         Optional<UserSettings> stored = settingsRepo.findByUserId(userId);
         stored.ifPresent(entity -> values.putAll(parse(entity.getSettingsJson())));
+        
+        AutomationPolicy policy = policyService.getOrCreate(userId);
+        EffectiveAutomationPolicyResolver.EffectivePolicy eff = effectiveResolver.resolve(userId);
+        SettingsDtos.EffectiveTimingSummary timing = null;
+        Boolean demoModeEnabled = null;
+        if (policy != null && eff != null) {
+            demoModeEnabled = policy.isDemoModeEnabled();
+            timing = new SettingsDtos.EffectiveTimingSummary(
+                    eff.candidatePollIntervalSeconds(),
+                    eff.firstSuggestionDelaySeconds(),
+                    eff.subsequentSpacingSeconds(),
+                    eff.notificationCooldownHours()
+            );
+        }
+
         return new SettingsDtos.SettingsResponse(user.getRole().name(), values,
-                stored.map(UserSettings::getUpdatedAt).orElse(null));
+                stored.map(UserSettings::getUpdatedAt).orElse(null), demoModeEnabled, timing);
     }
 
     @Transactional
@@ -67,7 +91,29 @@ public class SettingsService {
             throw AppException.badRequest("Settings payload could not be serialized");
         }
         entity = settingsRepo.save(entity);
-        return new SettingsDtos.SettingsResponse(user.getRole().name(), current, entity.getUpdatedAt());
+
+        if (request.demoModeEnabled() != null && user.getRole() != UserAccount.Role.ADMIN) {
+            AutomationPolicyService.PolicyUpdateRequest policyReq = new AutomationPolicyService.PolicyUpdateRequest(
+                    request.demoModeEnabled(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+            );
+            policyService.update(userId, policyReq);
+        }
+
+        AutomationPolicy policy = policyService.getOrCreate(userId);
+        EffectiveAutomationPolicyResolver.EffectivePolicy eff = effectiveResolver.resolve(userId);
+        SettingsDtos.EffectiveTimingSummary timing = null;
+        Boolean demoModeEnabled = null;
+        if (policy != null && eff != null) {
+            demoModeEnabled = policy.isDemoModeEnabled();
+            timing = new SettingsDtos.EffectiveTimingSummary(
+                    eff.candidatePollIntervalSeconds(),
+                    eff.firstSuggestionDelaySeconds(),
+                    eff.subsequentSpacingSeconds(),
+                    eff.notificationCooldownHours()
+            );
+        }
+
+        return new SettingsDtos.SettingsResponse(user.getRole().name(), current, entity.getUpdatedAt(), demoModeEnabled, timing);
     }
 
     private Object validate(String key, Object value) {
@@ -110,7 +156,7 @@ public class SettingsService {
             result.put("recruiterInviteAlerts", true); result.put("alertThreshold", 90);
             result.put("digestTime", "08:00"); result.put("showPortfolioAfterApply", true);
             result.put("allowPotentialDiscovery", false); result.put("hidePhoneUntilInvite", true);
-            result.put("passwordlessEnabled", true); result.put("sessionTimeoutDays", 30);
+            result.put("sessionTimeoutDays", 30);
         } else if (role == UserAccount.Role.RECRUITER) {
             result.put("hiringManagerReview", true); result.put("sharedCandidateNotes", true);
             result.put("restrictSalaryVisibility", false); result.put("defaultWorkingModel", "HYBRID");

@@ -26,6 +26,7 @@ import java.security.MessageDigest;
  */
 @Service
 public class EmailActionService {
+    public java.util.Collection<com.careerfit.backend.notification.dto.EmailSample> buildSampleCatalog() { return java.util.List.of(); }
 
     private static final Logger log = LoggerFactory.getLogger(EmailActionService.class);
 

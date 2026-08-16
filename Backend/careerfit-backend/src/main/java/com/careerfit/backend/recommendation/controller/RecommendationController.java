@@ -23,7 +23,7 @@ public class RecommendationController {
 
     @GetMapping("/jobs")
     @Operation(summary = "Get personalized job recommendations for the logged-in candidate (CANDIDATE)")
-    public ResponseEntity<ApiResponse<List<RecommendationService.JobRecommendation>>> getRecommendations(
+    public ResponseEntity<ApiResponse<RecommendationService.CatalogResponse>> getRecommendations(
             @RequestParam(defaultValue = "20") int limit,
             @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(ApiResponse.ok(

@@ -36,6 +36,9 @@ public class AdminJobService {
     @Transactional
     public void hideJob(UUID jobId, UUID adminId) {
         Job job = jobRepo.findById(jobId).orElseThrow(() -> AppException.notFound("Job", jobId));
+        if (job.getStatus() != Job.JobStatus.ACTIVE) {
+            throw new AppException(org.springframework.http.HttpStatus.BAD_REQUEST, "INVALID_STATUS", "Only active jobs can be hidden.");
+        }
         job.setStatus(Job.JobStatus.HIDDEN_BY_ADMIN);
         jobRepo.save(job);
 
@@ -48,6 +51,9 @@ public class AdminJobService {
     @Transactional
     public void restoreJob(UUID jobId, UUID adminId) {
         Job job = jobRepo.findById(jobId).orElseThrow(() -> AppException.notFound("Job", jobId));
+        if (job.getStatus() != Job.JobStatus.HIDDEN_BY_ADMIN) {
+            throw new AppException(org.springframework.http.HttpStatus.BAD_REQUEST, "INVALID_STATUS", "Only jobs hidden by an administrator can be restored.");
+        }
         job.setStatus(Job.JobStatus.ACTIVE); // or previous status if we tracked it, ACTIVE is safe default
         jobRepo.save(job);
 

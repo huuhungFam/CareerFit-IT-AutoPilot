@@ -18,20 +18,6 @@ public class AuthDtos {
         @NotBlank String password
     ) {}
 
-    public record PasswordlessRequest(
-        @NotBlank @Email String email
-    ) {}
-
-    public record PasswordlessRequestResponse(
-        String message,
-        String token,
-        int expiresInMinutes
-    ) {}
-
-    public record TokenVerifyRequest(
-        @NotBlank String token
-    ) {}
-
     public record AuthResponse(
         String accessToken,
         String tokenType,

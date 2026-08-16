@@ -40,20 +40,4 @@ public class AdminEmailMonitorController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    @GetMapping("/email-tokens")
-    @Operation(summary = "Get email tokens")
-    public ResponseEntity<ApiResponse<Page<AdminEmailResponse.EmailTokenSummary>>> getEmailTokens(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                monitorService.getEmailTokens(PageRequest.of(page, size))
-        ));
-    }
-
-    @PostMapping("/email-tokens/{tokenId}/revoke")
-    @Operation(summary = "Revoke an email token")
-    public ResponseEntity<ApiResponse<Void>> revokeToken(@PathVariable UUID tokenId, @RequestAttribute("userId") UUID adminId) {
-        monitorService.revokeToken(tokenId, adminId);
-        return ResponseEntity.ok(ApiResponse.ok());
-    }
 }

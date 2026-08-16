@@ -1,7 +1,7 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-export function ToastMessage({ tone, text }: { tone: 'success' | 'error'; text: string }) {
+export function ToastMessage({ tone, text }: { tone: 'success' | 'error' | 'info' | 'warning'; text: string }) {
   const Icon = tone === 'success' ? CheckCircle2 : XCircle;
   return createPortal(
     <div className={`action-message ${tone}`} role={tone === 'error' ? 'alert' : 'status'} aria-live="polite">

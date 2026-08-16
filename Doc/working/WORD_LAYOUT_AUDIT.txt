@@ -1,0 +1,208 @@
+PAGES=94 SECTIONS=3
+HEADINGS
+page=1 y=724.5 style=Heading 1 text=
+page=2 y=75 style=Heading 1 text=ACKNOWLEDGEMENTS
+page=3 y=75 style=Heading 1 text=ABSTRACT
+page=5 y=75 style=Heading 1 text=TABLE OF CONTENTS
+page=11 y=75 style=Heading 1 text=LIST OF FIGURES
+page=13 y=75 style=Heading 1 text=LIST OF TABLES
+page=14 y=681 style=Heading 1 text=
+page=15 y=75 style=Heading 1 text=CHAPTER 1. INTRODUCTION
+page=15 y=114.8 style=Heading 2 text=1.1 Problem Statement
+page=16 y=349.5 style=Heading 2 text=1.2 Motivation
+page=17 y=57 style=Heading 2 text=1.3 Objectives
+page=17 y=95 style=Heading 3 text=1.3.1 Overall Objective
+page=17 y=236 style=Heading 3 text=1.3.2 Specific Objectives
+page=18 y=57 style=Heading 2 text=1.4 Scope of the Thesis
+page=19 y=349.5 style=Heading 2 text=1.5 Contributions of the Thesis
+page=20 y=440.2 style=Heading 2 text=1.6 Thesis Organization
+page=21 y=75 style=Heading 1 text=CHAPTER 2. THEORETICAL BACKGROUND AND RELATED WORK
+page=21 y=148.5 style=Heading 2 text=2.1 Recruitment Information and CV-Job Description Matching
+page=22 y=349.5 style=Heading 2 text=2.2 Text Representation and Preprocessing
+page=22 y=379.2 style=Heading 3 text=2.2.1 Document Normalization
+page=23 y=176.8 style=Heading 3 text=2.2.2 Bag-of-Words Representation
+page=23 y=395.2 style=Heading 2 text=2.3 TF-IDF and Cosine Similarity
+page=23 y=433.2 style=Heading 3 text=2.3.1 Term Frequency and Inverse Document Frequency
+page=24 y=110 style=Heading 3 text=2.3.2 Cosine Similarity
+page=25 y=65.2 style=Heading 2 text=2.4 Matching, Recommendation, and Ranking
+page=26 y=57 style=Heading 2 text=2.5 Relevance Feedback and the Rocchio Method
+page=26 y=95 style=Heading 3 text=2.5.1 Relevance Feedback
+page=26 y=504.5 style=Heading 3 text=2.5.2 Feedback Semantics in CareerFit
+page=27 y=579.8 style=Heading 2 text=2.6 Evaluation Metrics for Ranked Results
+page=28 y=56.8 style=Heading 3 text=2.6.1 Precision@K, Recall@K, and HitRate@K
+page=28 y=225.5 style=Heading 3 text=2.6.2 Mean Reciprocal Rank
+page=28 y=395 style=Heading 3 text=2.6.3 Discounted Cumulative Gain
+page=29 y=57 style=Heading 2 text=2.7 Human-in-the-Loop and Explainable Automation
+page=29 y=95 style=Heading 3 text=2.7.1 Levels of Human Involvement
+page=29 y=437.8 style=Heading 3 text=2.7.2 Explainability and Auditability
+page=30 y=489.8 style=Heading 2 text=2.8 Web Architecture, Security, and Audit Foundations
+page=30 y=519.5 style=Heading 3 text=2.8.1 Client-Server and REST
+page=31 y=110 style=Heading 3 text=2.8.2 Authentication, Authorization, and Action Tokens
+page=31 y=637.2 style=Heading 3 text=2.8.3 Audit Logging
+page=32 y=248.2 style=Heading 2 text=2.9 Related Work and Research Gap
+page=33 y=343.5 style=Heading 2 text=2.10 Chapter Summary
+page=34 y=75 style=Heading 1 text=CHAPTER 3. SYSTEM ANALYSIS AND DESIGN
+page=34 y=120.8 style=Heading 2 text=3.1 System Analysis Context
+page=34 y=683.2 style=Heading 2 text=3.2 Stakeholders and Actors
+page=36 y=349.5 style=Heading 2 text=3.3 Functional Requirements
+page=37 y=469.5 style=Heading 2 text=3.4 Non-Functional Requirements
+page=38 y=578.2 style=Heading 2 text=3.5 Use-Case Analysis
+page=38 y=611 style=Heading 3 text=3.5.1 Candidate Uploads a CV and Receives Matches
+page=39 y=530.8 style=Heading 3 text=3.5.2 Candidate Searches and Applies for a Job
+page=39 y=710 style=Heading 3 text=3.5.3 Recruiter Creates a Job and Reviews Candidates
+page=40 y=199.2 style=Heading 3 text=3.5.4 User Feedback Changes Later Ranking
+page=40 y=673.2 style=Heading 3 text=3.5.5 AutoFit Executes a Policy-Governed Action
+page=41 y=553.2 style=Heading 3 text=3.5.6 Email Feedback Action
+page=42 y=399.8 style=Heading 2 text=3.6 System Architecture
+page=43 y=489.8 style=Heading 2 text=3.7 Module Design
+page=44 y=452.2 style=Heading 2 text=3.8 Data Design
+page=44 y=484.2 style=Heading 3 text=3.8.1 Core Identity and Recruitment Data
+page=45 y=56.8 style=Heading 3 text=3.8.2 Automation, Communication, and Operational Data
+page=46 y=349.5 style=Heading 2 text=3.9 Security, Failure, and Consistency Design
+page=46 y=373.2 style=Heading 3 text=3.9.1 Authentication and Authorization
+page=46 y=672.5 style=Heading 3 text=3.9.2 Failure Handling
+page=47 y=244.2 style=Heading 3 text=3.9.3 Identified Design Risks
+page=48 y=57 style=Heading 2 text=3.10 Deployment Architecture
+page=49 y=349.5 style=Heading 2 text=3.11 Chapter Summary
+page=50 y=75 style=Heading 1 text=CHAPTER 4. SYSTEM IMPLEMENTATION
+page=50 y=120.8 style=Heading 2 text=4.1 Implementation Overview
+page=51 y=422.2 style=Heading 2 text=4.2 Authentication and Authorization Implementation
+page=51 y=446.8 style=Heading 3 text=4.2.1 Login and JWT Processing
+page=52 y=155 style=Heading 3 text=4.2.2 URL Rules and Ownership Checks
+page=53 y=349.5 style=Heading 2 text=4.3 CV Ingestion and Validation
+page=53 y=373.2 style=Heading 3 text=4.3.1 Upload and Manual Creation
+page=54 y=56.8 style=Heading 3 text=4.3.2 File Validation and Extraction
+page=55 y=65.2 style=Heading 2 text=4.4 Text Normalization and TF-IDF Implementation
+page=55 y=89.8 style=Heading 3 text=4.4.1 Text Normalization
+page=55 y=389 style=Heading 3 text=4.4.2 Static Corpus and Vector Construction
+page=56 y=399.8 style=Heading 2 text=4.5 Matching and Recommendation Implementation
+page=56 y=424.2 style=Heading 3 text=4.5.1 Scoring Service
+page=57 y=244.2 style=Heading 3 text=4.5.2 Matching Orchestration and Persistence
+page=57 y=521.8 style=Heading 3 text=4.5.3 Recommendation Service
+page=58 y=349.5 style=Heading 2 text=4.6 Feedback Learning with Rocchio
+page=59 y=557.2 style=Heading 2 text=4.7 Application and Recruiter Workflow
+page=60 y=534.8 style=Heading 2 text=4.8 AutoFit and Background Processing
+page=60 y=558.5 style=Heading 3 text=4.8.1 Async Executor and Scheduler
+page=61 y=56.8 style=Heading 3 text=4.8.2 Auto-Apply
+page=61 y=378.5 style=Heading 3 text=4.8.3 Notification Guard and Delivery
+page=62 y=349.5 style=Heading 2 text=4.9 Email Action and Audit Implementation
+page=63 y=399.8 style=Heading 2 text=4.10 Persistence and API Implementation
+page=64 y=360.8 style=Heading 2 text=4.11 Frontend Integration
+page=68 y=349.5 style=Heading 2 text=4.12 Deployment and Observability Implementation
+page=69 y=57 style=Heading 2 text=4.13 Implementation Limitations
+page=70 y=136.5 style=Heading 2 text=4.14 Chapter Summary
+page=71 y=75 style=Heading 1 text=CHAPTER 5. EXPERIMENTAL EVALUATION
+page=71 y=120.8 style=Heading 2 text=5.1 Evaluation Objectives
+page=71 y=576.8 style=Heading 2 text=5.2 Evaluation Environment
+page=72 y=668.2 style=Heading 2 text=5.3 Dataset and Evaluation Design
+page=72 y=692.8 style=Heading 3 text=5.3.1 Controlled Algorithm Dataset
+page=73 y=401 style=Heading 3 text=5.3.2 Local Runtime Data
+page=73 y=548.2 style=Heading 2 text=5.4 Backend Automated Testing
+page=74 y=294 style=Heading 2 text=5.5 Controlled Algorithm Results
+page=75 y=349.5 style=Heading 2 text=5.6 Concurrency Observation in Benchmark Runs
+page=76 y=57 style=Heading 2 text=5.7 Frontend Build Evaluation
+page=76 y=450 style=Heading 2 text=5.8 Browser End-to-End Evaluation
+page=77 y=399.8 style=Heading 2 text=5.9 Security-Oriented API Checks
+page=78 y=114 style=Heading 2 text=5.10 Runtime Health, Monitoring, and Local Latency
+page=79 y=349.5 style=Heading 2 text=5.11 Evaluation Summary by Research Question
+page=80 y=57 style=Heading 2 text=5.12 Threats to Validity
+page=80 y=89 style=Heading 3 text=5.12.1 Construct Validity
+page=80 y=209 style=Heading 3 text=5.12.2 Internal Validity
+page=80 y=374 style=Heading 3 text=5.12.3 External Validity
+page=80 y=516.5 style=Heading 3 text=5.12.4 Reproducibility
+page=80 y=685.5 style=Heading 2 text=5.13 Chapter Summary
+page=82 y=75 style=Heading 1 text=CHAPTER 6. RESULTS, DISCUSSION AND CONCLUSION
+page=82 y=148.5 style=Heading 2 text=6.1 Summary of Results
+page=83 y=421.5 style=Heading 2 text=6.2 Achievement of Thesis Objectives
+page=83 y=453.5 style=Heading 3 text=6.2.1 Role-Based Recruitment Platform
+page=83 y=663.5 style=Heading 3 text=6.2.2 CV and Job-Description Processing
+page=84 y=199.2 style=Heading 3 text=6.2.3 Matching and Recommendation
+page=84 y=454.2 style=Heading 3 text=6.2.4 Feedback Learning
+page=85 y=56.8 style=Heading 3 text=6.2.5 Policy-Driven Automation and Email Action
+page=85 y=333.5 style=Heading 3 text=6.2.6 Auditability and Evaluation
+page=86 y=125.2 style=Heading 2 text=6.3 Discussion
+page=86 y=157.2 style=Heading 3 text=6.3.1 Value of an Interpretable Baseline
+page=86 y=412.2 style=Heading 3 text=6.3.2 Human-in-the-Loop as System Structure
+page=86 y=689 style=Heading 3 text=6.3.3 Meaning of the Rocchio Improvement
+page=87 y=244.2 style=Heading 3 text=6.3.4 Green Assertions versus Operational Cleanliness
+page=87 y=499.2 style=Heading 3 text=6.3.5 Product Positioning
+page=88 y=57 style=Heading 2 text=6.4 Limitations
+page=88 y=89 style=Heading 3 text=6.4.1 Data and Algorithm Limitations
+page=88 y=276.5 style=Heading 3 text=6.4.2 Evaluation Limitations
+page=88 y=441.5 style=Heading 3 text=6.4.3 Security and Privacy Limitations
+page=88 y=629 style=Heading 3 text=6.4.4 Reliability and Maintainability Limitations
+page=89 y=394.5 style=Heading 2 text=6.5 Future Work
+page=90 y=225.8 style=Heading 2 text=6.6 Conclusion
+page=91 y=75 style=Heading 1 text=REFERENCES
+page=93 y=75 style=Heading 1 text=APPENDICES
+page=93 y=116.2 style=Heading 2 text=Appendix A. Requirement-Test Traceability Matrix
+page=93 y=287.2 style=Heading 2 text=Appendix B. Selected API Contracts
+page=93 y=441.8 style=Heading 2 text=Appendix C. Data Model Summary
+page=93 y=595.5 style=Heading 2 text=Appendix D. Evaluation Summary
+page=94 y=57 style=Heading 2 text=Appendix E. UAT and Demonstration Script
+page=94 y=234 style=Heading 2 text=Appendix F. Local Deployment Instructions
+IMAGES
+image=1 page=1 heightIn=1.4
+image=2 page=16 heightIn=3.46
+image=3 page=19 heightIn=3.46
+image=4 page=22 heightIn=3.46
+image=5 page=24 heightIn=3.46
+image=6 page=27 heightIn=3.46
+image=7 page=30 heightIn=3.46
+image=8 page=34 heightIn=3.46
+image=9 page=36 heightIn=3.46
+image=10 page=39 heightIn=3.46
+image=11 page=40 heightIn=3.46
+image=12 page=41 heightIn=3.46
+image=13 page=42 heightIn=3.46
+image=14 page=43 heightIn=3.46
+image=15 page=46 heightIn=3.46
+image=16 page=49 heightIn=3.46
+image=17 page=51 heightIn=3.46
+image=18 page=53 heightIn=3.46
+image=19 page=54 heightIn=3.46
+image=20 page=56 heightIn=3.46
+image=21 page=58 heightIn=3.46
+image=22 page=59 heightIn=3.46
+image=23 page=60 heightIn=3.46
+image=24 page=62 heightIn=3.46
+image=25 page=63 heightIn=3.46
+image=26 page=65 heightIn=3.46
+image=27 page=65 heightIn=3.46
+image=28 page=66 heightIn=3.46
+image=29 page=66 heightIn=3.46
+image=30 page=67 heightIn=3.46
+image=31 page=67 heightIn=3.46
+image=32 page=68 heightIn=3.46
+image=33 page=72 heightIn=3.46
+image=34 page=75 heightIn=3.46
+image=35 page=77 heightIn=3.46
+image=36 page=79 heightIn=3.46
+TABLES
+table=1 pages=1-1 rows=1
+table=2 pages=14-14 rows=16
+table=3 pages=20-20 rows=6
+table=4 pages=33-33 rows=6
+table=5 pages=35-35 rows=7
+table=6 pages=37-37 rows=10
+table=7 pages=38-38 rows=9
+table=8 pages=44-44 rows=12
+table=9 pages=45-45 rows=10
+table=10 pages=47-48 rows=9
+table=11 pages=50-50 rows=11
+table=12 pages=53-54 rows=6
+table=13 pages=56-56 rows=6
+table=14 pages=59-59 rows=5
+table=15 pages=64-64 rows=8
+table=16 pages=69-70 rows=11
+table=17 pages=72-72 rows=13
+table=18 pages=74-74 rows=8
+table=19 pages=74-74 rows=9
+table=20 pages=76-76 rows=8
+table=21 pages=76-76 rows=5
+table=22 pages=77-77 rows=6
+table=23 pages=78-78 rows=6
+table=24 pages=79-80 rows=7
+table=25 pages=83-83 rows=8
+table=26 pages=86-86 rows=8
+table=27 pages=89-89 rows=9

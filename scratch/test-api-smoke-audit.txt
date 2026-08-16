@@ -1,0 +1,51 @@
+Fetching NON_OWNED_JOB_ID from PostgreSQL...
+Validating provided NON_OWNED_JOB_ID: cccccccc-cccc-cccc-cccc-cccccccccccc
+  Γ£ô Found valid non-owned job ID: cccccccc-cccc-cccc-cccc-cccccccccccc
+
+=== 1. LOGIN ===
+  Γ£ô POST /api/auth/login => 200 (expected 200)
+  Γ£ô Login response contains accessToken
+  Token: [REDACTED]
+
+=== 2. GET /api/auth/me ===
+  Γ£ô GET /api/auth/me => 200 (expected 200)
+  Γ£ô Role is RECRUITER
+  Γ£ô Email matches
+
+=== 3. GET /api/recruiter/dashboard ===
+  Γ£ô GET /api/recruiter/dashboard => 200
+  Γ£ô Dashboard has totalJobs
+  Γ£ô Dashboard totalJobs > 0
+
+=== 4. GET /api/recruiter/jobs ===
+  Γ£ô GET /api/recruiter/jobs => 200
+  Γ£ô Jobs response is array
+  Γ£ô Has owned jobs (count: 69)
+  Using owned job: f7d4fafe-16ee-47f0-a2f7-149d306315ad
+
+=== 5. GET /api/recruiter/jobs/{jobId}/applicants ===
+  Γ£ô GET applicants => 200
+  Γ£ô Applicants response has applicants array
+
+=== 6. GET /api/recruiter/jobs/{jobId}/ranking ===
+  Γ£ô GET ranking => 200
+  Γ£ô Ranking response has candidates array
+
+=== 7. GET /api/recruiter/talent/jobs/{jobId}/bookmarks ===
+  Γ£ô GET bookmarks => 200
+  Γ£ô Bookmarks response is array
+
+=== 8. GET /api/recruiter/analytics/overview ===
+  Γ£ô GET analytics/overview => 200
+  Γ£ô Overview response has data
+
+=== 9. GET /api/settings/me ===
+  Γ£ô GET /api/settings/me => 200
+  Γ£ô Settings returned emailNotificationsEnabled = false
+
+=== 10. OWNERSHIP GUARD TEST (403) ===
+  Testing with non-owned job ID: cccccccc-cccc-cccc-cccc-cccccccccccc
+  Γ£ô Ownership guard: non-owned job returns 403 (expected 403)
+
+============================================================
+Γ£à ALL API SMOKE TESTS PASSED!

@@ -402,6 +402,7 @@ public class JobService {
                 job.getCompany(),
                 employer != null ? employer.getLogoUrl() : null,
                 employer != null ? employer.getId().toString() : null,
+                job.getRecruiter().getEmail(),
                 job.getLocation(),
                 job.getRemoteType(),
                 job.getSeniorityLevel(),

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Auth", description = "Authentication and passwordless login")
+@Tag(name = "Auth", description = "Authentication")
 public class AuthController {
 
     private final AuthService authService;
@@ -35,27 +35,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthDtos.AuthResponse>> login(
             @Valid @RequestBody AuthDtos.LoginRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(authService.login(req)));
-    }
-
-    @PostMapping("/passwordless/request")
-    @Operation(summary = "Request a passwordless magic-link token (sent via email)")
-    public ResponseEntity<ApiResponse<AuthDtos.PasswordlessRequestResponse>> requestPasswordless(
-            @Valid @RequestBody AuthDtos.PasswordlessRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok(authService.requestPasswordlessToken(req.email())));
-    }
-
-    @GetMapping("/passwordless/verify")
-    @Operation(summary = "Verify passwordless token (GET shows confirm info)")
-    public ResponseEntity<ApiResponse<String>> verifyPasswordlessGet(
-            @RequestParam String token) {
-        return ResponseEntity.ok(ApiResponse.ok(authService.inspectPasswordlessToken(token)));
-    }
-
-    @PostMapping("/passwordless/verify")
-    @Operation(summary = "Verify and consume passwordless token to get JWT")
-    public ResponseEntity<ApiResponse<AuthDtos.AuthResponse>> verifyPasswordless(
-            @Valid @RequestBody AuthDtos.TokenVerifyRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok(authService.verifyPasswordlessToken(req.token())));
     }
 
     @GetMapping("/me")

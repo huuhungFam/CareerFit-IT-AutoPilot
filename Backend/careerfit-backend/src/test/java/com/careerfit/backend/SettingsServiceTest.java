@@ -8,6 +8,8 @@ import com.careerfit.backend.settings.entity.UserSettings;
 import com.careerfit.backend.settings.repository.UserSettingsRepository;
 import com.careerfit.backend.settings.service.SettingsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.careerfit.backend.automation.service.AutomationPolicyService;
+import com.careerfit.backend.automation.service.EffectiveAutomationPolicyResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +38,7 @@ class SettingsServiceTest {
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(settingsRepo.findByUserId(userId)).thenReturn(Optional.empty());
         when(settingsRepo.save(any(UserSettings.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        service = new SettingsService(settingsRepo, userRepo, new ObjectMapper());
+        service = new SettingsService(settingsRepo, userRepo, new ObjectMapper(), mock(AutomationPolicyService.class), mock(EffectiveAutomationPolicyResolver.class));
     }
 
     @Test
@@ -49,7 +51,7 @@ class SettingsServiceTest {
     @Test
     void rejectsSettingsOwnedByAnotherRole() {
         assertThatThrownBy(() -> service.update(userId,
-                new SettingsDtos.UpdateSettingsRequest(Map.of("hiringManagerReview", true))))
+                new SettingsDtos.UpdateSettingsRequest(Map.of("hiringManagerReview", true), null)))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("Unsupported setting");
     }
@@ -57,7 +59,7 @@ class SettingsServiceTest {
     @Test
     void rejectsOutOfRangeThreshold() {
         assertThatThrownBy(() -> service.update(userId,
-                new SettingsDtos.UpdateSettingsRequest(Map.of("alertThreshold", 101))))
+                new SettingsDtos.UpdateSettingsRequest(Map.of("alertThreshold", 101), null)))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("out of range");
     }
@@ -90,12 +92,12 @@ class SettingsServiceTest {
     @Test
     void rejectsInvalidDigestTimeAndBooleanType() {
         assertThatThrownBy(() -> service.update(userId,
-                new SettingsDtos.UpdateSettingsRequest(Map.of("digestTime", "25:99"))))
+                new SettingsDtos.UpdateSettingsRequest(Map.of("digestTime", "25:99"), null)))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("HH:mm");
 
         assertThatThrownBy(() -> service.update(userId,
-                new SettingsDtos.UpdateSettingsRequest(Map.of("dailyDigest", "yes"))))
+                new SettingsDtos.UpdateSettingsRequest(Map.of("dailyDigest", "yes"), null)))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("true or false");
     }

@@ -77,7 +77,7 @@ public class AutomationController {
                 : java.time.Instant.now().plus(7, java.time.temporal.ChronoUnit.DAYS);
 
         policyService.update(userId, new AutomationPolicyService.PolicyUpdateRequest(
-                false, null, null, null, null, null, null, null, null, null,
+                null, false, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, pauseUntil));
         return ResponseEntity.ok(ApiResponse.ok(policyService.getSummary(userId)));
     }
@@ -87,7 +87,7 @@ public class AutomationController {
     public ResponseEntity<ApiResponse<AutomationPolicy.PolicySummary>> resume(
             @RequestAttribute("userId") UUID userId) {
         policyService.update(userId, new AutomationPolicyService.PolicyUpdateRequest(
-                true, null, null, null, null, null, null, null, null, null,
+                null, true, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null));
         return ResponseEntity.ok(ApiResponse.ok(policyService.getSummary(userId)));
     }

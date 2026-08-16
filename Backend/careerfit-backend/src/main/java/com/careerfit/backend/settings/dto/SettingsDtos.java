@@ -8,12 +8,22 @@ import java.util.Map;
 
 public class SettingsDtos {
     public record UpdateSettingsRequest(
-            @NotNull @Size(max = 30) Map<String, Object> values
+            @NotNull @Size(max = 30) Map<String, Object> values,
+            Boolean demoModeEnabled
     ) {}
 
     public record SettingsResponse(
             String role,
             Map<String, Object> values,
-            Instant updatedAt
+            Instant updatedAt,
+            Boolean demoModeEnabled,
+            EffectiveTimingSummary effectiveTiming
+    ) {}
+
+    public record EffectiveTimingSummary(
+            Integer candidatePollIntervalSeconds,
+            Integer firstSuggestionDelaySeconds,
+            Integer subsequentSpacingSeconds,
+            Integer notificationCooldownHours
     ) {}
 }

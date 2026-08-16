@@ -136,7 +136,7 @@ public class Job {
 
     public enum SalaryMode { NEGOTIABLE, RANGE, UP_TO, FROM, HIDDEN }
 
-    public enum JobStatus { ACTIVE, CLOSED, DRAFT, PAUSED, HIDDEN_BY_ADMIN }
+    public enum JobStatus { ACTIVE, CLOSED, DRAFT, PAUSED, HIDDEN_BY_ADMIN, BANNED }
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -206,6 +206,9 @@ public class Job {
     public String getExternalHash()                      { return externalHash; }
     public void setExternalHash(String h)                { this.externalHash = h; }
     public Instant getCreatedAt()                        { return createdAt; }
+    private int pendingReportCount;
+    public int getPendingReportCount() { return pendingReportCount; }
+    public void setPendingReportCount(int c) { this.pendingReportCount = c; }
     public Instant getUpdatedAt()                        { return updatedAt; }
     public long getVersion()                             { return version; }
 }

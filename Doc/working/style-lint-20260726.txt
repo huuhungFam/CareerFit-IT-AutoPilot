@@ -1,0 +1,13 @@
+[style_lint] direct run-formatting runs: 756
+[style_lint] direct paragraph-formatting paragraphs: 915
+[style_lint] heading-like paragraphs not using Heading styles (first 10):
+  - #2: style='Normal' text='CAN THO UNIVERSITY'
+  - #3: style='Normal' text='COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY'
+  - #4: style='Normal' text='FACULTY OF SOFTWARE ENGINEERING'
+  - #6: style='Normal' text='SOFTWARE DEVELOPMENT THESIS PROJECT'
+  - #7: style='Normal' text='COURSE: CT250H'
+  - #8: style='Normal' text='Thesis title'
+  - #9: style='Normal' text='DESIGN AND IMPLEMENTATION OF A HUMAN-IN-THE-LOOP'
+  - #10: style='Normal' text='AI-ASSISTED RECRUITMENT AUTOMATION PLATFORM FOR'
+  - #11: style='Normal' text='CV-JD EVALUATION AND RECOMMENDATION IN IT'
+  - #12: style='Normal' text='Student'

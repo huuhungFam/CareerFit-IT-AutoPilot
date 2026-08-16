@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * Bounded in-memory Rate Limiting filter for abuse protection.
- * Protects login, register, passwordless, and email-action endpoints.
+ * Protects login, register, and email-action endpoints.
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -91,9 +91,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private boolean isAuthEndpoint(String method, String path) {
         if (!"POST".equalsIgnoreCase(method)) return false;
         return "/api/auth/login".equals(path) ||
-               "/api/auth/register".equals(path) ||
-               "/api/auth/passwordless/request".equals(path) ||
-               "/api/auth/passwordless/verify".equals(path);
+               "/api/auth/register".equals(path);
     }
 
     private boolean isActionEndpoint(String method, String path) {

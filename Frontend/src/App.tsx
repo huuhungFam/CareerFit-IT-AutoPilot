@@ -27,7 +27,7 @@ import {
   FileText,
   Flag,
   Globe,
-  KeyRound,
+  KeyRound, RefreshCcw,
   LogIn,
   LogOut,
   Mail,
@@ -373,7 +373,7 @@ function LoginPage({
   const [fullName, setFullName] = useState('');
   const [registerRole, setRegisterRole] = useState<'CANDIDATE' | 'RECRUITER'>('CANDIDATE');
   const [error, setError] = useState('');
-  const [authMessage, setAuthMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [authMessage, setAuthMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const nextPath = searchParams.get('next');
 
@@ -599,7 +599,7 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const { data = [], isLoading: isJobsLoading } = useJobs({ isPublic });
   const { data: applicationPage } = useQuery<any>({
     queryKey: ['my-applications'],
@@ -723,7 +723,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const [candidatePages, setCandidatePages] = useState<CandidateJobPage[]>([]);
   const [isLoadingMoreJobs, setIsLoadingMoreJobs] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
@@ -1361,7 +1361,7 @@ function UploadPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState<'idle' | 'uploading' | 'processing' | 'scored' | 'failed'>('idle');
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const [isSavingManualCv, setIsSavingManualCv] = useState(false);
   const [pendingCvId, setPendingCvId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1727,7 +1727,7 @@ function ProfilePage() {
     desiredWorkModel: '', desiredSalaryMin: '', desiredSalaryMax: '', desiredSalaryCurrency: 'VND',
     yearsOfExperience: '', aboutMe: '',
   });
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [defaultingCvId, setDefaultingCvId] = useState<string | null>(null);
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
@@ -2093,7 +2093,7 @@ function PortfolioManager() {
   const [editor, setEditor] = useState<PortfolioEditor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'link' | 'project'; id: string; label: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const { data: portfolio, isLoading, error } = useQuery<any>({
     queryKey: ['candidate-portfolio'],
     queryFn: careerfitApi.getPortfolio,
@@ -2252,12 +2252,28 @@ function RecommendationsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [hiddenJobIds, setHiddenJobIds] = useState<string[]>([]);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
+
+  const settingsQuery = useQuery<any>({
+    queryKey: ['settings', 'candidate'],
+    queryFn: () => careerfitApi.getSettings()
+  });
+
+  const demoModeEnabled = settingsQuery.data?.demoModeEnabled;
+  const pollInterval = demoModeEnabled ? 5_000 : 300_000;
+
   const recommendationsQuery = useQuery({
     queryKey: ['recommendations'],
     queryFn: () => careerfitApi.getRecommendations(20),
+    refetchInterval: pollInterval
   });
-  const recommendedJobs = (recommendationsQuery.data ?? []).filter((job) => !hiddenJobIds.includes(job.id));
+
+  const recommendedJobs = (recommendationsQuery.data?.jobs ?? []).filter((job: any) => !hiddenJobIds.includes(job.id));
+  const cvStatus = recommendationsQuery.data?.cvStatus;
+  const cvMessage = recommendationsQuery.data?.message;
+
+  const isRefetching = recommendationsQuery.isFetching;
+  const lastRefresh = new Date(recommendationsQuery.dataUpdatedAt || Date.now());
 
   async function applyToJob(job: Job) {
     setActionMessage(null);
@@ -2274,7 +2290,7 @@ function RecommendationsPage() {
   }
 
   async function skipJob(id: string, options?: { feedbackSaved?: boolean }) {
-    const job = recommendedJobs.find((item) => item.id === id);
+    const job = recommendedJobs.find((item: any) => item.id === id);
     setActionMessage(null);
     try {
       if (!options?.feedbackSaved && job?.matchingId) {
@@ -2299,7 +2315,23 @@ function RecommendationsPage() {
         <p className="eyebrow">{t('recommendations')}</p>
         <h2>{t('recommendationsTitle')}</h2>
       </section>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <button className="secondary-action" onClick={() => recommendationsQuery.refetch()} disabled={isRefetching}>
+          <RefreshCcw size={16} /> {language === 'vi' ? 'Làm mới' : 'Refresh'}
+        </button>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {lastRefresh.toLocaleTimeString()}
+          {isRefetching && ' (Đang tải...)'}
+        </span>
+      </div>
+
+      {cvStatus !== 'SCORING_DONE' && cvStatus !== 'ACTIVE' && cvMessage && (
+        <ActionMessage tone="info" text={cvMessage} />
+      )}
+
       {actionMessage ? <ActionMessage {...actionMessage} /> : null}
+      
       {recommendationsQuery.isError ? (
         <section className="query-error-panel">
           <ActionMessage tone="error" text={readableError(recommendationsQuery.error, language === 'vi' ? 'Không thể tải gợi ý việc làm.' : 'Could not load job recommendations.', language)} />
@@ -2323,7 +2355,7 @@ function RecommendationsPage() {
 function ApplicationsPage() {
   const { t, language } = useLanguage();
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const { data: applicationPage, refetch } = useQuery<any>({
     queryKey: ['my-applications'],
     queryFn: () => careerfitApi.getMyApplications(),
@@ -2386,8 +2418,8 @@ function AutomationPage() {
   const { language, t } = useLanguage();
   const [draftPolicy, setDraftPolicy] = useState<AutomationPolicy>(automationPolicy);
   const [isSaving, setIsSaving] = useState(false);
-  const [autoApplyResult, setAutoApplyResult] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const [policyMessage, setPolicyMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [autoApplyResult, setAutoApplyResult] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
+  const [policyMessage, setPolicyMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const { data: backendPolicy } = useQuery<any>({
     queryKey: ['automation-policy'],
     queryFn: () => careerfitApi.getAutomationPolicy(),
@@ -2691,13 +2723,73 @@ function RecruiterSettingsPageUnused({
   );
 }
 
+function DemoModeSettings({
+  data,
+  role,
+  onUpdate
+}: {
+  data: any;
+  role: 'candidate' | 'recruiter';
+  onUpdate: () => void;
+}) {
+  const { language } = useLanguage();
+  const vi = language === 'vi';
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const demoModeEnabled = Boolean(data?.demoModeEnabled);
+  const timing = data?.effectiveTiming || {
+    candidatePollIntervalSeconds: 5,
+    firstSuggestionDelaySeconds: 12,
+    subsequentSpacingSeconds: 30
+  };
+
+  const handleToggle = async (checked: boolean) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await careerfitApi.updateSettings({}, checked);
+      onUpdate();
+    } catch (err) {
+      setError(readableError(err, vi ? 'Lỗi cập nhật Demo Mode.' : 'Failed to update Demo Mode.', language));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div className="action-message tone-warning" style={{ marginBottom: 16 }}>
+        {vi
+          ? 'Chế độ Demo đang được kiểm soát từ trang Settings này.'
+          : 'Demo Mode is controlled from this Settings page.'}
+      </div>
+      <SettingsSection icon={<Zap size={20} />} title="Demo Mode">
+        {error && <p className="form-error">{error}</p>}
+        <div className="settings-option-grid">
+          <SettingToggle
+            title="Enable Demo Mode"
+            detail={vi ? 'Rút ngắn thời gian xử lý.' : 'Shortens processing times.'}
+            checked={demoModeEnabled}
+            onChange={handleToggle}
+            disabled={loading}
+          />
+        </div>
+        <div style={{ marginTop: 12, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          {vi ? 'Thời gian hiện tại' : 'Current timings'}: Polling: {timing.candidatePollIntervalSeconds}s, First Delay: {timing.firstSuggestionDelaySeconds}s, Subsequent: {timing.subsequentSpacingSeconds}s.
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
 function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'candidate' | 'recruiter'; onLogout: () => void; onDeleteAccount: () => void }) {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const vi = language === 'vi';
   const [draft, setDraft] = useState<Record<string, string | number | boolean>>({});
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const { data, isLoading, error } = useQuery<any>({ queryKey: ['settings', role], queryFn: careerfitApi.getSettings });
 
   useEffect(() => { if (data) setDraft((data as any).values || {}); }, [data]);
@@ -2845,7 +2937,19 @@ function SettingsSection({ icon, title, children }: { icon: ReactNode; title: st
   );
 }
 
-function SettingToggle({ title, detail, checked = false, onChange }: { title: string; detail: string; checked?: boolean; onChange?: (checked: boolean) => void }) {
+function SettingToggle({
+  title,
+  detail,
+  checked,
+  onChange,
+  disabled
+}: {
+  title: string;
+  detail: string;
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
   return (
     <label className="setting-toggle">
       <span>
@@ -3032,7 +3136,7 @@ function RecruiterJobsPage() {
   const candidateOptions = useMemo(() => recruiterDiscoveryOptions(recruiterQuery), [recruiterQuery]);
   const [invitingCandidateId, setInvitingCandidateId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<RecruiterCandidateItem | null>(null);
-  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
 
   useEffect(() => {
     if (searchParams.get('create') === '1') setShowCreateJob(true);
@@ -4315,7 +4419,14 @@ function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; sh
       <section className="jd-detail-hero">
         <div className="company-logo large">{job.company.slice(0, 2).toUpperCase()}</div>
         <div>
-          <p className="eyebrow">{job.company}</p>
+          <div className="jd-company-line">
+            <p className="eyebrow">{job.company}</p>
+            {showMatchMeta && job.recruiterLogin ? (
+              <span className="recruiter-login" title={t('recruiterAccount')}>
+                {job.recruiterLogin}
+              </span>
+            ) : null}
+          </div>
           <h1>{job.title}</h1>
           <p>{localizeUiMetadata(job.location, language)} · {localizeUiMetadata(job.seniority, language)} · {localizeUiMetadata(job.language, language)}</p>
         </div>
