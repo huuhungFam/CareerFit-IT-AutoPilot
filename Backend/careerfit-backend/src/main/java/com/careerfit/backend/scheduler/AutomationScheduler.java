@@ -11,8 +11,11 @@ import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
 import com.careerfit.backend.matching.service.MatchingService;
 import com.careerfit.backend.matching.service.ScoringService;
+import com.careerfit.backend.job.entity.Job;
+import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.notification.repository.EmailActionRepository;
 import com.careerfit.backend.notification.service.EmailActionService;
+import com.careerfit.backend.notification.service.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -60,6 +63,9 @@ public class AutomationScheduler {
     private final EmailActionService emailActionService;
     private final EmailActionRepository emailActionRepo;
     private final AutoApplyService autoApplyService;
+    private final JobRepository jobRepo;
+    private final MatchingService matchingService;
+    private final OutboxService outboxService;
 
     public AutomationScheduler(MatchingRepository matchingRepo,
                                 ScoringService scoringService,
@@ -68,7 +74,10 @@ public class AutomationScheduler {
                                 AutomationPolicyRepository policyRepo,
                                 EmailActionService emailActionService,
                                 EmailActionRepository emailActionRepo,
-                                AutoApplyService autoApplyService) {
+                                AutoApplyService autoApplyService,
+                                JobRepository jobRepo,
+                                MatchingService matchingService,
+                                OutboxService outboxService) {
         this.matchingRepo = matchingRepo;
         this.scoringService = scoringService;
         this.candidateRepo = candidateRepo;
@@ -77,6 +86,9 @@ public class AutomationScheduler {
         this.emailActionService = emailActionService;
         this.emailActionRepo = emailActionRepo;
         this.autoApplyService = autoApplyService;
+        this.jobRepo = jobRepo;
+        this.matchingService = matchingService;
+        this.outboxService = outboxService;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -108,6 +120,16 @@ public class AutomationScheduler {
             }
         }
         log.info("[SCHEDULER] Recompute done. Success={}, Failed={}", success, failed);
+    }
+
+    /** Bounded recovery only: jobs are marked before their after-commit event is emitted. */
+    @Scheduled(fixedDelayString = "${app.scheduler.recompute-delay-ms:30000}")
+    public void recoverMissedJobMatching() {
+        var pending = jobRepo.findByStatusAndMatchingRecoveryNeededTrue(
+                Job.JobStatus.ACTIVE, PageRequest.of(0, 20));
+        for (Job job : pending.getContent()) {
+            matchingService.scoreJobAgainstAllCvs(job.getId());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -235,7 +257,8 @@ public class AutomationScheduler {
                         .filter(m -> m.getLabel() == Matching.MatchLabel.HIGH)
                         .findFirst()
                         .ifPresent(m -> {
-                            emailActionService.sendMatchNotification(user, m);
+                            outboxService.enqueueSuggestion(user.getId(), m.getId(), m.getJob().getId(),
+                                    Instant.now(), policy.isDemoModeEnabled());
                         });
 
                 notified++;

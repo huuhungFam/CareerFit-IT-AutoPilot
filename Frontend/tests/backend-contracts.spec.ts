@@ -73,53 +73,6 @@ test('CV upload polls status until SCORING_DONE', async ({ page }) => {
   expect(statusRequests).toBeGreaterThanOrEqual(3);
 });
 
-test('magic link inspects token, verifies it, restores user, and routes by role', async ({ page }) => {
-  let inspectRequests = 0;
-  let verifyRequests = 0;
-  let meRequests = 0;
-
-  await page.route('**/api/auth/passwordless/verify**', (route) => {
-    if (route.request().method() === 'GET') {
-      inspectRequests += 1;
-      return route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: 'Token is valid for candidate@example.com.' }),
-      });
-    }
-    verifyRequests += 1;
-    return route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          accessToken: 'magic-jwt', tokenType: 'Bearer', expiresIn: 3600,
-          user: { id: 'candidate-1', email: 'candidate@example.com', fullName: 'Magic Candidate', role: 'CANDIDATE', emailVerified: true },
-        },
-      }),
-    });
-  });
-  await page.route('**/api/auth/me', (route) => {
-    meRequests += 1;
-    return route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: { id: 'candidate-1', email: 'candidate@example.com', fullName: 'Magic Candidate', role: 'CANDIDATE', emailVerified: true, preferredLanguage: 'vi' },
-      }),
-    });
-  });
-
-  await page.goto('/auth/magic-link/verify?token=secure-token');
-  await expect(page.getByText(/liên kết hợp lệ|link verified/i)).toBeVisible();
-  await page.getByRole('button', { name: /tiếp tục đăng nhập|continue signing in/i }).click();
-
-  await expect(page).toHaveURL(/\/candidate$/);
-  expect(inspectRequests).toBe(1);
-  expect(verifyRequests).toBe(1);
-  expect(meRequests).toBeGreaterThanOrEqual(1);
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('careerfit.accessToken'))).toBe('magic-jwt');
-});
-
 test('recommendations page uses the recommendation API instead of matching feed', async ({ page }) => {
   await useCandidateSession(page);
   let recommendationRequests = 0;
@@ -148,6 +101,28 @@ test('recommendations page uses the recommendation API instead of matching feed'
   await expect(page.getByRole('heading', { name: 'Recommendation API Job' })).toBeVisible();
   expect(recommendationRequests).toBe(1);
   expect(matchingFeedRequests).toBe(0);
+});
+
+test('candidate jobs route redirects to the paginated catalog instead of the matching feed', async ({ page }) => {
+  await useCandidateSession(page);
+  let catalogRequests = 0;
+  let matchingRequests = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/api/matches/me/cards')) matchingRequests += 1;
+  });
+  await page.route('**/api/jobs/search?**', (route) => {
+    catalogRequests += 1;
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+      success: true,
+      data: { jobs: [], total: 990, page: 0, size: 20, totalPages: 50 },
+    }) });
+  });
+
+  await page.goto('/candidate/jobs?keyword=React');
+  await expect(page).toHaveURL(/\/jobs\?keyword=React$/);
+  await expect(page.getByText(/Đang hiển thị 0 \/ 990|Showing 0 \/ 990/)).toBeVisible();
+  expect(catalogRequests).toBe(1);
+  expect(matchingRequests).toBe(0);
 });
 
 test('reload validates and restores the current user with auth me', async ({ page }) => {

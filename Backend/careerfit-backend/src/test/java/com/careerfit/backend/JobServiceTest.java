@@ -12,6 +12,7 @@ import com.careerfit.backend.employer.repository.EmployerProfileRepository;
 import com.careerfit.backend.job.entity.Job;
 import com.careerfit.backend.job.repository.JobRepository;
 import com.careerfit.backend.job.service.JobService;
+import com.careerfit.backend.job.service.JobDuplicateProtectionService;
 import com.careerfit.backend.matching.service.MatchingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class JobServiceTest {
     private AfterCommitExecutor afterCommitExecutor;
     private TextNormalizationService normalizer;
     private TfIdfService tfidf;
+    private JobDuplicateProtectionService duplicateProtection;
     private JobService service;
     private UserAccount recruiter;
 
@@ -50,6 +52,7 @@ class JobServiceTest {
         afterCommitExecutor = mock(AfterCommitExecutor.class);
         normalizer = mock(TextNormalizationService.class);
         tfidf = mock(TfIdfService.class);
+        duplicateProtection = mock(JobDuplicateProtectionService.class);
         recruiter = new UserAccount("recruiter@test.local", "hash", UserAccount.Role.RECRUITER, "Recruiter");
         ReflectionTestUtils.setField(recruiter, "id", recruiterId);
         service = new JobService(
@@ -62,7 +65,8 @@ class JobServiceTest {
                 new ObjectMapper(),
                 mock(QualityValidationService.class),
                 applicationRepo,
-                afterCommitExecutor);
+                afterCommitExecutor,
+                duplicateProtection);
     }
 
     @Test
@@ -149,6 +153,63 @@ class JobServiceTest {
         verify(afterCommitExecutor).execute(task.capture());
         task.getValue().run();
         verify(matchingService).scoreJobAgainstAllCvs(UUID.fromString(response.id()));
+    }
+
+    @Test
+    void activeTransitionSchedulesExactlyOneAfterCommitWorkItem() {
+        Job job = job();
+        job.setStatus(Job.JobStatus.DRAFT);
+        when(jobRepo.findById(job.getId())).thenReturn(Optional.of(job));
+
+        service.updateStatus(job.getId(), recruiterId, "ACTIVE");
+
+        verify(duplicateProtection).assertCanActivate(job, false);
+        verify(afterCommitExecutor, times(1)).execute(any(Runnable.class));
+        assertThat(job.isMatchingRecoveryNeeded()).isTrue();
+    }
+
+    @Test
+    void duplicateDraftCanExistButItsActivationFailsBeforePersistence() {
+        Job job = job();
+        job.setStatus(Job.JobStatus.DRAFT);
+        when(jobRepo.findById(job.getId())).thenReturn(Optional.of(job));
+        doThrow(AppException.conflict("An identical internal job already exists"))
+                .when(duplicateProtection).assertCanActivate(job, false);
+
+        assertThatThrownBy(() -> service.updateStatus(job.getId(), recruiterId, "ACTIVE"))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("identical internal job");
+        verify(jobRepo, never()).save(job);
+        verify(afterCommitExecutor, never()).execute(any(Runnable.class));
+    }
+
+    @Test
+    void irrelevantActiveUpdateDoesNotScheduleMatching() {
+        Job job = job();
+        when(jobRepo.findById(job.getId())).thenReturn(Optional.of(job));
+        var request = new com.careerfit.backend.job.dto.JobDtos.UpdateJobRequest(
+                null, null, null, null, null, null, "Can Tho", null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        service.updateJob(job.getId(), recruiterId, request);
+
+        verify(afterCommitExecutor, never()).execute(any(Runnable.class));
+    }
+
+    @Test
+    void relevantActiveUpdateSchedulesOneRecoverySafeWorkItem() {
+        Job job = job();
+        when(jobRepo.findById(job.getId())).thenReturn(Optional.of(job));
+        when(normalizer.normalize(anyString(), anyString())).thenReturn(List.of("java"));
+        when(tfidf.buildVector(anyList())).thenReturn(Map.of("java", 1.0));
+        var request = new com.careerfit.backend.job.dto.JobDtos.UpdateJobRequest(
+                null, "Updated Java Spring matching content", null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        service.updateJob(job.getId(), recruiterId, request);
+
+        verify(afterCommitExecutor, times(1)).execute(any(Runnable.class));
+        assertThat(job.isMatchingRecoveryNeeded()).isTrue();
     }
 
     private Job job() {

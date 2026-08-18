@@ -99,6 +99,7 @@ app:
 
   mail:
     enabled: ${APP_MAIL_ENABLED:false}
+    allowlist: ${APP_MAIL_ALLOWLIST:}
 
   matching:
     high-match-threshold-candidate: 90.0
@@ -109,7 +110,8 @@ app:
 
   scheduler:
     zone: "Asia/Ho_Chi_Minh"
-    recompute-delay-ms: 1800000
+    recompute-delay-ms: 30000
+    outbox-delay-ms: 1000
     notification-delay-ms: 14400000
     auto-apply-delay-ms: 7200000
     daily-digest-cron: "0 0 8 * * *"     # 08:00 daily

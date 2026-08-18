@@ -106,6 +106,7 @@ com.careerfit.backend
 | GET  | /api/auth/passwordless/verify?token=... | Kiểm tra token còn hợp lệ |
 | POST | /api/auth/passwordless/verify | Verify token → JWT |
 | GET  | /api/auth/me | Thông tin user hiện tại |
+| DELETE | /api/auth/me | Xóa vĩnh viễn tài khoản Candidate/Recruiter và dữ liệu sở hữu; email có thể đăng ký lại |
 
 ## Admin MVP API
 

@@ -105,6 +105,9 @@ public class Job {
     @Enumerated(EnumType.STRING)
     private JobStatus status = JobStatus.ACTIVE;
 
+    @Column(name = "matching_recovery_needed", nullable = false)
+    private boolean matchingRecoveryNeeded = false;
+
     @Column(name = "domain", length = 100)
     private String domain;
 
@@ -119,6 +122,14 @@ public class Job {
 
     @Column(name = "external_hash", length = 64)
     private String externalHash;
+
+    /** Stable fingerprint used only for new/internal publish-time duplicate protection. */
+    @Column(name = "duplicate_fingerprint", length = 64)
+    private String duplicateFingerprint;
+
+    @Column(name = "source_type", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private SourceType sourceType = SourceType.INTERNAL;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -138,9 +149,21 @@ public class Job {
 
     public enum JobStatus { ACTIVE, CLOSED, DRAFT, PAUSED, HIDDEN_BY_ADMIN, BANNED }
 
+    public enum SourceType { INTERNAL, IMPORTED }
+
     // ── Constructors ──────────────────────────────────────────────────────
 
     protected Job() {}
+
+    /**
+     * Keep old fixtures and any reflection/serialization-created entity safe:
+     * field initializers are bypassed by Objenesis, while the database column
+     * is intentionally NOT NULL.
+     */
+    @PrePersist
+    private void applyPersistenceDefaults() {
+        if (sourceType == null) sourceType = SourceType.INTERNAL;
+    }
 
     public Job(UserAccount recruiter, String title, String company,
                String originalText, SalaryMode salaryMode) {
@@ -195,6 +218,8 @@ public class Job {
     public void setLanguage(String l)                    { this.language = l; }
     public JobStatus getStatus()                         { return status; }
     public void setStatus(JobStatus s)                   { this.status = s; }
+    public boolean isMatchingRecoveryNeeded()            { return matchingRecoveryNeeded; }
+    public void setMatchingRecoveryNeeded(boolean value) { this.matchingRecoveryNeeded = value; }
     public String getDomain()                            { return domain; }
     public void setDomain(String d)                      { this.domain = d; }
     public String getSourcePlatform()                    { return sourcePlatform; }
@@ -205,6 +230,11 @@ public class Job {
     public void setScrapedAt(Instant t)                  { this.scrapedAt = t; }
     public String getExternalHash()                      { return externalHash; }
     public void setExternalHash(String h)                { this.externalHash = h; }
+    public String getDuplicateFingerprint()              { return duplicateFingerprint; }
+    public void setDuplicateFingerprint(String value)    { this.duplicateFingerprint = value; }
+    public SourceType getSourceType()                    { return sourceType; }
+    public void setSourceType(SourceType value)          { this.sourceType = value; }
+    public boolean isInternalApplication()               { return sourceType == SourceType.INTERNAL; }
     public Instant getCreatedAt()                        { return createdAt; }
     private int pendingReportCount;
     public int getPendingReportCount() { return pendingReportCount; }

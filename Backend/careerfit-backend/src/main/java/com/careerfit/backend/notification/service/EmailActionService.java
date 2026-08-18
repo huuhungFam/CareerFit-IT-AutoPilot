@@ -64,35 +64,31 @@ public class EmailActionService {
             return;
         }
 
-        String email = candidate.getEmail();
-        String name  = candidate.getFullName() != null ? candidate.getFullName() : email;
-        var job = matching.getJob();
-
-        // Create tokens for each action
-        String goodToken  = createToken(candidate, matching, EmailAction.ActionType.GOOD_MATCH);
-        String potToken   = createToken(candidate, matching, EmailAction.ActionType.POTENTIAL);
-        String skipToken  = createToken(candidate, matching, EmailAction.ActionType.NOT_INTERESTED);
-        String viewToken  = createToken(candidate, matching, EmailAction.ActionType.VIEW_JOB);
-
-        String baseUrl = props.getEmailActionBaseUrl();
-
-        String body = buildMatchEmailHtml(name, job.getTitle(), job.getCompany(),
-                matching.getNormalizedScore().doubleValue(),
-                matching.getLabel().name(),
-                baseUrl + "?token=" + goodToken,
-                baseUrl + "?token=" + potToken,
-                baseUrl + "?token=" + skipToken,
-                baseUrl.replace("/email-action/redeem", "/jobs/") + job.getId());
-
         try {
-            mailService.sendHtml(email,
-                    "CareerFit: Co hoi moi phu hop - " + job.getTitle() + " tai " + job.getCompany(),
-                    body);
+            deliverMatchNotification(candidate, matching);
             notificationPolicyGuard.logSent(candidate, emailType, contextKey);
         } catch (Exception e) {
             notificationPolicyGuard.logFailed(candidate, emailType, contextKey, e.getMessage());
-            log.error("Match notification email failed to {} matching={}: {}", email, matching.getId(), e.getMessage());
+            log.error("Match notification email failed to {} matching={}: {}", candidate.getEmail(), matching.getId(), e.getMessage());
         }
+    }
+
+    /** Called by the durable dispatcher after its row has been exclusively claimed. */
+    public void deliverMatchNotification(UserAccount candidate, Matching matching) {
+        String email = candidate.getEmail();
+        String name = candidate.getFullName() != null ? candidate.getFullName() : email;
+        var job = matching.getJob();
+        String goodToken = createToken(candidate, matching, EmailAction.ActionType.GOOD_MATCH);
+        String potToken = createToken(candidate, matching, EmailAction.ActionType.POTENTIAL);
+        String skipToken = createToken(candidate, matching, EmailAction.ActionType.NOT_INTERESTED);
+        String baseUrl = props.getEmailActionBaseUrl();
+        String body = buildMatchEmailHtml(name, job.getTitle(), job.getCompany(),
+                matching.getNormalizedScore().doubleValue(), matching.getLabel().name(),
+                baseUrl + "?token=" + goodToken, baseUrl + "?token=" + potToken,
+                baseUrl + "?token=" + skipToken,
+                baseUrl.replace("/email-action/redeem", "/jobs/") + job.getId());
+        mailService.deliverOutboxHtml(email,
+                "CareerFit: Co hoi moi phu hop - " + job.getTitle() + " tai " + job.getCompany(), body);
     }
 
     /**

@@ -68,6 +68,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
     List<Job> findByStatus(Job.JobStatus status);
 
+    Page<Job> findByStatusAndMatchingRecoveryNeededTrue(Job.JobStatus status, Pageable pageable);
+
     Page<Job> findByStatus(Job.JobStatus status, Pageable pageable);
 
     Page<Job> findByStatusOrderByCreatedAtDesc(Job.JobStatus status, Pageable pageable);
@@ -75,6 +77,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     long countByStatus(Job.JobStatus status);
 
     long countByRecruiterIdAndStatus(UUID recruiterId, Job.JobStatus status);
+
+    List<Job> findByDuplicateFingerprint(String duplicateFingerprint);
+
+    List<Job> findBySourceType(Job.SourceType sourceType);
 
     @Query(value = """
         SELECT skill, COUNT(*) AS demand_count

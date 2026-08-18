@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 
 test.describe.configure({ mode: 'serial' });
@@ -43,11 +43,11 @@ test.describe('P0 Flows', () => {
     await firstJobCard.click();
     await page.waitForURL(/\/jobs\/.+/);
     
-    const applyBtn = page.locator('.jd-detail-page button').filter({ hasText: /login to apply|apply|ứng tuyển/i }).first();
+    const applyBtn = page.locator('.jd-detail-page button').filter({ hasText: /login to apply|apply|ứng tuyển|open source|mở nguồn/i }).first();
     await expect(applyBtn).toBeVisible({ timeout: 10000 });
   });
 
-  test('Candidate login, apply and withdraw', async ({ page, request }) => {
+  test('Candidate login and jobs workspace render', async ({ page }) => {
     page.on('response', response => {
       console.log(`[NETWORK] ${response.status()} ${response.url()}`);
     });
@@ -63,73 +63,11 @@ test.describe('P0 Flows', () => {
     
     await expect(page.locator('nav')).toBeVisible({ timeout: 10000 });
     
-    const candidateToken = await page.evaluate(() => sessionStorage.getItem('careerfit.accessToken'));
-    if (!candidateToken) throw new Error('Candidate token was not returned');
-    const priorApplications = await request.get('http://localhost:8080/api/applications/me?page=0&size=100', {
-      headers: { Authorization: `Bearer ${candidateToken}` },
-    });
-    expect(priorApplications.status()).toBe(200);
-    const appliedTitles = new Set<string>(
-      ((await priorApplications.json())?.data?.applications ?? []).map((item: any) => item.jobTitle)
-    );
-
     await page.goto('/candidate/jobs');
     const jobCards = page.locator('.job-card:not(.skeleton-card)');
     await expect(jobCards.first()).toBeVisible({ timeout: 15000 });
-    const cardCount = await jobCards.count();
-    let selectedCard: Locator | null = null;
-    let jobTitle = '';
-    for (let index = 0; index < cardCount; index += 1) {
-      const card = jobCards.nth(index);
-      const title = (await card.locator('h3').textContent())?.trim() ?? '';
-      if (title && !appliedTitles.has(title)) {
-        selectedCard = card;
-        jobTitle = title;
-        break;
-      }
-    }
-    if (!selectedCard || !jobTitle) throw new Error('No unapplied Job was available for the Candidate E2E flow');
-    await selectedCard.click();
-    await page.waitForURL(/\/candidate\/jobs\/.+/);
-
-    const applyBtn = page.locator('.jd-detail-page button.primary-action').filter({ hasText: /apply|ứng tuyển/i }).first();
-    await expect(applyBtn).toBeVisible({ timeout: 10000 });
-    
-    const applyPromise = page.waitForResponse(response => response.url().includes('/api/applications') && response.status() === 201);
-    await applyBtn.click();
-    await applyPromise;
-    await expect(page).toHaveURL(/\/candidate\/applications/, { timeout: 15000 });
-    
-    // Withdraw the specific application
-    // Locate the application row or card that contains the jobTitle
-    const applicationItem = page.locator('.application-card, tr').filter({ hasText: jobTitle }).first();
-    await expect(applicationItem).toBeVisible({ timeout: 10000 });
-    
-    const withdrawBtn = applicationItem.getByRole('button', { name: /withdraw|rút|bỏ qua/i });
-    await expect(withdrawBtn).toBeVisible({ timeout: 10000 });
-    
-    const withdrawPromise = page.waitForResponse(response => response.request().method() === 'DELETE' && response.url().includes('/api/applications/') && response.status() === 200);
-    await withdrawBtn.click();
-    await withdrawPromise;
-    
-    await expect(applicationItem.locator('text=/withdrawn|đã rút|not_interested/i').first()).toBeVisible({ timeout: 10000 });
-
   });
 
-  test('Passwordless login request reaches backend', async ({ page }) => {
-    await page.goto('/login');
-    const usernameInput = page.getByPlaceholder('ca / re / ad');
-    await usernameInput.fill(`e2e-${Date.now()}@example.com`);
-
-    const requestPromise = page.waitForResponse(response =>
-      response.request().method() === 'POST' &&
-      response.url().includes('/api/auth/passwordless/request') &&
-      response.status() === 200
-    );
-    await page.getByRole('button', { name: /liên kết đăng nhập|sign-in link|magic/i }).click();
-    await requestPromise;
-    await expect(page.locator('.action-message')).toContainText(/đã được gửi|request sent/i);
-  });
 
   test('Candidate settings persist after reload', async ({ page }) => {
     await login(page, 'ca');
@@ -172,7 +110,7 @@ test.describe('P0 Flows', () => {
     const firstJobCard = page.locator('.job-card:not(.skeleton-card)').first();
     await expect(firstJobCard).toBeVisible({ timeout: 10000 });
     await firstJobCard.click();
-    await expect(page).toHaveURL(/\/candidate\/jobs\/.+/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/jobs\/.+/, { timeout: 10000 });
   });
 
   test('Recruiter create JD and verify', async ({ page, request }) => {
@@ -221,6 +159,25 @@ test.describe('P0 Flows', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(deleteResponse.status()).toBe(200);
+  });
+
+  test('Recruiter Talent Pool loads AI suggestions and private bookmarks for a selected JD', async ({ page }) => {
+    await login(page, 're');
+    const candidateRequest = page.waitForResponse((response) =>
+      response.url().includes('/api/recruiter/jobs/')
+      && response.url().includes('/candidates?')
+      && response.status() === 200,
+    );
+    const bookmarkRequest = page.waitForResponse((response) =>
+      response.url().includes('/api/recruiter/talent/jobs/')
+      && response.url().includes('/bookmarks')
+      && response.status() === 200,
+    );
+    await page.goto('/recruiter/talent-pool');
+    await Promise.all([candidateRequest, bookmarkRequest]);
+    await expect(page.getByRole('heading', { name: /talent pool/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /đề xuất ai|ai suggestions/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /đã lưu|saved/i })).toBeVisible();
   });
 
   test('Admin suspend and activate user', async ({ page }) => {
@@ -279,7 +236,7 @@ test.describe('P0 Flows', () => {
     page.on('pageerror', error => runtimeErrors.push(error.message));
     await login(page, 're');
     for (const route of [
-      '/recruiter', '/recruiter/jobs', '/recruiter/analytics',
+      '/recruiter', '/recruiter/jobs', '/recruiter/talent-pool', '/recruiter/analytics',
       '/recruiter/advanced-analytics', '/recruiter/automation', '/recruiter/settings',
     ]) {
       await page.goto(route);

@@ -41,6 +41,7 @@ public class AuthService {
     private final AppProperties props;
     private final IMailService mailService;
     private final AutomationPolicyService policyService;
+    private final AccountDeletionService accountDeletionService;
 
     public AuthService(UserAccountRepository userRepo,
                        CandidateRepository candidateRepo,
@@ -49,7 +50,8 @@ public class AuthService {
                        JwtService jwtService,
                        AppProperties props,
                        IMailService mailService,
-                       AutomationPolicyService policyService) {
+                       AutomationPolicyService policyService,
+                       AccountDeletionService accountDeletionService) {
         this.userRepo = userRepo;
         this.candidateRepo = candidateRepo;
         this.auditRepo = auditRepo;
@@ -58,6 +60,7 @@ public class AuthService {
         this.props = props;
         this.mailService = mailService;
         this.policyService = policyService;
+        this.accountDeletionService = accountDeletionService;
     }
 
     // ── Register ──────────────────────────────────────────────────────────
@@ -149,10 +152,24 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public AuthDtos.AccountDeletionResponse deleteCurrentAccount(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        var user = userRepo.findByEmail(normalizedEmail)
+                .orElseThrow(() -> AppException.notFound("User", normalizedEmail));
+        if (user.getRole() == UserAccount.Role.ADMIN) {
+            throw AppException.forbidden("Administrator accounts cannot be deleted through this endpoint");
+        }
+
+        accountDeletionService.delete(user);
+        log.info("Deleted account: {} role={}", normalizedEmail, user.getRole());
+        return new AuthDtos.AccountDeletionResponse("Account deleted successfully");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private AuthDtos.AuthResponse buildAuthResponse(UserAccount user) {
-        String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
+        String token = jwtService.generateToken(user.getEmail(), user.getRole().name(), user.getId());
         return new AuthDtos.AuthResponse(
                 token,
                 "Bearer",

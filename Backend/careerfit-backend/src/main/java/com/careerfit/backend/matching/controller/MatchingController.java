@@ -46,8 +46,9 @@ public class MatchingController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String label,
             @RequestParam(defaultValue = "false") boolean potentialOnly,
-            @RequestParam(defaultValue = "0") double minScore) {
+            @RequestParam(defaultValue = "0") double minScore,
+            @RequestParam(required = false) UUID cvId) {
         return ResponseEntity.ok(ApiResponse.ok(
-                queryService.getCandidateJobCards(userId, page, size, label, potentialOnly, minScore)));
+                queryService.getCandidateJobCards(userId, page, size, label, potentialOnly, minScore, cvId)));
     }
 }

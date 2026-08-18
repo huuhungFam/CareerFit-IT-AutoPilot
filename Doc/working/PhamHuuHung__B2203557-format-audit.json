@@ -1,0 +1,2908 @@
+{
+  "document": "C:\\CODING\\Thesis\\Doc\\PhamHuuHung__B2203557.docx",
+  "paragraph_count_body": 1118,
+  "table_count": 71,
+  "drawing_count": 43,
+  "style_counts": {
+    "Normal": 3920,
+    "Heading 1": 17,
+    "toc 1": 127,
+    "toc 2": 69,
+    "toc 3": 95,
+    "toc 4": 30,
+    "Heading 2": 70,
+    "Heading 3": 95,
+    "List Paragraph": 65,
+    "Table Caption": 69,
+    "Figure Caption": 41,
+    "Heading 4": 30,
+    "Header": 10,
+    "Footer": 14
+  },
+  "alignment_counts": {
+    "CENTER": 220,
+    "JUSTIFY": 250,
+    "LEFT": 3808,
+    "RIGHT": 3,
+    "None": 371
+  },
+  "direct_font_counts": {
+    "Times New Roman": 3966,
+    "Cambria Math": 2
+  },
+  "direct_size_counts": {
+    "14.0": 8,
+    "15.0": 4,
+    "16.0": 12
+  },
+  "headings": [
+    {
+      "index": 38,
+      "level": 1,
+      "text": "ACKNOWLEDGEMENTS"
+    },
+    {
+      "index": 52,
+      "level": 1,
+      "text": "DECLARATION OF ORIGINALITY"
+    },
+    {
+      "index": 63,
+      "level": 1,
+      "text": "SUPERVISOR'S COMMENTS"
+    },
+    {
+      "index": 90,
+      "level": 1,
+      "text": "TABLE OF CONTENTS"
+    },
+    {
+      "index": 303,
+      "level": 1,
+      "text": "LIST OF TABLES"
+    },
+    {
+      "index": 373,
+      "level": 1,
+      "text": "LIST OF FIGURES"
+    },
+    {
+      "index": 415,
+      "level": 1,
+      "text": "LIST OF ABBREVIATIONS"
+    },
+    {
+      "index": 416,
+      "level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "index": 423,
+      "level": 1,
+      "text": "PART 1. INTRODUCTION"
+    },
+    {
+      "index": 424,
+      "level": 2,
+      "text": "1. Problem Statement"
+    },
+    {
+      "index": 429,
+      "level": 2,
+      "text": "2. Background and Related Work"
+    },
+    {
+      "index": 434,
+      "level": 2,
+      "text": "3. Research Objectives"
+    },
+    {
+      "index": 435,
+      "level": 3,
+      "text": "3.1 Overall Objective"
+    },
+    {
+      "index": 437,
+      "level": 3,
+      "text": "3.2 Specific Objectives"
+    },
+    {
+      "index": 447,
+      "level": 2,
+      "text": "4. Research Subjects and Scope"
+    },
+    {
+      "index": 448,
+      "level": 3,
+      "text": "4.1 Research Subject"
+    },
+    {
+      "index": 450,
+      "level": 3,
+      "text": "4.2 Research Scope"
+    },
+    {
+      "index": 455,
+      "level": 2,
+      "text": "5. Research Methods and Content"
+    },
+    {
+      "index": 456,
+      "level": 3,
+      "text": "5.1 Research Methods"
+    },
+    {
+      "index": 458,
+      "level": 3,
+      "text": "5.2 Research Content"
+    },
+    {
+      "index": 460,
+      "level": 2,
+      "text": "6. Key Contributions"
+    },
+    {
+      "index": 471,
+      "level": 2,
+      "text": "7. Thesis Structure"
+    },
+    {
+      "index": 478,
+      "level": 1,
+      "text": "PART 2. MAIN CONTENT"
+    },
+    {
+      "index": 479,
+      "level": 1,
+      "text": "CHAPTER 1. PROBLEM DESCRIPTION AND REQUIREMENTS"
+    },
+    {
+      "index": 480,
+      "level": 2,
+      "text": "1.1 System Analysis Context"
+    },
+    {
+      "index": 485,
+      "level": 2,
+      "text": "1.2 Stakeholders and Actors"
+    },
+    {
+      "index": 491,
+      "level": 2,
+      "text": "1.3 Functional Requirements"
+    },
+    {
+      "index": 494,
+      "level": 2,
+      "text": "1.4 Non-Functional Requirements"
+    },
+    {
+      "index": 497,
+      "level": 2,
+      "text": "1.5 Use-Case Analysis"
+    },
+    {
+      "index": 502,
+      "level": 3,
+      "text": "1.5.1 Manage Career Profile"
+    },
+    {
+      "index": 504,
+      "level": 3,
+      "text": "1.5.2 Explore Jobs"
+    },
+    {
+      "index": 506,
+      "level": 3,
+      "text": "1.5.3 Manage Job Applications"
+    },
+    {
+      "index": 508,
+      "level": 3,
+      "text": "1.5.4 Provide Matching Feedback"
+    },
+    {
+      "index": 510,
+      "level": 3,
+      "text": "1.5.5 Review Personalized Career Insights"
+    },
+    {
+      "index": 512,
+      "level": 3,
+      "text": "1.5.6 Manage AutoFit"
+    },
+    {
+      "index": 514,
+      "level": 3,
+      "text": "1.5.7 Respond Through Actionable Email"
+    },
+    {
+      "index": 520,
+      "level": 3,
+      "text": "1.5.8 Manage Employer Profile and Job Postings"
+    },
+    {
+      "index": 522,
+      "level": 3,
+      "text": "1.5.9 Review and Process Applicants"
+    },
+    {
+      "index": 524,
+      "level": 3,
+      "text": "1.5.10 Manage Talent Pool and Invitations"
+    },
+    {
+      "index": 526,
+      "level": 3,
+      "text": "1.5.11 Review Recruitment Analytics"
+    },
+    {
+      "index": 530,
+      "level": 3,
+      "text": "1.5.12 Report Suspicious Recruitment Content"
+    },
+    {
+      "index": 536,
+      "level": 3,
+      "text": "1.5.13 Administer Platform Access and Job Visibility"
+    },
+    {
+      "index": 538,
+      "level": 3,
+      "text": "1.5.14 Review and Resolve Content Reports"
+    },
+    {
+      "index": 540,
+      "level": 2,
+      "text": ""
+    },
+    {
+      "index": 542,
+      "level": 2,
+      "text": "1.6 Chapter Summary"
+    },
+    {
+      "index": 544,
+      "level": 1,
+      "text": "CHAPTER 2. THEORETICAL BACKGROUND"
+    },
+    {
+      "index": 545,
+      "level": 2,
+      "text": "2.1 Recruitment Information and CV–Job Description Matching"
+    },
+    {
+      "index": 549,
+      "level": 2,
+      "text": "2.2 Text Representation and Preprocessing"
+    },
+    {
+      "index": 550,
+      "level": 3,
+      "text": "2.2.1 Document Normalization"
+    },
+    {
+      "index": 554,
+      "level": 3,
+      "text": "2.2.2 Bag-of-Words Representation"
+    },
+    {
+      "index": 556,
+      "level": 2,
+      "text": "2.3 TF-IDF and Cosine Similarity"
+    },
+    {
+      "index": 557,
+      "level": 3,
+      "text": "2.3.1 Term Frequency and Inverse Document Frequency"
+    },
+    {
+      "index": 562,
+      "level": 3,
+      "text": "2.3.2 Cosine Similarity"
+    },
+    {
+      "index": 567,
+      "level": 2,
+      "text": "2.4 Matching, Recommendation, and Ranking"
+    },
+    {
+      "index": 572,
+      "level": 2,
+      "text": "2.5 Relevance Feedback and the Rocchio Method"
+    },
+    {
+      "index": 573,
+      "level": 3,
+      "text": "2.5.1 Relevance Feedback"
+    },
+    {
+      "index": 578,
+      "level": 3,
+      "text": "2.5.2 Feedback Semantics in CareerFit"
+    },
+    {
+      "index": 582,
+      "level": 2,
+      "text": "2.6 Evaluation Metrics for Ranked Results"
+    },
+    {
+      "index": 584,
+      "level": 3,
+      "text": "2.6.1 Precision@K, Recall@K, and HitRate@K"
+    },
+    {
+      "index": 586,
+      "level": 3,
+      "text": "2.6.2 Mean Reciprocal Rank"
+    },
+    {
+      "index": 588,
+      "level": 3,
+      "text": "2.6.3 Discounted Cumulative Gain"
+    },
+    {
+      "index": 593,
+      "level": 2,
+      "text": "2.7 Human-in-the-Loop and Explainable Automation"
+    },
+    {
+      "index": 594,
+      "level": 3,
+      "text": "2.7.1 Levels of Human Involvement"
+    },
+    {
+      "index": 597,
+      "level": 3,
+      "text": "2.7.2 Explainability and Auditability"
+    },
+    {
+      "index": 601,
+      "level": 2,
+      "text": "2.8 Web Architecture, Security, and Audit Foundations"
+    },
+    {
+      "index": 602,
+      "level": 3,
+      "text": "2.8.1 Client–Server and REST"
+    },
+    {
+      "index": 604,
+      "level": 3,
+      "text": "2.8.2 Authentication, Authorization, and Action Tokens"
+    },
+    {
+      "index": 608,
+      "level": 3,
+      "text": "2.8.3 Audit Logging"
+    },
+    {
+      "index": 611,
+      "level": 2,
+      "text": "2.9 Related Work and Research Gap"
+    },
+    {
+      "index": 626,
+      "level": 2,
+      "text": "2.10 Theoretical Background Summary"
+    },
+    {
+      "index": 628,
+      "level": 1,
+      "text": "CHAPTER 3. SYSTEM DESIGN AND IMPLEMENTATION"
+    },
+    {
+      "index": 630,
+      "level": 2,
+      "text": "3.1 System Architecture"
+    },
+    {
+      "index": 636,
+      "level": 2,
+      "text": "3.2 Module Design"
+    },
+    {
+      "index": 639,
+      "level": 2,
+      "text": "3.3 Data Design"
+    },
+    {
+      "index": 640,
+      "level": 3,
+      "text": "3.3.1 Data Design Overview"
+    },
+    {
+      "index": 643,
+      "level": 3,
+      "text": "3.3.2 Conceptual Data Model"
+    },
+    {
+      "index": 647,
+      "level": 3,
+      "text": "3.3.3 Logical Data Model"
+    },
+    {
+      "index": 657,
+      "level": 3,
+      "text": "3.3.4 Physical Data Model"
+    },
+    {
+      "index": 668,
+      "level": 3,
+      "text": "3.3.5 Data Dictionary"
+    },
+    {
+      "index": 670,
+      "level": 2,
+      "text": "3.4 Functional Design"
+    },
+    {
+      "index": 672,
+      "level": 3,
+      "text": "3.4.1 Functional Design for Candidate"
+    },
+    {
+      "index": 673,
+      "level": 4,
+      "text": "3.4.1.1 Explore Jobs"
+    },
+    {
+      "index": 683,
+      "level": 4,
+      "text": "3.4.1.2 Manage AutoFit"
+    },
+    {
+      "index": 693,
+      "level": 4,
+      "text": "3.4.1.3 Upload and Confirm a CV"
+    },
+    {
+      "index": 703,
+      "level": 3,
+      "text": "3.4.2 Functional Design for Recruiter"
+    },
+    {
+      "index": 704,
+      "level": 4,
+      "text": "3.4.2.1 Manage Job Postings and Applicants"
+    },
+    {
+      "index": 714,
+      "level": 4,
+      "text": "3.4.2.2 Manage Talent Pool and Invitations"
+    },
+    {
+      "index": 724,
+      "level": 3,
+      "text": "3.4.3 Functional Design for Administrator"
+    },
+    {
+      "index": 725,
+      "level": 4,
+      "text": "3.4.3.1 Review Administrative Audit Activity"
+    },
+    {
+      "index": 735,
+      "level": 2,
+      "text": "3.5 Security, Failure, and Consistency Design"
+    },
+    {
+      "index": 736,
+      "level": 3,
+      "text": "3.5.1 Authentication and Authorization"
+    },
+    {
+      "index": 739,
+      "level": 3,
+      "text": "3.5.2 Failure Handling"
+    },
+    {
+      "index": 742,
+      "level": 3,
+      "text": "3.5.3 Identified Design Risks"
+    },
+    {
+      "index": 744,
+      "level": 2,
+      "text": "3.6 Deployment Architecture"
+    },
+    {
+      "index": 750,
+      "level": 2,
+      "text": "3.7 Implementation Overview"
+    },
+    {
+      "index": 756,
+      "level": 2,
+      "text": "3.8 Authentication and Authorization Implementation"
+    },
+    {
+      "index": 757,
+      "level": 3,
+      "text": "3.8.1 Login and JWT Processing"
+    },
+    {
+      "index": 761,
+      "level": 3,
+      "text": "3.8.2 URL Rules and Ownership Checks"
+    },
+    {
+      "index": 767,
+      "level": 2,
+      "text": "3.9 CV Ingestion and Validation"
+    },
+    {
+      "index": 768,
+      "level": 3,
+      "text": "3.9.1 Upload and Manual Creation"
+    },
+    {
+      "index": 771,
+      "level": 3,
+      "text": "3.9.2 File Validation and Extraction"
+    },
+    {
+      "index": 777,
+      "level": 2,
+      "text": "3.10 Text Normalization and TF-IDF Implementation"
+    },
+    {
+      "index": 778,
+      "level": 3,
+      "text": "3.10.1 Text Normalization"
+    },
+    {
+      "index": 781,
+      "level": 3,
+      "text": "3.10.2 Static Corpus and Vector Construction"
+    },
+    {
+      "index": 789,
+      "level": 2,
+      "text": "3.11 Matching and Recommendation Implementation"
+    },
+    {
+      "index": 790,
+      "level": 3,
+      "text": "3.11.1 Scoring Service"
+    },
+    {
+      "index": 795,
+      "level": 3,
+      "text": "3.11.2 Matching Orchestration and Persistence"
+    },
+    {
+      "index": 798,
+      "level": 3,
+      "text": "3.11.3 Recommendation Service"
+    },
+    {
+      "index": 802,
+      "level": 2,
+      "text": "3.12 Feedback Learning with Rocchio"
+    },
+    {
+      "index": 811,
+      "level": 2,
+      "text": "3.13 Application and Recruiter Workflow"
+    },
+    {
+      "index": 817,
+      "level": 2,
+      "text": "3.14 AutoFit and Background Processing"
+    },
+    {
+      "index": 818,
+      "level": 3,
+      "text": "3.14.1 Async Executor and Scheduler"
+    },
+    {
+      "index": 821,
+      "level": 3,
+      "text": "3.14.2 Auto-Apply"
+    },
+    {
+      "index": 826,
+      "level": 3,
+      "text": "3.14.3 Notification Guard and Delivery"
+    },
+    {
+      "index": 830,
+      "level": 2,
+      "text": "3.15 Email Action and Audit Implementation"
+    },
+    {
+      "index": 837,
+      "level": 2,
+      "text": "3.16 Persistence and API Implementation"
+    },
+    {
+      "index": 842,
+      "level": 2,
+      "text": "3.17 Frontend Integration"
+    },
+    {
+      "index": 848,
+      "level": 2,
+      "text": "3.18 Deployment and Observability Implementation"
+    },
+    {
+      "index": 852,
+      "level": 2,
+      "text": "3.19 Implementation Limitations"
+    },
+    {
+      "index": 855,
+      "level": 2,
+      "text": "3.20 Chapter Summary"
+    },
+    {
+      "index": 857,
+      "level": 1,
+      "text": "CHAPTER 4. TESTING AND EVALUATION"
+    },
+    {
+      "index": 858,
+      "level": 2,
+      "text": "4.1 Evaluation Objectives"
+    },
+    {
+      "index": 860,
+      "level": 2,
+      "text": "4.2 Evaluation Environment"
+    },
+    {
+      "index": 864,
+      "level": 2,
+      "text": "4.3 Dataset and Evaluation Design"
+    },
+    {
+      "index": 865,
+      "level": 3,
+      "text": "4.3.1 Controlled Algorithm Dataset"
+    },
+    {
+      "index": 869,
+      "level": 3,
+      "text": "4.3.2 Local Runtime Data"
+    },
+    {
+      "index": 871,
+      "level": 2,
+      "text": "4.4 Backend Automated Testing"
+    },
+    {
+      "index": 875,
+      "level": 2,
+      "text": "4.5 Controlled Algorithm Results"
+    },
+    {
+      "index": 883,
+      "level": 2,
+      "text": "4.6 Asynchronous Consistency Observation"
+    },
+    {
+      "index": 885,
+      "level": 2,
+      "text": "4.7 Frontend Build Evaluation"
+    },
+    {
+      "index": 887,
+      "level": 2,
+      "text": "4.8 Browser End-to-End Evaluation"
+    },
+    {
+      "index": 891,
+      "level": 2,
+      "text": "4.9 Security-Oriented API Checks"
+    },
+    {
+      "index": 899,
+      "level": 2,
+      "text": "4.10 Runtime Health, Monitoring, and Local Latency"
+    },
+    {
+      "index": 903,
+      "level": 2,
+      "text": "4.11 Evaluation Summary by Research Question"
+    },
+    {
+      "index": 905,
+      "level": 2,
+      "text": "4.12 Threats to Validity"
+    },
+    {
+      "index": 906,
+      "level": 3,
+      "text": "4.12.1 Construct Validity"
+    },
+    {
+      "index": 908,
+      "level": 3,
+      "text": "4.12.2 Internal Validity"
+    },
+    {
+      "index": 911,
+      "level": 3,
+      "text": "4.12.3 External Validity"
+    },
+    {
+      "index": 913,
+      "level": 3,
+      "text": "4.12.4 Reproducibility"
+    },
+    {
+      "index": 915,
+      "level": 2,
+      "text": "4.13 Chapter Summary"
+    },
+    {
+      "index": 917,
+      "level": 1,
+      "text": "PART 3. CONCLUSION"
+    },
+    {
+      "index": 918,
+      "level": 2,
+      "text": "1. Summary of Results"
+    },
+    {
+      "index": 921,
+      "level": 2,
+      "text": "2. Achievement of Thesis Objectives"
+    },
+    {
+      "index": 922,
+      "level": 3,
+      "text": "2.1 Role-Based Recruitment Platform"
+    },
+    {
+      "index": 924,
+      "level": 3,
+      "text": "2.2 CV and Job-Description Processing"
+    },
+    {
+      "index": 926,
+      "level": 3,
+      "text": "2.3 Matching and Recommendation"
+    },
+    {
+      "index": 928,
+      "level": 3,
+      "text": "2.4 Feedback Learning"
+    },
+    {
+      "index": 930,
+      "level": 3,
+      "text": "2.5 Policy-Driven Automation and Email Action"
+    },
+    {
+      "index": 932,
+      "level": 3,
+      "text": "2.6 Auditability and Evaluation"
+    },
+    {
+      "index": 935,
+      "level": 2,
+      "text": "3. Discussion"
+    },
+    {
+      "index": 936,
+      "level": 3,
+      "text": "3.1 Value of an Interpretable Baseline"
+    },
+    {
+      "index": 938,
+      "level": 3,
+      "text": "3.2 Human-in-the-Loop as System Structure"
+    },
+    {
+      "index": 940,
+      "level": 3,
+      "text": "3.3 Meaning of the Rocchio Improvement"
+    },
+    {
+      "index": 942,
+      "level": 3,
+      "text": "3.4 Test Results versus Background Errors"
+    },
+    {
+      "index": 944,
+      "level": 3,
+      "text": "3.5 Product Positioning"
+    },
+    {
+      "index": 946,
+      "level": 2,
+      "text": "4. Limitations"
+    },
+    {
+      "index": 947,
+      "level": 3,
+      "text": "4.1 Data and Algorithm Limitations"
+    },
+    {
+      "index": 949,
+      "level": 3,
+      "text": "4.2 Evaluation Limitations"
+    },
+    {
+      "index": 951,
+      "level": 3,
+      "text": "4.3 Security and Privacy Limitations"
+    },
+    {
+      "index": 953,
+      "level": 3,
+      "text": "4.4 Reliability and Maintainability Limitations"
+    },
+    {
+      "index": 955,
+      "level": 2,
+      "text": "5. Future Work"
+    },
+    {
+      "index": 963,
+      "level": 2,
+      "text": "6. Closing Remarks"
+    },
+    {
+      "index": 965,
+      "level": 1,
+      "text": "REFERENCES"
+    },
+    {
+      "index": 987,
+      "level": 1,
+      "text": "APPENDICES"
+    },
+    {
+      "index": 988,
+      "level": 2,
+      "text": "Appendix A. Requirement-Test Traceability Matrix"
+    },
+    {
+      "index": 990,
+      "level": 2,
+      "text": "Appendix B. Selected API Contracts"
+    },
+    {
+      "index": 995,
+      "level": 2,
+      "text": "Appendix C. Full Data Dictionary"
+    },
+    {
+      "index": 997,
+      "level": 3,
+      "text": "C.1 Physical Table Catalogue"
+    },
+    {
+      "index": 999,
+      "level": 3,
+      "text": "C.2 Field-Level Data Dictionary"
+    },
+    {
+      "index": 1000,
+      "level": 3,
+      "text": "C.2.1 Identity, Candidate, CV, and Portfolio"
+    },
+    {
+      "index": 1001,
+      "level": 4,
+      "text": "user_account"
+    },
+    {
+      "index": 1004,
+      "level": 4,
+      "text": "user_settings"
+    },
+    {
+      "index": 1007,
+      "level": 4,
+      "text": "candidate"
+    },
+    {
+      "index": 1010,
+      "level": 4,
+      "text": "candidate_portfolio_link"
+    },
+    {
+      "index": 1013,
+      "level": 4,
+      "text": "candidate_portfolio_project"
+    },
+    {
+      "index": 1016,
+      "level": 4,
+      "text": "cv"
+    },
+    {
+      "index": 1019,
+      "level": 4,
+      "text": "skills"
+    },
+    {
+      "index": 1022,
+      "level": 3,
+      "text": "C.2.2 Employer, Job, Matching, and Recruitment"
+    },
+    {
+      "index": 1023,
+      "level": 4,
+      "text": "employer_profile"
+    },
+    {
+      "index": 1026,
+      "level": 4,
+      "text": "job"
+    },
+    {
+      "index": 1029,
+      "level": 4,
+      "text": "matching"
+    },
+    {
+      "index": 1032,
+      "level": 4,
+      "text": "feedback"
+    },
+    {
+      "index": 1035,
+      "level": 4,
+      "text": "application"
+    },
+    {
+      "index": 1038,
+      "level": 4,
+      "text": "recommendation_interaction"
+    },
+    {
+      "index": 1041,
+      "level": 4,
+      "text": "recruiter_cv_bookmark"
+    },
+    {
+      "index": 1044,
+      "level": 3,
+      "text": "C.2.3 Automation, Email, and Notification"
+    },
+    {
+      "index": 1045,
+      "level": 4,
+      "text": "automation_policy"
+    },
+    {
+      "index": 1048,
+      "level": 4,
+      "text": "email_action"
+    },
+    {
+      "index": 1051,
+      "level": 4,
+      "text": "email_action_token"
+    },
+    {
+      "index": 1054,
+      "level": 4,
+      "text": "notification_job"
+    },
+    {
+      "index": 1057,
+      "level": 4,
+      "text": "notification_delivery_log"
+    },
+    {
+      "index": 1060,
+      "level": 3,
+      "text": "C.2.4 Reporting, Analytics, and Audit"
+    },
+    {
+      "index": 1061,
+      "level": 4,
+      "text": "content_report"
+    },
+    {
+      "index": 1064,
+      "level": 4,
+      "text": "analytics_event"
+    },
+    {
+      "index": 1067,
+      "level": 4,
+      "text": "audit_log"
+    },
+    {
+      "index": 1070,
+      "level": 4,
+      "text": "job_trend_snapshot"
+    },
+    {
+      "index": 1073,
+      "level": 4,
+      "text": "job_market_snapshot"
+    },
+    {
+      "index": 1077,
+      "level": 2,
+      "text": "Appendix D. Evaluation Summary"
+    },
+    {
+      "index": 1079,
+      "level": 2,
+      "text": "Appendix E. UAT and Demonstration Script"
+    },
+    {
+      "index": 1080,
+      "level": 3,
+      "text": "Preparation"
+    },
+    {
+      "index": 1084,
+      "level": 3,
+      "text": "Execution"
+    },
+    {
+      "index": 1091,
+      "level": 3,
+      "text": "Acceptance and cleanup"
+    },
+    {
+      "index": 1095,
+      "level": 2,
+      "text": "Appendix F. Local Deployment Instructions"
+    },
+    {
+      "index": 1096,
+      "level": 3,
+      "text": "Prerequisites"
+    },
+    {
+      "index": 1099,
+      "level": 3,
+      "text": "Startup procedure"
+    },
+    {
+      "index": 1103,
+      "level": 3,
+      "text": "Verification"
+    },
+    {
+      "index": 1107,
+      "level": 3,
+      "text": "Shutdown and cleanup"
+    },
+    {
+      "index": 1109,
+      "level": 2,
+      "text": "Appendix G. Role-Based User Guide"
+    },
+    {
+      "index": 1110,
+      "level": 3,
+      "text": "Guest"
+    },
+    {
+      "index": 1112,
+      "level": 3,
+      "text": "Candidate"
+    },
+    {
+      "index": 1114,
+      "level": 3,
+      "text": "Recruiter"
+    },
+    {
+      "index": 1116,
+      "level": 3,
+      "text": "Administrator"
+    }
+  ],
+  "section_stats": {
+    "FRONT MATTER": {
+      "paragraphs": 24,
+      "words": 97,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "ACKNOWLEDGEMENTS": {
+      "paragraphs": 9,
+      "words": 305,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "DECLARATION OF ORIGINALITY": {
+      "paragraphs": 5,
+      "words": 99,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "SUPERVISOR'S COMMENTS": {
+      "paragraphs": 20,
+      "words": 9,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "TABLE OF CONTENTS": {
+      "paragraphs": 211,
+      "words": 1281,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "LIST OF TABLES": {
+      "paragraphs": 69,
+      "words": 616,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "LIST OF FIGURES": {
+      "paragraphs": 41,
+      "words": 411,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "ABSTRACT": {
+      "paragraphs": 5,
+      "words": 264,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1. Problem Statement": {
+      "paragraphs": 4,
+      "words": 165,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "2. Background and Related Work": {
+      "paragraphs": 4,
+      "words": 152,
+      "citations": 5,
+      "long_paragraphs": 0
+    },
+    "3. Research Objectives": {
+      "paragraphs": 10,
+      "words": 238,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4. Research Subjects and Scope": {
+      "paragraphs": 5,
+      "words": 209,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "5. Research Methods and Content": {
+      "paragraphs": 2,
+      "words": 93,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "6. Key Contributions": {
+      "paragraphs": 8,
+      "words": 184,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "7. Thesis Structure": {
+      "paragraphs": 6,
+      "words": 53,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1.1 System Analysis Context": {
+      "paragraphs": 3,
+      "words": 122,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1.2 Stakeholders and Actors": {
+      "paragraphs": 4,
+      "words": 116,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1.3 Functional Requirements": {
+      "paragraphs": 2,
+      "words": 32,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1.4 Non-Functional Requirements": {
+      "paragraphs": 2,
+      "words": 38,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "1.5 Use-Case Analysis": {
+      "paragraphs": 20,
+      "words": 221,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1.6 Chapter Summary": {
+      "paragraphs": 1,
+      "words": 45,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "2.1 Recruitment Information and CV–Job Description Matching": {
+      "paragraphs": 3,
+      "words": 135,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "2.2 Text Representation and Preprocessing": {
+      "paragraphs": 4,
+      "words": 154,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "2.3 TF-IDF and Cosine Similarity": {
+      "paragraphs": 8,
+      "words": 390,
+      "citations": 3,
+      "long_paragraphs": 0
+    },
+    "2.4 Matching, Recommendation, and Ranking": {
+      "paragraphs": 4,
+      "words": 313,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "2.5 Relevance Feedback and the Rocchio Method": {
+      "paragraphs": 7,
+      "words": 420,
+      "citations": 1,
+      "long_paragraphs": 0
+    },
+    "2.6 Evaluation Metrics for Ranked Results": {
+      "paragraphs": 7,
+      "words": 186,
+      "citations": 4,
+      "long_paragraphs": 0
+    },
+    "2.7 Human-in-the-Loop and Explainable Automation": {
+      "paragraphs": 5,
+      "words": 346,
+      "citations": 4,
+      "long_paragraphs": 0
+    },
+    "2.8 Web Architecture, Security, and Audit Foundations": {
+      "paragraphs": 6,
+      "words": 201,
+      "citations": 2,
+      "long_paragraphs": 0
+    },
+    "2.9 Related Work and Research Gap": {
+      "paragraphs": 5,
+      "words": 275,
+      "citations": 8,
+      "long_paragraphs": 0
+    },
+    "2.10 Theoretical Background Summary": {
+      "paragraphs": 1,
+      "words": 69,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "CHAPTER 3. SYSTEM DESIGN AND IMPLEMENTATION": {
+      "paragraphs": 1,
+      "words": 48,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.1 System Architecture": {
+      "paragraphs": 4,
+      "words": 230,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.2 Module Design": {
+      "paragraphs": 2,
+      "words": 59,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.3 Data Design": {
+      "paragraphs": 16,
+      "words": 433,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.4 Functional Design": {
+      "paragraphs": 43,
+      "words": 452,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.5 Security, Failure, and Consistency Design": {
+      "paragraphs": 5,
+      "words": 210,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.6 Deployment Architecture": {
+      "paragraphs": 4,
+      "words": 169,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.7 Implementation Overview": {
+      "paragraphs": 4,
+      "words": 97,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.8 Authentication and Authorization Implementation": {
+      "paragraphs": 7,
+      "words": 387,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.9 CV Ingestion and Validation": {
+      "paragraphs": 6,
+      "words": 243,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.10 Text Normalization and TF-IDF Implementation": {
+      "paragraphs": 8,
+      "words": 310,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.11 Matching and Recommendation Implementation": {
+      "paragraphs": 8,
+      "words": 355,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.12 Feedback Learning with Rocchio": {
+      "paragraphs": 7,
+      "words": 238,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.13 Application and Recruiter Workflow": {
+      "paragraphs": 4,
+      "words": 184,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.14 AutoFit and Background Processing": {
+      "paragraphs": 7,
+      "words": 253,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.15 Email Action and Audit Implementation": {
+      "paragraphs": 5,
+      "words": 240,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.16 Persistence and API Implementation": {
+      "paragraphs": 4,
+      "words": 126,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.17 Frontend Integration": {
+      "paragraphs": 4,
+      "words": 163,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.18 Deployment and Observability Implementation": {
+      "paragraphs": 3,
+      "words": 156,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.19 Implementation Limitations": {
+      "paragraphs": 2,
+      "words": 39,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3.20 Chapter Summary": {
+      "paragraphs": 1,
+      "words": 54,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.1 Evaluation Objectives": {
+      "paragraphs": 1,
+      "words": 108,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.2 Evaluation Environment": {
+      "paragraphs": 3,
+      "words": 80,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.3 Dataset and Evaluation Design": {
+      "paragraphs": 4,
+      "words": 204,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.4 Backend Automated Testing": {
+      "paragraphs": 3,
+      "words": 50,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.5 Controlled Algorithm Results": {
+      "paragraphs": 6,
+      "words": 162,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.6 Asynchronous Consistency Observation": {
+      "paragraphs": 1,
+      "words": 63,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.7 Frontend Build Evaluation": {
+      "paragraphs": 1,
+      "words": 32,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.8 Browser End-to-End Evaluation": {
+      "paragraphs": 3,
+      "words": 55,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.9 Security-Oriented API Checks": {
+      "paragraphs": 3,
+      "words": 63,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.10 Runtime Health, Monitoring, and Local Latency": {
+      "paragraphs": 3,
+      "words": 110,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.11 Evaluation Summary by Research Question": {
+      "paragraphs": 1,
+      "words": 8,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.12 Threats to Validity": {
+      "paragraphs": 5,
+      "words": 225,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4.13 Chapter Summary": {
+      "paragraphs": 1,
+      "words": 29,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "1. Summary of Results": {
+      "paragraphs": 2,
+      "words": 100,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "2. Achievement of Thesis Objectives": {
+      "paragraphs": 7,
+      "words": 216,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "3. Discussion": {
+      "paragraphs": 5,
+      "words": 188,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "4. Limitations": {
+      "paragraphs": 4,
+      "words": 136,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "5. Future Work": {
+      "paragraphs": 7,
+      "words": 77,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "6. Closing Remarks": {
+      "paragraphs": 1,
+      "words": 50,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "REFERENCES": {
+      "paragraphs": 21,
+      "words": 625,
+      "citations": 21,
+      "long_paragraphs": 0
+    },
+    "Appendix A. Requirement-Test Traceability Matrix": {
+      "paragraphs": 1,
+      "words": 12,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix B. Selected API Contracts": {
+      "paragraphs": 2,
+      "words": 39,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix C. Full Data Dictionary": {
+      "paragraphs": 50,
+      "words": 501,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix D. Evaluation Summary": {
+      "paragraphs": 1,
+      "words": 43,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix E. UAT and Demonstration Script": {
+      "paragraphs": 12,
+      "words": 287,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix F. Local Deployment Instructions": {
+      "paragraphs": 9,
+      "words": 189,
+      "citations": 0,
+      "long_paragraphs": 0
+    },
+    "Appendix G. Role-Based User Guide": {
+      "paragraphs": 4,
+      "words": 175,
+      "citations": 0,
+      "long_paragraphs": 0
+    }
+  },
+  "suspects": {
+    "character_spacing_or_fit_text": [
+      {
+        "location": "body.p0",
+        "style": "Normal",
+        "text": "MINISTRY OF EDUCATION AND TRAINING",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p1",
+        "style": "Normal",
+        "text": "CAN THO UNIVERSITY",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p2",
+        "style": "Normal",
+        "text": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p3",
+        "style": "Normal",
+        "text": "FACULTY OF SOFTWARE ENGINEERING",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p6",
+        "style": "Normal",
+        "text": "UNDERGRADUATE THESIS",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p7",
+        "style": "Normal",
+        "text": "SOFTWARE ENGINEERING MAJOR",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p9",
+        "style": "Normal",
+        "text": "Thesis title",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p10",
+        "style": "Normal",
+        "text": "DESIGN AND IMPLEMENTATION OF A HUMAN-IN-THE-LOOP",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p11",
+        "style": "Normal",
+        "text": "AI-ASSISTED RECRUITMENT AUTOMATION PLATFORM",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p12",
+        "style": "Normal",
+        "text": "FOR CV-JD EVALUATION AND RECOMMENDATION IN IT",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p14",
+        "style": "Normal",
+        "text": "Student",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p15",
+        "style": "Normal",
+        "text": "Pham Huu Hung - B2203557",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p20",
+        "style": "Normal",
+        "text": "Can Tho, August 2026",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p22",
+        "style": "Normal",
+        "text": "MINISTRY OF EDUCATION AND TRAINING",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p23",
+        "style": "Normal",
+        "text": "CAN THO UNIVERSITY",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p24",
+        "style": "Normal",
+        "text": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p25",
+        "style": "Normal",
+        "text": "FACULTY OF SOFTWARE ENGINEERING",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p28",
+        "style": "Normal",
+        "text": "UNDERGRADUATE THESIS",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p29",
+        "style": "Normal",
+        "text": "SOFTWARE ENGINEERING MAJOR",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p31",
+        "style": "Normal",
+        "text": "Thesis title",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p32",
+        "style": "Normal",
+        "text": "DESIGN AND IMPLEMENTATION OF A HUMAN-IN-THE-LOOP",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p33",
+        "style": "Normal",
+        "text": "AI-ASSISTED RECRUITMENT AUTOMATION PLATFORM",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p34",
+        "style": "Normal",
+        "text": "FOR CV-JD EVALUATION AND RECOMMENDATION IN IT",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p37",
+        "style": "Normal",
+        "text": "Can Tho, August 2026",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p64",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p65",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p66",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p67",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p68",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p69",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p70",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p71",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p72",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p73",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p74",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p75",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p76",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p77",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p78",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p79",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p80",
+        "style": "Normal",
+        "text": "....................................................................................................................",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p490",
+        "style": "Figure Caption",
+        "text": "Figure 1.2. Overall CareerFit use-case diagram",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p500",
+        "style": "Figure Caption",
+        "text": "Figure 1.3. Candidate use-case diagram",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p502",
+        "style": "Heading 3",
+        "text": "1.5.1 Manage Career Profile",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p503",
+        "style": "Table Caption",
+        "text": "Table 1.5. Use case - Manage Career Profile",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p504",
+        "style": "Heading 3",
+        "text": "1.5.2 Explore Jobs",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p505",
+        "style": "Table Caption",
+        "text": "Table 1.6. Use case - Explore Jobs",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p506",
+        "style": "Heading 3",
+        "text": "1.5.3 Manage Job Applications",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p507",
+        "style": "Table Caption",
+        "text": "Table 1.7. Use case - Manage Job Applications",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p508",
+        "style": "Heading 3",
+        "text": "1.5.4 Provide Matching Feedback",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p509",
+        "style": "Table Caption",
+        "text": "Table 1.8. Use case - Provide Matching Feedback",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p510",
+        "style": "Heading 3",
+        "text": "1.5.5 Review Personalized Career Insights",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p511",
+        "style": "Table Caption",
+        "text": "Table 1.9. Use case - Review Personalized Career Insights",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p512",
+        "style": "Heading 3",
+        "text": "1.5.6 Manage AutoFit",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p513",
+        "style": "Table Caption",
+        "text": "Table 1.10. Use case - Manage AutoFit",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p514",
+        "style": "Heading 3",
+        "text": "1.5.7 Respond Through Actionable Email",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p515",
+        "style": "Table Caption",
+        "text": "Table 1.11. Use case - Respond Through Actionable Email",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p519",
+        "style": "Figure Caption",
+        "text": "Figure 1.4. Recruiter use-case diagram",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p520",
+        "style": "Heading 3",
+        "text": "1.5.8 Manage Employer Profile and Job Postings",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p521",
+        "style": "Table Caption",
+        "text": "Table 1.12. Use case - Manage Employer Profile and Job Postings",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p522",
+        "style": "Heading 3",
+        "text": "1.5.9 Review and Process Applicants",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p523",
+        "style": "Table Caption",
+        "text": "Table 1.13. Use case - Review and Process Applicants",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p524",
+        "style": "Heading 3",
+        "text": "1.5.10 Manage Talent Pool and Invitations",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p525",
+        "style": "Table Caption",
+        "text": "Table 1.14. Use case - Manage Talent Pool and Invitations",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p526",
+        "style": "Heading 3",
+        "text": "1.5.11 Review Recruitment Analytics",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p527",
+        "style": "Table Caption",
+        "text": "Table 1.15. Use case - Review Recruitment Analytics",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p529",
+        "style": "Figure Caption",
+        "text": "Figure 1.5. Shared Candidate-Recruiter reporting use-case diagram",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p530",
+        "style": "Heading 3",
+        "text": "1.5.12 Report Suspicious Recruitment Content",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p531",
+        "style": "Table Caption",
+        "text": "Table 1.16. Use case - Report Suspicious Recruitment Content",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p535",
+        "style": "Figure Caption",
+        "text": "Figure 1.6. Administrator use-case diagram",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p536",
+        "style": "Heading 3",
+        "text": "1.5.13 Administer Platform Access and Job Visibility",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p537",
+        "style": "Table Caption",
+        "text": "Table 1.17. Use case - Administer Platform Access and Job Visibility",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p538",
+        "style": "Heading 3",
+        "text": "1.5.14 Review and Resolve Content Reports",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p539",
+        "style": "Table Caption",
+        "text": "Table 1.18. Use case - Review and Resolve Content Reports",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p675",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p678",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p680",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p685",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p688",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p690",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p695",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p698",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p700",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p706",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p709",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p711",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p716",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p719",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p721",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p727",
+        "style": "List Paragraph",
+        "text": "Interface:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p730",
+        "style": "List Paragraph",
+        "text": "Interface Components:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p732",
+        "style": "List Paragraph",
+        "text": "Processing Logic:",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p736",
+        "style": "Heading 3",
+        "text": "3.5.1 Authentication and Authorization",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p739",
+        "style": "Heading 3",
+        "text": "3.5.2 Failure Handling",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p742",
+        "style": "Heading 3",
+        "text": "3.5.3 Identified Design Risks",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p757",
+        "style": "Heading 3",
+        "text": "3.8.1 Login and JWT Processing",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p761",
+        "style": "Heading 3",
+        "text": "3.8.2 URL Rules and Ownership Checks",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p768",
+        "style": "Heading 3",
+        "text": "3.9.1 Upload and Manual Creation",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p771",
+        "style": "Heading 3",
+        "text": "3.9.2 File Validation and Extraction",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p778",
+        "style": "Heading 3",
+        "text": "3.10.1 Text Normalization",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p781",
+        "style": "Heading 3",
+        "text": "3.10.2 Static Corpus and Vector Construction",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p790",
+        "style": "Heading 3",
+        "text": "3.11.1 Scoring Service",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p795",
+        "style": "Heading 3",
+        "text": "3.11.2 Matching Orchestration and Persistence",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p798",
+        "style": "Heading 3",
+        "text": "3.11.3 Recommendation Service",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p818",
+        "style": "Heading 3",
+        "text": "3.14.1 Async Executor and Scheduler",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p821",
+        "style": "Heading 3",
+        "text": "3.14.2 Auto-Apply",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p826",
+        "style": "Heading 3",
+        "text": "3.14.3 Notification Guard and Delivery",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p829",
+        "style": "Figure Caption",
+        "text": "Figure 3.32. Notification policy evaluation and delivery outcome flowchart",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p966",
+        "style": "Normal",
+        "text": "[1] G. Salton, A. Wong, and C. S. Yang, “A vector space model for automatic indexing,” Communications of the ACM, vol. 18, no. 11, pp. 613–620, 1975, doi: 10.1145/361219.361220.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p967",
+        "style": "Normal",
+        "text": "[2] C. D. Manning, P. Raghavan, and H. Schütze, Introduction to Information Retrieval. Cambridge, U.K.: Cambridge University Press, 2008.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p968",
+        "style": "Normal",
+        "text": "[3] C. Buck and P. Koehn, “Quick and reliable document alignment via TF/IDF-weighted cosine distance,” in Proceedings of the First Conference on Machine Translation, vol. 2, Berlin, Germany, 2016, pp. 672–678, doi: 10.18653/v1/W16-2365.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p969",
+        "style": "Normal",
+        "text": "[4] J. J. Rocchio, “Relevance feedback in information retrieval,” in The SMART Retrieval System: Experiments in Automatic Document Processing, G. Salton, Ed. Englewood Cliffs, NJ, USA: Prentice-Hall, 1971, pp. 313–323.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p970",
+        "style": "Normal",
+        "text": "[5] K. Järvelin and J. Kekäläinen, “Cumulated gain-based evaluation of IR techniques,” ACM Transactions on Information Systems, vol. 20, no. 4, pp. 422–446, 2002, doi: 10.1145/582415.582418.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p971",
+        "style": "Normal",
+        "text": "[6] N. Drushchak and M. Romanyshyn, “Introducing the Djinni Recruitment Dataset: A corpus of anonymized CVs and job postings,” in Proceedings of the Third Ukrainian Natural Language Processing Workshop, Torino, Italy, 2024, pp. 8–13, doi: 10.63317/2dcvy45ws6yb.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p972",
+        "style": "Normal",
+        "text": "[7] X. Yu, R. Xu, C. Xue, J. Zhang, X. Ma, and Z. Yu, “ConFit v2: Improving resume-job matching using hypothetical resume embedding and runner-up hard-negative mining,” in Findings of the Association for Computational Linguistics: ACL 2025, Vienna, Austria, 2025, pp. 12775–12790, doi: 10.18653/v1/2025.findings-acl.661.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p973",
+        "style": "Normal",
+        "text": "[8] S. Vaishampayan et al., “Human and LLM-based resume matching: An observational study,” in Findings of the Association for Computational Linguistics: NAACL 2025, Albuquerque, NM, USA, 2025, pp. 4823–4838, doi: 10.18653/v1/2025.findings-naacl.270.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p974",
+        "style": "Normal",
+        "text": "[9] E. Tabassi, Artificial Intelligence Risk Management Framework (AI RMF 1.0), NIST AI 100-1. Gaithersburg, MD, USA: National Institute of Standards and Technology, 2023, doi: 10.6028/NIST.AI.100-1.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p975",
+        "style": "Normal",
+        "text": "[10] M. Raghavan, S. Barocas, J. Kleinberg, and K. Levy, “Mitigating bias in algorithmic hiring: Evaluating claims and practices,” in Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency, Barcelona, Spain, 2020, pp. 469–481, doi: 10.1145/3351095.3372828.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p976",
+        "style": "Normal",
+        "text": "[11] R. T. Fielding, “Architectural styles and the design of network-based software architectures,” Ph.D. dissertation, University of California, Irvine, CA, USA, 2000.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p977",
+        "style": "Normal",
+        "text": "[12] M. Jones, J. Bradley, and N. Sakimura, “JSON Web Token (JWT),” Internet Engineering Task Force, RFC 7519, May 2015, doi: 10.17487/RFC7519.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p978",
+        "style": "Normal",
+        "text": "[13] K. Kent and M. Souppaya, Guide to Computer Security Log Management, NIST SP 800-92. Gaithersburg, MD, USA: National Institute of Standards and Technology, 2006, doi: 10.6028/NIST.SP.800-92.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p979",
+        "style": "Normal",
+        "text": "[14] A. Colas, J. Araki, Z. Zhou, B. Wang, and Z. Feng, “Knowledge-grounded natural language recommendation explanation,” in Proceedings of the 6th BlackboxNLP Workshop, Singapore, 2023, pp. 1–15, doi: 10.18653/v1/2023.blackboxnlp-1.1.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p980",
+        "style": "Normal",
+        "text": "[15] ITviec, “ITviec | Top IT Jobs for You,” [Online]. Available: https://itviec.com/. [Accessed: Aug. 12, 2026].",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p981",
+        "style": "Normal",
+        "text": "[16] CareerViet, “Fast Recruitment & Job Search at CareerViet.vn,” [Online]. Available: https://careerviet.vn/en. [Accessed: Aug. 12, 2026].",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p982",
+        "style": "Normal",
+        "text": "[17] TopDev, “TopDev - Việc Làm Lương Cao Hàng Đầu,” [Online]. Available: https://topdev.vn/. [Accessed: Aug. 12, 2026].",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p983",
+        "style": "Normal",
+        "text": "[18] TopCV Vietnam, “TopCV Pro - Nơi kết nối Ứng viên chất & Doanh nghiệp hàng đầu,” [Online]. Available: https://www.topcv.vn/pro. [Accessed: Aug. 12, 2026].",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p984",
+        "style": "Normal",
+        "text": "[19] CareerViet, “Tăng Tỉ Lệ Ứng Tuyển Thành Công Với AI Matching - Cách Biến CV Của Bạn Thành 'Ứng Viên Sáng Giá',” CareerViet Talent Community, [Online]. Available: https://careerviet.vn/en/talentcommunity/tang-ti-le-ung-tuyen-thanh-cong-voi-ai-matching-cach-bien-cv-cua-ban-thanh-ung-vien-sang-gia.35A52D7D.html. [Accessed: Aug. 12, 2026].",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p985",
+        "style": "Normal",
+        "text": "[20] Huynh Xuan Hiep, Phan Phuong Lan (2011) – Introduction to Software Engineering Textbook (Giáo trình nhập môn Công Nghệ Phần Mềm), Can Tho University, 2011.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "body.p986",
+        "style": "Normal",
+        "text": "[21] Nguyen Cong Danh, Tran Cao De, Software Quality Assurance Textbook, Can Tho University Publishing House, 2014.",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table1.r1.c1.p1",
+        "style": "Normal",
+        "text": "Supervisor Thanh-Khoa Nguyen, Ph.D",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table1.r1.c2.p1",
+        "style": "Normal",
+        "text": "Student Pham Huu Hung - B2203557",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r1.c1.p1",
+        "style": "Normal",
+        "text": "Abbreviation",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r1.c2.p1",
+        "style": "Normal",
+        "text": "Full Term",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r1.c3.p1",
+        "style": "Normal",
+        "text": "Meaning / Explanation",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r2.c1.p1",
+        "style": "Normal",
+        "text": "API",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r2.c2.p1",
+        "style": "Normal",
+        "text": "Application Programming Interface",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r2.c3.p1",
+        "style": "Normal",
+        "text": "A defined interface through which software components communicate",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r3.c1.p1",
+        "style": "Normal",
+        "text": "CV",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r3.c2.p1",
+        "style": "Normal",
+        "text": "Curriculum Vitae",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r3.c3.p1",
+        "style": "Normal",
+        "text": "A document describing a candidate’s qualifications and experience",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r4.c1.p1",
+        "style": "Normal",
+        "text": "E2E",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r4.c2.p1",
+        "style": "Normal",
+        "text": "End-to-End",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r4.c3.p1",
+        "style": "Normal",
+        "text": "Testing of a complete workflow across integrated components",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r5.c1.p1",
+        "style": "Normal",
+        "text": "HITL",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r5.c2.p1",
+        "style": "Normal",
+        "text": "Human-in-the-Loop",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r5.c3.p1",
+        "style": "Normal",
+        "text": "Automation in which humans retain oversight or approval authority",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r6.c1.p1",
+        "style": "Normal",
+        "text": "JD",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r6.c2.p1",
+        "style": "Normal",
+        "text": "Job Description",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r6.c3.p1",
+        "style": "Normal",
+        "text": "A description of a job’s responsibilities and requirements",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r7.c1.p1",
+        "style": "Normal",
+        "text": "JWT",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r7.c2.p1",
+        "style": "Normal",
+        "text": "JSON Web Token",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r7.c3.p1",
+        "style": "Normal",
+        "text": "A compact token format used for authentication and authorization",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r8.c1.p1",
+        "style": "Normal",
+        "text": "MRR",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r8.c2.p1",
+        "style": "Normal",
+        "text": "Mean Reciprocal Rank",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r8.c3.p1",
+        "style": "Normal",
+        "text": "A ranking metric based on the position of the first relevant item",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r9.c1.p1",
+        "style": "Normal",
+        "text": "nDCG",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r9.c2.p1",
+        "style": "Normal",
+        "text": "Normalized Discounted Cumulative Gain",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r9.c3.p1",
+        "style": "Normal",
+        "text": "A ranking metric that accounts for relevance and position",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r10.c1.p1",
+        "style": "Normal",
+        "text": "NLP",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r10.c2.p1",
+        "style": "Normal",
+        "text": "Natural Language Processing",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r10.c3.p1",
+        "style": "Normal",
+        "text": "Methods for processing and analyzing human language",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r11.c1.p1",
+        "style": "Normal",
+        "text": "OCR",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r11.c2.p1",
+        "style": "Normal",
+        "text": "Optical Character Recognition",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r11.c3.p1",
+        "style": "Normal",
+        "text": "Extraction of machine-readable text from images or scanned documents",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r12.c1.p1",
+        "style": "Normal",
+        "text": "RBAC",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r12.c2.p1",
+        "style": "Normal",
+        "text": "Role-Based Access Control",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r12.c3.p1",
+        "style": "Normal",
+        "text": "Authorization based on assigned user roles",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r13.c1.p1",
+        "style": "Normal",
+        "text": "REST",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r13.c2.p1",
+        "style": "Normal",
+        "text": "Representational State Transfer",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r13.c3.p1",
+        "style": "Normal",
+        "text": "An architectural style for networked APIs",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r14.c1.p1",
+        "style": "Normal",
+        "text": "TF-IDF",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r14.c2.p1",
+        "style": "Normal",
+        "text": "Term Frequency–Inverse Document Frequency",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r14.c3.p1",
+        "style": "Normal",
+        "text": "A weighting method for representing text terms",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r15.c1.p1",
+        "style": "Normal",
+        "text": "UAT",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r15.c2.p1",
+        "style": "Normal",
+        "text": "User Acceptance Testing",
+        "character_spacing": true,
+        "fit_text": false
+      },
+      {
+        "location": "table2.r15.c3.p1",
+        "style": "Normal",
+        "text": "Validation of whether the system satisfies intended user workflows",
+        "character_spacing": true,
+        "fit_text": false
+      }
+    ],
+    "literal_spacing": [
+      {
+        "location": "body.p46",
+        "style": "Normal",
+        "text": "Can Tho, August 2026",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p47",
+        "style": "Normal",
+        "text": "Student",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p51",
+        "style": "Normal",
+        "text": "Pham Huu Hung",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p56",
+        "style": "Normal",
+        "text": "Can Tho, August 2026",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p57",
+        "style": "Normal",
+        "text": "Student",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p61",
+        "style": "Normal",
+        "text": "Pham Huu Hung",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p83",
+        "style": "Normal",
+        "text": "Can Tho, August 2026",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p444",
+        "style": "List Paragraph",
+        "text": "• Implement AutoFit policies that convert eligible Matching results into controlled Applications using enablement, pause state, a processed default CV, ACTIVE Job state, score threshold, duplicate checks, and a bounded per-run limit.",
+        "multiple_spaces": true,
+        "nbsp": 0
+      },
+      {
+        "location": "body.p590",
+        "style": "Normal",
+        "text": "DCG@K = Σ(i=1..K) (2^relᵢ − 1) / log₂(i + 1),",
+        "multiple_spaces": true,
+        "nbsp": 0
+      }
+    ],
+    "wide_word_spacing_risk": [
+      {
+        "location": "body.p459",
+        "style": "Normal",
+        "text": "The research models CareerFit as a Perception-Decision-Action-Learning-Audit workflow. It first identifies recruitment roles, requirements, and control boundaries; then designs and implements the data, matching, recommendation, feedback, automation, email action, and audit modules. Finally, the study evaluates algorithm behavior, software correctness, browser workflows, authorization, runtime health, and local latency within the stated experimental scope.",
+        "alignment": "JUSTIFY",
+        "tabs": 0,
+        "line_breaks": 0,
+        "longest_token": 41,
+        "word_count": 53,
+        "in_table": false
+      },
+      {
+        "location": "body.p956",
+        "style": "Normal",
+        "text": "Future work should prioritize:",
+        "alignment": "JUSTIFY",
+        "tabs": 0,
+        "line_breaks": 0,
+        "longest_token": 11,
+        "word_count": 4,
+        "in_table": false
+      }
+    ]
+  },
+  "repeated_sentences": [],
+  "invalid_characters": {
+    "replacement": 0,
+    "nul": 0,
+    "soft_hyphen": 0,
+    "nbsp": 0
+  }
+}

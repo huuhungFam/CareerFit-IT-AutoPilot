@@ -108,6 +108,8 @@ public class JobDtos {
         String language,
         String status,
         Instant createdAt,
+        String applicationMode,
+        String sourceUrl,
         List<ValidationDtos.QualitySignal> qualitySignals
     ) {}
 
@@ -131,6 +133,8 @@ public class JobDtos {
         String status,
         Instant createdAt,
         Instant updatedAt,
+        String applicationMode,
+        String sourceUrl,
         List<ValidationDtos.QualitySignal> qualitySignals
     ) {}
 
@@ -152,5 +156,23 @@ public class JobDtos {
         List<String> titles,
         List<String> companies,
         List<String> skills
+    ) {}
+
+    /** Publish preflight. Near duplicates are warning-only and require explicit confirmation to publish. */
+    public record DuplicateCheckRequest(
+        @NotBlank @Size(max = 255) String title,
+        @NotBlank @Size(max = 255) String company,
+        @NotBlank String originalText,
+        @Size(max = 50) String employmentType,
+        @Size(max = 255) String location
+    ) {}
+
+    public record NearDuplicateResponse(String jobId, String title, double similarity) {}
+
+    public record DuplicateCheckResponse(
+        String fingerprint,
+        boolean exactDuplicate,
+        double nearDuplicateThreshold,
+        List<NearDuplicateResponse> nearDuplicates
     ) {}
 }

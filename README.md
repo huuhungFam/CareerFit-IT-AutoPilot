@@ -167,14 +167,14 @@ Hiện tại UI candidate có các luồng chính:
 - Login gọi backend `POST /api/auth/login`; token và account được lưu trong `sessionStorage` và được xóa khi đóng tab. Các tài khoản test nhanh `ca` / `1`, `re` / `1`, `ad` / `1` là tài khoản seed thật từ backend/Flyway, không phải phiên mock tạm thời. Backend cần chạy để đăng nhập các tài khoản này; admin seed dùng email/identifier `ad`.
 - Trang tổng quan hiển thị search hero, một số job mới và nút xem tất cả.
 - Khi gõ keyword sẽ hiển thị gợi ý tìm kiếm trong lúc input đang focus.
-- Bấm Search sẽ chuyển sang trang kết quả `/candidate/jobs?keyword=...`.
+- Bấm Search chuyển sang catalog `/jobs?keyword=...`; route cũ `/candidate/jobs` tự chuyển về catalog này và giữ query string.
 - Trang kết quả hiển thị list job một cột, filter bar và link vào job detail.
 - Job detail có sticky apply bar khi cuộn xuống.
 - Nhà tuyển dụng nổi bật, hồ sơ công ty và danh sách JD của công ty dùng lần lượt `/api/employers/featured`, `/api/employers/{slug}` và `/api/employers/{slug}/jobs`.
 - Upload CV có 2 tab: Document Parser và Manual Creation.
 - Hồ sơ & CV quản lý nhiều CV, hồ sơ cố định và Portfolio / Dự án.
 - Candidate Settings quản lý tài khoản, job alerts, privacy và security.
-- Candidate job feed ưu tiên `GET /api/matches/me/cards` để lấy score/potential/reasons. Account test seed `ca` / `1` đã có default CV và matching seed nên route Candidate Jobs có thể lấy data thật khi backend đang chạy.
+- Catalog `/jobs` dùng `GET /api/jobs/search` cho cả guest và Candidate, có phân trang; Candidate đăng nhập có thể apply trực tiếp còn guest được chuyển đến login. Matching theo CV dùng `GET /api/matches/me/cards?cvId=...` trong chi tiết CV ở Profile.
 - Candidate job cards/detail có Rocchio feedback UI: `GOOD_MATCH`, `POTENTIAL`, `BAD_MATCH`, `NOT_INTERESTED`; public/guest cards không hiện feedback controls.
 - Candidate job results có edge-case UX: no-match CTA, low-match-only warning, stable tie-score ordering và tie-break note khi có metadata.
 - Manual CV Builder và Hồ sơ cố định có field-level validation suggestions, phân biệt quality flag/warning/hard error pattern để sau này map trực tiếp từ backend validation signals.
@@ -190,7 +190,7 @@ Hiện tại UI candidate có các luồng chính:
 - Nút Việc làm tương tự ở job detail đọc endpoint public `/api/recommendations/jobs/{jobId}/similar`; xuất CSV recruiter tạo file có dữ liệu thật từ `/api/recruiter/jobs` thay vì file rỗng.
 - Dashboard Candidate lấy số gợi ý, số đơn ứng tuyển và trạng thái Auto-Apply từ API thật; nút Apply trên job mới thực hiện `POST /api/applications` thay vì chỉ đổi giao diện.
 - Trang Gợi ý đọc `/api/matches/me/cards`, xếp các kết quả tốt nhất hiện có và nối xem chi tiết, ứng tuyển, bỏ qua/phản hồi. Trang không còn phụ thuộc ngưỡng cứng khiến tài khoản có match thấp bị rỗng giả.
-- Trang Candidate Jobs dùng phân trang 20 job/trang; nút `Xem thêm 20 việc làm` gọi tiếp page kế tiếp và tự ẩn khi backend trả hết `totalPages`.
+- Catalog dùng phân trang 20 job/trang; nút `Xem thêm 20 việc làm` gọi tiếp page kế tiếp và tự ẩn khi backend trả hết `totalPages`.
 - Candidate/Recruiter Settings đọc và lưu `/api/settings/me`; session được xác minh lại bằng `/api/auth/me` khi reload. Magic-link có route `/auth/magic-link/verify` để inspect token, consume token, lưu JWT và chuyển về dashboard theo role. URL trong email backend cần trỏ token về route frontend này thay vì mở trực tiếp API GET.
 - AutoFit/Automation page đã nối policy backend, có toggle `emailNotificationsEnabled`/no-spam, Auto-Apply threshold, high-match email, daily digest, quiet hours, cooldown và nút `Run now` để gọi `POST /api/automation/auto-apply/run-now` khi cần test ngay. Frontend mapper chuyển đúng field UI như `highMatchEmailEnabled`, `highMatchThreshold`, `maxEmailsPerDay` sang contract backend tương ứng.
 - Recruiter job page đã nối discovery/invite/status flow: `GET /api/recruiter/jobs/{jobId}/candidates`, `POST /api/recruiter/jobs/{jobId}/candidates/{candidateId}/invite`, `PATCH /api/recruiter/applications/{id}/status`. Modal review ứng viên hiển thị portfolio chỉ khi candidate đã apply và bật `showPortfolioAfterApply`.

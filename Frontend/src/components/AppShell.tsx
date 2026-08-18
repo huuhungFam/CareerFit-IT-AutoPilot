@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   UploadCloud,
   UserRound,
+  Users,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import type { Role } from '../types';
@@ -43,6 +44,7 @@ const guestLinks = [
 const recruiterLinks = [
   { to: '/recruiter', key: 'dashboard', icon: Home },
   { to: '/recruiter/jobs', key: 'jobs', icon: BriefcaseBusiness },
+  { to: '/recruiter/talent-pool', key: 'talentPool', icon: Users },
   { to: '/recruiter/analytics', key: 'analytics', icon: BarChart3 },
   { to: '/recruiter/advanced-analytics', key: 'advancedAnalytics', icon: Gauge },
   { to: '/recruiter/automation', key: 'automation', icon: SlidersHorizontal },

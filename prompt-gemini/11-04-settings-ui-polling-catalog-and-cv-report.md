@@ -32,12 +32,20 @@ Hoàn thiện API/UI cho Demo Mode và Candidate experience; hoàn tất Phase 2
    - `uploadedPdf` trong translation resource được update thành generic "Tệp CV đã tải lên" / "CV file uploaded" để phù hợp với DOCX.
 
 ## 4. Testing & Verifications
-- **Backend Build & Tests**: `mvnw test` executed successfully.
-- **Frontend Build**: `npm run build` completed via vite without type errors.
-- **Test Types**:
-  - `CvControllerTest`
-  - `RecommendationControllerTest`
-  - `SettingsControllerTest`
+
+Verified on 2026-08-16:
+
+- `Backend/careerfit-backend`: `./mvnw.cmd test-compile` — PASS.
+- `Backend/careerfit-backend`: `./mvnw.cmd '-Dtest=Phase1OutboxPolicyTest,Phase2SettingsCatalogCvIntegrationTest' test` — PASS: Phase 1 has 9 tests; `Phase2SettingsCatalogCvIntegrationTest` has 3 tests.
+- `Frontend`: `npm run type-check` — PASS.
+- `Frontend`: `npx playwright test tests/phase2-ui.spec.ts tests/job-description.spec.ts --project=chromium --reporter=line` — PASS: 3 tests.
+- Root: `git diff --check` — PASS.
+
+The actual Phase 2 integration class is `Phase2SettingsCatalogCvIntegrationTest`: it verifies settings timing/toggle, unscored active catalog entries and enriched matching entries, and CV success, failure, owner-only retry, and recovery. Browser coverage is in `Frontend/tests/phase2-ui.spec.ts` and exercises settings PATCH plus unscored catalog rendering.
 
 ## 5. Verdict
-**READY_FOR_REAUDIT**: Checkpoint 2 (Phase 2) is fully complete.
+## Scope and risk
+
+No Phase 3+ workflow, migration, import, reset, or main-database mutation was performed. The only external dependency mocked in the CV integration test is document extraction/storage; persistence, state transitions, authorization, and API contracts use Testcontainers.
+
+**READY_FOR_REAUDIT**: Checkpoint 2 (Phase 2) is ready for independent verification.

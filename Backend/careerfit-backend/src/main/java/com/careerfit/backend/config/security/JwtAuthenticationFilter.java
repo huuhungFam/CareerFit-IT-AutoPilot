@@ -68,7 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String email = jwtService.extractSubject(token);
         String role  = jwtService.extractRole(token);
-        if (!StringUtils.hasText(email) || !ALLOWED_ROLES.contains(role)) {
+        String tokenUserId = jwtService.extractUserId(token);
+        if (!StringUtils.hasText(email) || !ALLOWED_ROLES.contains(role) || !StringUtils.hasText(tokenUserId)) {
             SecurityContextHolder.clearContext();
             errorWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED,
                     "TOKEN_CLAIMS_INVALID", "Token claims are invalid");
@@ -80,6 +81,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             errorWriter.write(response, HttpServletResponse.SC_FORBIDDEN,
                     "ACCOUNT_DISABLED", "Account is disabled or not found");
+            return;
+        }
+        if (!user.getId().toString().equals(tokenUserId) || !user.getRole().name().equals(role)) {
+            SecurityContextHolder.clearContext();
+            errorWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED,
+                    "TOKEN_ACCOUNT_MISMATCH", "Token no longer belongs to this account");
             return;
         }
 

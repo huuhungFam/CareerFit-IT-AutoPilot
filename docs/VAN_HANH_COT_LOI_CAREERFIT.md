@@ -169,6 +169,8 @@ Với PDF scan hoặc image-only, hệ thống dùng OCR nếu `app.ocr.enabled=
 
 Nói ngắn gọn: PDF có text thật thì đọc trực tiếp bằng PDFBox; PDF scan chỉ là ảnh thì phải OCR. Nếu OCR tắt hoặc Tesseract không chạy được, CV scan sẽ xử lý thất bại với lý do rõ ràng.
 
+Project có thêm `ImagePreprocessingService` với grayscale, đảo ảnh nền tối, crop whitespace, resize, tăng tương phản, lọc nhiễu, deskew và adaptive binarization. Tuy nhiên `PdfExtractionService` hiện chưa inject/call service này; ảnh gửi Tesseract vẫn là ảnh đọc/render trực tiếp. Vì vậy đây là module chuẩn bị cho cải thiện OCR, chưa phải bước đang chạy trong pipeline extract hiện tại.
+
 ### 3.4. Trích xuất text từ ảnh CV
 
 Với PNG/JPG/JPEG:
@@ -406,6 +408,25 @@ Trong đó:
 - `potential_reason`: câu giải thích bổ sung khi heuristic Potential bật.
 - `needs_recompute`: đánh dấu cần tính lại sau Rocchio hoặc thay đổi vector.
 
+### 6.5. Potential đang chạy trong `ScoringService`
+
+Theo implementation hiện tại, `ScoringService` dùng heuristic trực tiếp:
+
+```text
+35 <= score < 75 và có ít nhất 3 term job quan trọng trùng CV
+
+hoặc
+
+35 <= score < 75, seniority tương thích
+và có ít nhất 2 term job quan trọng trùng CV
+```
+
+Term job chỉ được đếm khi trọng số lớn hơn `0.01`. Seniority tương thích gồm cùng level và một số level liền kề như Junior-Mid hoặc Mid-Senior.
+
+Project có `SkillTransferService` và file `matching/skill-transfer-model.json`, nhưng `ScoringService` hiện không inject/call service này. Vì vậy skill-transfer graph chưa phải đường Potential đang vận hành trong runtime hiện tại. Khi bảo vệ, phải phân biệt rõ code đã tồn tại với code đang được nối vào pipeline.
+
+Một giới hạn dữ liệu cần biết: trong upsert thông thường, nếu lần trước có `potentialReason` nhưng lần sau Potential trở thành false, code hiện không có nhánh xóa reason cũ. Scheduler recompute cũng chỉ cập nhật score, label và `isPotential`, không cập nhật `matchReasons` hoặc `potentialReason`. Vì vậy hai trường giải thích có thể cũ hơn kết quả score sau recompute; đây là điểm cần hoàn thiện.
+
 ## 7. Query ranking và feed kết quả
 
 Scoring không chạy lại mỗi lần người dùng mở UI. Kết quả đã được lưu trong bảng `matching`, sau đó query service đọc ra.
@@ -436,6 +457,41 @@ Nếu nhiều candidate cùng điểm, response có `TieBreakMeta` để UI bi�
 - Rule tie-break đang dùng.
 
 Phần này không phải thuật toán scoring mới. Nó chỉ giúp danh sách hiển thị ổn định và giải thích được khi nhiều ứng viên có cùng điểm.
+
+### 7.1. Recommendation feed cho candidate
+
+`RecommendationService` tạo feed riêng tại:
+
+```text
+GET /api/recommendations/jobs
+GET /api/recommendations/jobs/{jobId}/similar
+```
+
+Recommendation không thay thế bảng matching. Khi default CV đã `SCORING_DONE` và có matching đủ dùng, service lấy tối đa gấp đôi số lượng cần trả rồi re-rank:
+
+```text
+skillBoost    = tỷ lệ desired skill có trong required skill * 30
+locationBoost = 15 nếu location hai phía chứa nhau, ngược lại 0
+
+finalScore = min(100,
+    0.7 * matchingScore
+  + 0.2 * skillBoost
+  + 0.1 * locationBoost)
+```
+
+Do `skillBoost` đã có trần 30 và `locationBoost` có trần 15, đóng góp tối đa thực tế sau khi nhân hệ số lần lượt là 6 và 1.5 điểm. Ngay cả khi matching score bằng 100, `finalScore` tối đa theo công thức hiện tại chỉ là `77.5`; phép `min(100, ...)` gần như không chạm trần. Vì vậy cosine matching vẫn chi phối phần lớn thứ tự recommendation, nhưng thang final score không còn tương đương thang matching 0-100.
+
+Service fallback sang profile-based recommendation khi:
+
+- Candidate chưa có default CV.
+- CV chưa `SCORING_DONE` hoặc đang `FAILED`.
+- Chưa có matching, hoặc best matching thấp hơn `scoreLabelLowMax` hiện là 40.
+
+Fallback profile cộng tối đa 40 điểm khi title phù hợp, tối đa 30 điểm skill overlap và 15 điểm location. Kết quả dùng label `UNKNOWN`, không phải nhãn matching.
+
+Luồng similar jobs so sánh tỷ lệ required skill trùng với job tham chiếu, chỉ giữ score lớn hơn 20 và trả tối đa 10 job. Nếu job tham chiếu không có structured skill, service fallback sang các job cùng seniority với score cố định 30.
+
+Điểm cần nói đúng: recommendation score là điểm xếp hạng sản phẩm, không phải cosine score và cũng không phải xác suất ứng viên được tuyển.
 
 ## 8. Feedback và học lại bằng Rocchio
 
@@ -632,6 +688,38 @@ expire token quá hạn
 delete token đã expired quá 30 ngày
 ```
 
+### 9.7. Durable notification outbox: nền móng đã có, chưa là đường gửi chính
+
+Migration V31 tạo bảng `notification_outbox` với các trạng thái:
+
+```text
+PENDING
+PROCESSING
+SENT
+FAILED
+```
+
+`OutboxService.enqueue()` yêu cầu target là `MATCHING` hoặc `JOB`, sau đó insert idempotent theo khóa:
+
+```text
+(recipient_user_id, email_type, target_type, target_key)
+```
+
+Nhờ `ON CONFLICT DO NOTHING`, cùng một recipient/type/target không tạo nhiều outbox item. Bảng còn có `scheduled_at`, `attempt_count`, `last_error` và `sent_at`; migration V32 thêm index để tìm item `PROCESSING` bị kẹt.
+
+Unique constraint áp dụng bất kể status. Vì vậy nếu một item đã `FAILED` hoặc `SENT`, enqueue lại cùng identity vẫn bị bỏ qua; muốn hỗ trợ retry/resend cần cập nhật row cũ hoặc thiết kế thêm khóa occurrence/version.
+
+Tuy nhiên, theo code runtime hiện tại:
+
+- Không có service/scheduler đọc item `PENDING` để claim và gửi.
+- Không có luồng recovery chuyển item `PROCESSING` bị kẹt về trạng thái có thể retry.
+- Các service email hiện vẫn gọi `IMailService`/`EmailActionService` trực tiếp.
+- `OutboxService` hiện chỉ được dùng trong test, chưa được gọi bởi luồng nghiệp vụ chính.
+
+Vì vậy đây là **durable outbox foundation**, chưa phải hệ thống gửi email qua outbox hoàn chỉnh. Không nên trình bày rằng email production đã có retry bền vững qua outbox.
+
+Một chi tiết logging: lifecycle email gọi mail service bất đồng bộ. `NotificationEmailService` ghi delivery `SENT` sau khi giao việc cho mail service; vì vậy log này gần với "đã chấp nhận gửi" hơn là biên nhận SMTP cuối cùng. `MailService` tự log lỗi phát sinh trong worker bất đồng bộ.
+
 ## 10. Scheduler
 
 Service chính: `AutomationScheduler`.
@@ -663,6 +751,8 @@ find matching needsRecompute=true
   -> update rawScore/normalizedScore/label/isPotential
   -> needsRecompute=false
 ```
+
+Scheduler hiện không ghi lại `matchReasons` và `potentialReason` từ `ScoringResult`. Do đó recompute làm mới điểm/cờ nhưng chưa bảo đảm phần giải thích được làm mới cùng lúc.
 
 Nguồn phổ biến làm `needsRecompute=true` là Rocchio update learned vector của job.
 
@@ -760,6 +850,18 @@ Giới hạn này giúp tránh tự động apply quá nhiều trong một lư�
 
 Vì auto-apply là hành động có tác động thật đến ứng tuyển, hệ thống cần ngưỡng điểm, chống trùng và giới hạn số lượng mỗi lượt chạy.
 
+### 10.6. Stored policy và effective policy
+
+`AutomationPolicyService` quản lý policy lưu trong database. `EffectiveAutomationPolicyResolver` tạo một projection dùng cho Settings UI:
+
+- Tài khoản imported bị ép tắt demo mode, autopilot, auto-apply, email notification, digest và email action trong effective response.
+- Demo mode bỏ cooldown/quiet hours và trả timing nhanh: poll 5 giây, gợi ý đầu sau 12 giây, cách nhau 30 giây, recovery cadence 30 giây.
+- Normal mode trả timing chậm hơn: poll 5 phút, spacing/recovery 1 giờ.
+
+Điểm cần phân biệt: resolver hiện chỉ được `SettingsService` sử dụng để trả cấu hình/timing cho frontend. `AutomationScheduler`, `NotificationPolicyGuard` và `AutoApplyService` vẫn đọc `AutomationPolicy` đã lưu trực tiếp. Vì vậy các giá trị effective chưa phải một lớp enforcement thống nhất cho toàn bộ backend.
+
+Ví dụ, việc effective response tắt email cho imported user không tự động chứng minh mọi scheduler đã bỏ qua user đó nếu stored policy vẫn bật. Muốn policy có hiệu lực nhất quán, các consumer nghiệp vụ cần cùng gọi resolver hoặc policy phải được normalize trước khi lưu.
+
 ## 11. Auto-apply và application workflow
 
 Auto-apply tạo `Application` giống một ứng tuyển thật, nhưng có cờ cho biết được tạo bởi hệ thống.
@@ -802,6 +904,8 @@ Khi debug production, hai nguồn log này rất quan trọng:
 
 Nói cách khác: audit log theo dõi hành động nghiệp vụ; delivery log theo dõi riêng kênh email.
 
+Outbox bổ sung một nguồn trạng thái vận hành khác gồm `PENDING/PROCESSING/SENT/FAILED`, `attemptCount` và `lastError`. Tuy nhiên vì worker outbox chưa được nối, các trạng thái này hiện chủ yếu mô tả schema/foundation chứ chưa phản ánh toàn bộ email đang gửi.
+
 ## 13. Các trạng thái dữ liệu cần nắm
 
 ### 13.1. CV
@@ -809,7 +913,10 @@ Nói cách khác: audit log theo dõi hành động nghiệp vụ; delivery log 
 ```text
 UPLOADED -> VALIDATING/PROCESSING -> SCORING_DONE
                                   -> FAILED
+SCORING_DONE/FAILED/... -> BANNED sau moderation
 ```
+
+`FAILED` có thể quay lại `UPLOADED` qua endpoint retry. `BANNED` là trạng thái quản trị, không phải lỗi kỹ thuật của OCR/scoring.
 
 ### 13.2. Matching
 
@@ -866,9 +973,18 @@ INTERVIEW_RESCHEDULED
 INTERVIEW_CANCELLED
 ```
 
+### 13.6. Notification outbox
+
+```text
+PENDING -> PROCESSING -> SENT
+                     -> FAILED
+```
+
+Đây là state machine theo thiết kế schema. Runtime hiện chưa có processor thực hiện đầy đủ các transition này.
+
 ## 14. Những điểm nên nhấn mạnh khi bảo vệ
 
-1. Hệ thống không chỉ chấm điểm bằng một công thức đơn lẻ. Nó là pipeline gồm extract text, normalize, vectorize, scoring, ranking, feedback learning và notification.
+1. Hệ thống không chỉ chấm điểm bằng một công thức đơn lẻ. Nó là pipeline gồm extract text, normalize, vectorize, scoring, recommendation, feedback learning và notification.
 2. CV upload có validate định dạng thật bằng content type và magic bytes, không chỉ tin vào tên file.
 3. PDF có hai đường extract: text nhúng bằng PDFBox và OCR fallback cho file scan.
 4. Matching được tính nền và lưu vào database, nên UI đọc nhanh thay vì tính lại mỗi request.
@@ -878,27 +994,38 @@ INTERVIEW_CANCELLED
 8. Scheduler chịu trách nhiệm cho recompute, digest, token cleanup, high-match notification và auto-apply.
 9. Auto-apply có ngưỡng policy, chống duplicate và giới hạn 3 application mỗi lượt chạy.
 10. Audit log và delivery log giúp truy vết các quyết định quan trọng.
+11. Recommendation score là điểm re-rank sản phẩm, khác cosine matching score.
+12. Outbox và image preprocessing đã có nền móng nhưng chưa được nối vào luồng runtime chính; cần trình bày đúng mức độ hoàn thiện.
+13. Effective policy hiện được dùng cho Settings projection, chưa được mọi scheduler/guard dùng thống nhất.
+14. Potential runtime hiện vẫn là heuristic trong `ScoringService`; skill-transfer graph tồn tại nhưng chưa được gọi.
 
 ## 15. Câu trả lời mẫu ngắn
 
 Nếu được hỏi "hệ thống xử lý CV và matching như thế nào?", có thể trả lời:
 
-> Khi candidate upload CV, backend validate file PDF/ảnh/DOCX, trích xuất text bằng PDFBox/Apache POI hoặc OCR Tesseract nếu là scan/ảnh. Text được chuẩn hóa, detect language, loại stopword rồi chuyển thành vector TF-IDF. JD cũng được vector hóa tương tự khi recruiter tạo hoặc sửa job. Matching được tính bằng cosine similarity giữa vector CV và vector job, chuyển sang điểm 0-100, gán nhãn và lưu vào bảng matching. Nếu người dùng feedback qua web hoặc email, Rocchio cập nhật learned vector của job và scheduler tính lại các matching liên quan. Kênh email có notification lifecycle, digest và token feedback; token được hash, có hạn 72 giờ, GET chỉ xác nhận còn POST mới thực thi hành động.
+> Khi candidate upload CV, backend validate file PDF/ảnh/DOCX, trích xuất text bằng PDFBox/Apache POI hoặc OCR Tesseract nếu là scan/ảnh. Text được chuẩn hóa, detect language, loại stopword rồi chuyển thành vector TF-IDF. JD cũng được vector hóa tương tự khi recruiter tạo hoặc sửa job. Matching được tính bằng cosine similarity, gán nhãn và lưu vào database; recommendation có thể re-rank kết quả theo desired skill và location. Nếu người dùng feedback qua web hoặc email, Rocchio cập nhật learned vector của job và scheduler tính lại các matching liên quan. Kênh email có lifecycle, digest và token feedback; token được hash, có hạn 72 giờ, GET chỉ xác nhận còn POST mới thực thi hành động.
 
 ## 16. File code nên đọc kèm
 
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/cv/service/CvIngestionService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/cv/service/PdfExtractionService.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/cv/service/ImagePreprocessingService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/job/service/JobService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/common/util/TextNormalizationService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/common/util/TfIdfService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/matching/service/ScoringService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/matching/service/MatchingService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/matching/service/MatchingQueryService.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/matching/service/SkillTransferService.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/recommendation/service/RecommendationService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/feedback/service/FeedbackService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/feedback/service/RocchioService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/notification/service/NotificationEmailService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/notification/service/EmailActionService.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/notification/controller/EmailActionController.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/notification/service/OutboxService.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/notification/entity/NotificationOutbox.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/scheduler/AutomationScheduler.java`
 - `Backend/careerfit-backend/src/main/java/com/careerfit/backend/automation/service/AutoApplyService.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/automation/service/EffectiveAutomationPolicyResolver.java`
+- `Backend/careerfit-backend/src/main/java/com/careerfit/backend/settings/service/SettingsService.java`

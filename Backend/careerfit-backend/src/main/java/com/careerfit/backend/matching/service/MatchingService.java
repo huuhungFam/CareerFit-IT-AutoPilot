@@ -11,6 +11,7 @@ import com.careerfit.backend.matching.entity.Matching;
 import com.careerfit.backend.matching.repository.MatchingRepository;
 import com.careerfit.backend.notification.service.EmailActionService;
 import com.careerfit.backend.notification.service.NotificationEmailService;
+import com.careerfit.backend.notification.service.OutboxService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +42,7 @@ public class MatchingService {
     private final CVRepository cvRepo;
     private final AutomationPolicyService automationPolicyService;
     private final EmailActionService emailActionService;
+    private final OutboxService outboxService;
 
     public MatchingService(JobRepository jobRepo,
                            MatchingRepository matchingRepo,
@@ -50,7 +52,8 @@ public class MatchingService {
                            NotificationEmailService notificationEmailService,
                            CVRepository cvRepo,
                            AutomationPolicyService automationPolicyService,
-                           EmailActionService emailActionService) {
+                           EmailActionService emailActionService,
+                           OutboxService outboxService) {
         this.jobRepo = jobRepo;
         this.matchingRepo = matchingRepo;
         this.scoringService = scoringService;
@@ -60,6 +63,7 @@ public class MatchingService {
         this.cvRepo = cvRepo;
         this.automationPolicyService = automationPolicyService;
         this.emailActionService = emailActionService;
+        this.outboxService = outboxService;
     }
 
     /**
@@ -116,7 +120,7 @@ public class MatchingService {
     @Transactional
     public void scoreJobAgainstAllCvs(UUID jobId) {
         Job job = jobRepo.findById(jobId).orElse(null);
-        if (job == null) {
+        if (job == null || job.getStatus() != Job.JobStatus.ACTIVE) {
             log.warn("Skipping matching because job no longer exists: {}", jobId);
             return;
         }
@@ -133,11 +137,13 @@ public class MatchingService {
             }
         }
         log.info("Job {} matching complete. CVs={}, scored={}", job.getId(), cvs.size(), scored);
+        job.setMatchingRecoveryNeeded(false);
+        jobRepo.save(job);
     }
 
     // ── Core upsert ───────────────────────────────────────────────────────
 
-    private void upsertMatching(CV cv, Job job) {
+    private Matching upsertMatching(CV cv, Job job) {
         ScoringService.ScoringResult result = scoringService.score(cv, job);
 
         Optional<Matching> existing = matchingRepo.findByCvIdAndJobId(cv.getId(), job.getId());
@@ -165,7 +171,7 @@ public class MatchingService {
         }
 
         try {
-            matchingRepo.saveAndFlush(matching);
+            matching = matchingRepo.saveAndFlush(matching);
         } catch (DataIntegrityViolationException e) {
             Matching concurrent = matchingRepo.findByCvIdAndJobId(cv.getId(), job.getId())
                     .orElseThrow(() -> e);
@@ -176,8 +182,21 @@ public class MatchingService {
             concurrent.setNeedsRecompute(false);
             concurrent.setMatchReasonsJson(matching.getMatchReasonsJson());
             concurrent.setPotentialReasonJson(matching.getPotentialReasonJson());
-            matchingRepo.saveAndFlush(concurrent);
+            matching = matchingRepo.saveAndFlush(concurrent);
         }
+        enqueueEligibleMatch(matching);
+        return matching;
+    }
+
+    /** Both event and recovery paths arrive here, so the outbox unique key is the sole dedupe winner. */
+    private void enqueueEligibleMatch(Matching matching) {
+        if (matching.getLabel() != Matching.MatchLabel.HIGH) return;
+        var candidate = matching.getCv().getCandidate().getUser();
+        var policy = automationPolicyService.getOrCreate(candidate.getId());
+        if (policy == null || !policy.isEmailNotificationsEnabled() || !policy.isHighMatchEmailEnabled()) return;
+        if (matching.getNormalizedScore().doubleValue() < policy.getMinScoreToNotify()) return;
+        outboxService.enqueueSuggestion(candidate.getId(), matching.getId(), matching.getJob().getId(),
+                java.time.Instant.now(), policy.isDemoModeEnabled());
     }
 
     private boolean isLanguageCompatible(String cvLang, String jobLang) {
@@ -206,7 +225,7 @@ public class MatchingService {
                 && policy.isHighMatchEmailEnabled()
                 && bestScore >= policy.getMinScoreToNotify()
                 && best.getLabel() == Matching.MatchLabel.HIGH) {
-            emailActionService.sendMatchNotification(user, best);
+            enqueueEligibleMatch(best);
             return;
         }
         if (bestScore < 40.0) {

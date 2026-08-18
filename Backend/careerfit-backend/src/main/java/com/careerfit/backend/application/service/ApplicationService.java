@@ -79,6 +79,12 @@ public class ApplicationService {
         if (job.getStatus() != Job.JobStatus.ACTIVE) {
             throw AppException.badRequest("Job is no longer accepting applications");
         }
+        if (!job.isInternalApplication()) {
+            String source = job.getSourceUrl();
+            throw AppException.conflict(source == null || source.isBlank()
+                    ? "This imported job is externally hosted and cannot accept an internal CareerFit application"
+                    : "This imported job is externally hosted. Apply at: " + source);
+        }
 
         if (appRepo.existsByCandidateIdAndJobId(candidate.getId(), req.jobId())) {
             throw AppException.conflict("You have already applied to this job");

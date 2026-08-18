@@ -58,7 +58,11 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
                 .xssProtection(xss -> xss.disable()) // using CSP instead
-                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'; sandbox"))
+                // Email-action redemption renders a same-origin confirmation form.
+                // A sandboxed document otherwise has an opaque Origin, which Spring
+                // CORS rejects on POST. Keep the sandbox, but allow this local form
+                // to retain its same origin and submit.
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'; sandbox allow-forms allow-same-origin"))
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000)

@@ -6,6 +6,7 @@ import com.careerfit.backend.feedback.service.FeedbackService;
 import com.careerfit.backend.notification.entity.EmailAction;
 import com.careerfit.backend.notification.repository.EmailActionRepository;
 import com.careerfit.backend.notification.service.NotificationEmailService;
+import com.careerfit.backend.notification.service.OutboxService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,13 +48,16 @@ public class EmailActionController {
     private final EmailActionRepository emailActionRepo;
     private final FeedbackService feedbackService;
     private final NotificationEmailService notificationEmailService;
+    private final OutboxService outboxService;
 
     public EmailActionController(EmailActionRepository emailActionRepo,
                                  FeedbackService feedbackService,
-                                 NotificationEmailService notificationEmailService) {
+                                 NotificationEmailService notificationEmailService,
+                                 OutboxService outboxService) {
         this.emailActionRepo = emailActionRepo;
         this.feedbackService = feedbackService;
         this.notificationEmailService = notificationEmailService;
+        this.outboxService = outboxService;
     }
 
     @GetMapping(value = "/redeem", produces = MediaType.TEXT_HTML_VALUE)
@@ -77,7 +81,7 @@ public class EmailActionController {
         response.setContentType("text/html; charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        EmailAction action = emailActionRepo.findByTokenHash(hashToken(token)).orElse(null);
+        EmailAction action = emailActionRepo.findByTokenHashForUpdate(hashToken(token)).orElse(null);
 
         // ── Validation ────────────────────────────────────────────────────
         if (action == null) {
@@ -111,6 +115,10 @@ public class EmailActionController {
                                 feedbackType,
                                 Feedback.SourceChannel.EMAIL
                         );
+                        // Feedback belongs only to the recruiter who owns this matching's job.
+                        outboxService.enqueue(action.getMatching().getJob().getRecruiter().getId(),
+                                "RECRUITER_CANDIDATE_FEEDBACK", action.getMatching().getId(),
+                                action.getMatching().getJob().getId(), java.time.Instant.now());
                         if (action.getActionType() == EmailAction.ActionType.NOT_INTERESTED) {
                             notificationEmailService.sendAfterSkip(action.getRecipient(), action.getMatching());
                         }

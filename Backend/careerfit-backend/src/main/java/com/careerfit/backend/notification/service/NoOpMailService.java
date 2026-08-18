@@ -26,4 +26,14 @@ public class NoOpMailService implements IMailService {
     public void sendPlainText(String to, String subject, String text) {
         log.info("[NO-OP EMAIL] To: {} | Subject: {} | Text:\n{}", to, subject, text);
     }
+
+    @Override
+    public void deliverOutboxPlainText(String to, String subject, String text) {
+        sendPlainText(to, subject, text);
+    }
+
+    @Override
+    public void deliverOutboxHtml(String to, String subject, String htmlBody) {
+        sendHtml(to, subject, htmlBody);
+    }
 }

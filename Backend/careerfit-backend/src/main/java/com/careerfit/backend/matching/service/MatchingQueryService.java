@@ -233,16 +233,20 @@ public class MatchingQueryService {
     @Transactional(readOnly = true)
     public MatchingDtos.CandidateJobCardPageResponse getCandidateJobCards(UUID userId, int page, int size,
                                                                           String label, boolean potentialOnly,
-                                                                          double minScore) {
+                                                                          double minScore, UUID requestedCvId) {
         Candidate candidate = candidateRepo.findByUserId(userId)
                 .orElseThrow(() -> AppException.notFound("Candidate", userId));
-        CV defaultCv = cvRepo.findByCandidateIdAndIsDefaultTrue(candidate.getId())
-                .orElseThrow(() -> AppException.badRequest(
-                        "No default CV found. Please upload a CV and set it as default."));
+        CV selectedCv = requestedCvId == null
+                ? cvRepo.findByCandidateIdAndIsDefaultTrue(candidate.getId())
+                    .orElseThrow(() -> AppException.badRequest(
+                            "No default CV found. Please upload a CV and set it as default."))
+                : cvRepo.findById(requestedCvId)
+                    .filter(cv -> cv.getCandidate().getId().equals(candidate.getId()))
+                    .orElseThrow(() -> AppException.notFound("CV", requestedCvId));
 
         int pageSize = Math.min(50, Math.max(1, size == 0 ? 20 : size));
         Pageable pageable = PageRequest.of(Math.max(0, page), pageSize);
-        List<Matching> matches = matchingRepo.findTopMatchesByCvId(defaultCv.getId(), pageable);
+        List<Matching> matches = matchingRepo.findTopMatchesByCvId(selectedCv.getId(), pageable);
 
         List<Matching> filtered = label != null && !label.isBlank()
                 ? matches.stream()
@@ -257,7 +261,7 @@ public class MatchingQueryService {
 
         Map<UUID, EmployerProfile> employersByRecruiter = loadEmployersByRecruiter(visible);
         Map<UUID, MatchingDtos.TieBreakMeta> tieMeta = buildTieMeta(visible);
-        long totalMatches = matchingRepo.countActiveMatchesByCvId(defaultCv.getId());
+        long totalMatches = matchingRepo.countActiveMatchesByCvId(selectedCv.getId());
         int responseTotalPages = totalPages((int) totalMatches, pageSize);
 
         List<MatchingDtos.CandidateJobCardResponse> jobs = visible.stream()
@@ -266,7 +270,7 @@ public class MatchingQueryService {
 
         return new MatchingDtos.CandidateJobCardPageResponse(
                 jobs, totalMatches, page, pageSize, responseTotalPages,
-                buildMeta(defaultCv, filtered, visible, effectiveMinScore));
+                buildMeta(selectedCv, filtered, visible, effectiveMinScore));
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────

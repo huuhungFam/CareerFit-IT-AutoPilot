@@ -4,12 +4,23 @@ import com.careerfit.backend.notification.entity.NotificationOutbox;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 public interface NotificationOutboxRepository extends JpaRepository<NotificationOutbox, UUID> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM NotificationOutbox o WHERE o.status IN ('PENDING', 'FAILED') AND o.scheduledAt <= :now ORDER BY o.scheduledAt, o.id")
+    List<NotificationOutbox> lockDue(@Param("now") Instant now, Pageable pageable);
+
+    @Query("SELECT MAX(o.scheduledAt) FROM NotificationOutbox o WHERE o.recipient.id = :recipientId AND o.emailType = 'HIGH_MATCH' AND o.status IN ('PENDING', 'PROCESSING', 'SENT', 'FAILED')")
+    Instant latestSuggestionSlot(@Param("recipientId") UUID recipientId);
 
     @Modifying
     @Query(value = """

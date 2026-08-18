@@ -36,6 +36,8 @@ type JobCardDto = {
   language?: string | null;
   status?: string | null;
   createdAt?: string | null;
+  applicationMode?: 'INTERNAL' | 'EXTERNAL' | null;
+  sourceUrl?: string | null;
 };
 
 type JobDetailDto = JobCardDto & {
@@ -92,6 +94,7 @@ type JobRecommendationDto = {
   language?: string | null;
   finalScore?: number | null;
   matchLabel?: string | null;
+  hasMatching?: boolean;
   isPotential?: boolean;
   requiredSkills?: string[] | null;
   matchingSkills?: string[] | null;
@@ -112,6 +115,7 @@ export type CandidateJobPageParams = {
   label?: string;
   potentialOnly?: boolean;
   minScore?: number;
+  cvId?: string;
 };
 
 type SuggestionsDto = {
@@ -490,6 +494,24 @@ function mapRecruiterCandidate(dto: any): RecruiterCandidateItem {
   };
 }
 
+export type RecruiterTalentBookmark = {
+  bookmarkId: string;
+  jobId: string;
+  candidateId: string;
+  cvId: string;
+  bookmarkedAt: string;
+};
+
+function mapRecruiterTalentBookmark(dto: any): RecruiterTalentBookmark {
+  return {
+    bookmarkId: String(dto.bookmarkId ?? dto.id ?? ''),
+    jobId: String(dto.jobId ?? ''),
+    candidateId: String(dto.candidateId ?? ''),
+    cvId: String(dto.cvId ?? ''),
+    bookmarkedAt: String(dto.bookmarkedAt ?? dto.createdAt ?? ''),
+  };
+}
+
 function normalizeTime(value?: string | null) {
   if (!value) return '08:00';
   return value.length >= 5 ? value.slice(0, 5) : value;
@@ -564,6 +586,11 @@ function toAutomationPolicyPatch(payload: Partial<AutomationPolicy>) {
 
 export function mapPublicJob(dto: JobCardDto | JobDetailDto): Job {
   const detail = dto as JobDetailDto;
+  let cleanDesc = detail.originalText ?? '';
+  const startMatch = cleanDesc.match(/(Mô tả Công việc|M t\? Cng vi\?c|Job Description|K\?T N\?I D\?I TAC)/i);
+  if (startMatch && startMatch.index !== undefined && startMatch.index < 500) {
+    cleanDesc = cleanDesc.substring(startMatch.index);
+  }
   return {
     id: dto.id,
     title: dto.title,
@@ -574,13 +601,15 @@ export function mapPublicJob(dto: JobCardDto | JobDetailDto): Job {
     salary: formatSalary(dto.salary),
     requiredSkills: dto.requiredSkills ?? [],
     optionalSkills: detail.niceToHaveSkills ?? [],
-    description: detail.originalText ?? 'No description provided.',
+    description: cleanDesc,
     normalizedScore: 0,
     label: 'Low',
     isPotential: false,
     reasons: [],
     status: mapStatus(dto.status),
     postedAt: formatPostedAt(dto.createdAt),
+    applicationMode: dto.applicationMode ?? 'INTERNAL',
+    sourceUrl: dto.sourceUrl ?? undefined,
   };
 }
 
@@ -641,6 +670,7 @@ function mapRecommendation(dto: JobRecommendationDto): Job {
     description: 'Recommended role based on your CV and candidate profile.',
     normalizedScore: Math.round(Number(dto.finalScore ?? 0)),
     label: normalizeLabel(dto.matchLabel),
+    hasMatching: dto.hasMatching,
     isPotential: Boolean(dto.isPotential),
     reasons: dto.matchingSkills ?? [],
     status: 'new',
@@ -670,6 +700,10 @@ export const careerfitApi = {
 
   async getCurrentUser() {
     return request<MeResponseDto>('/auth/me');
+  },
+
+  async deleteMyAccount() {
+    return request<{ message: string }>('/auth/me', { method: 'DELETE' });
   },
 
   async restoreSession() {
@@ -731,17 +765,21 @@ export const careerfitApi = {
     });
     const initialAccount = toAccount(payload);
     saveSession(initialAccount, payload.accessToken);
-    const me = await careerfitApi.getCurrentUser();
-    const account = meToAccount(me);
+    const account = meToAccount(await careerfitApi.getCurrentUser());
     saveSession(account);
     return account;
   },
 
   async searchJobs(keyword = '') {
-    const params = new URLSearchParams({ page: '0', size: '20', sort: 'recent' });
+    const payload = await careerfitApi.searchJobsPage(keyword);
+    return payload.jobs;
+  },
+
+  async searchJobsPage(keyword = '', page = 0, size = 20): Promise<CandidateJobPage> {
+    const params = new URLSearchParams({ page: String(page), size: String(size), sort: 'recent' });
     if (keyword.trim()) params.set('keyword', keyword.trim());
     const payload = await request<JobListDto>(`/jobs/search?${params}`);
-    return payload.jobs.map(mapPublicJob);
+    return { jobs: payload.jobs.map(mapPublicJob), total: payload.total, page: payload.page, size: payload.size, totalPages: payload.totalPages };
   },
 
   async getJob(jobId: string) {
@@ -787,6 +825,7 @@ export const careerfitApi = {
     if (params.label) query.set('label', params.label);
     if (params.potentialOnly) query.set('potentialOnly', 'true');
     if (params.minScore && params.minScore > 0) query.set('minScore', String(params.minScore));
+    if (params.cvId) query.set('cvId', params.cvId);
 
     const payload = await request<CandidateJobListDto>(`/matches/me/cards?${query}`);
     return {
@@ -801,6 +840,18 @@ export const careerfitApi = {
   async getCandidateJobs() {
     const payload = await careerfitApi.getCandidateJobsPage({ page: 0, size: 20 });
     return payload.jobs;
+  },
+
+  async getSavedJobIds() {
+    return request<string[]>('/candidates/me/saved-jobs');
+  },
+
+  async saveJob(jobId: string) {
+    return request<void>(`/candidates/me/saved-jobs/${encodeURIComponent(jobId)}`, { method: 'PUT' });
+  },
+
+  async removeSavedJob(jobId: string) {
+    return request<void>(`/candidates/me/saved-jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' });
   },
 
   async getSearchSuggestions(keyword: string): Promise<SearchSuggestionGroup> {
@@ -1137,6 +1188,20 @@ export const careerfitApi = {
     return request<any>(`/recruiter/jobs/${jobId}/candidates/${candidateId}/invite`, { method: 'POST' });
   },
 
+  async getRecruiterTalentBookmarks(jobId: string) {
+    const payload = await request<any[]>(`/recruiter/talent/jobs/${jobId}/bookmarks`);
+    return payload.map(mapRecruiterTalentBookmark);
+  },
+
+  async bookmarkRecruiterCandidate(jobId: string, candidateId: string) {
+    const payload = await request<any>(`/recruiter/talent/jobs/${jobId}/candidates/${candidateId}/bookmark`, { method: 'PUT' });
+    return mapRecruiterTalentBookmark(payload);
+  },
+
+  async removeRecruiterCandidateBookmark(jobId: string, candidateId: string) {
+    return request<void>(`/recruiter/talent/jobs/${jobId}/candidates/${candidateId}/bookmark`, { method: 'DELETE' });
+  },
+
   async updateApplicationStatus(applicationId: string, status: string) {
     return request<any>(`/recruiter/applications/${applicationId}/status`, {
       method: 'PATCH',
@@ -1151,13 +1216,13 @@ export const careerfitApi = {
       method: 'POST',
     });
   },
-  async getJobFieldSuggestions(keyword: string, field: JobSuggestionField, signal?: AbortSignal) {
+  async getJobFieldSuggestions(keyword: string, field: JobSuggestionField, _signal?: AbortSignal) {
     const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
     if (field === 'title') return payload.titles || [];
     if (field === 'company') return payload.companies || [];
     return [];
   },
-  async getSkillSuggestions(keyword: string, limit?: number, signal?: AbortSignal) {
+  async getSkillSuggestions(keyword: string, _limit?: number, _signal?: AbortSignal) {
     const payload = await request<any>(`/jobs/search/suggestions?keyword=${encodeURIComponent(keyword)}`);
     return payload.skills || [];
   },

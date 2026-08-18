@@ -212,7 +212,7 @@ public class CvIngestionService {
 
         try {
             cv.setStatus(CV.CvStatus.VALIDATING);
-            cvRepo.save(cv);
+            cv = cvRepo.save(cv);
 
             // Extract text from the stored PDF, image or DOCX document.
             if (cv.getFilePath() == null) {
@@ -224,7 +224,7 @@ public class CvIngestionService {
 
             cv.setStatus(CV.CvStatus.PROCESSING);
             cv.setRawText(extracted.rawText());
-            cvRepo.save(cv);
+            cv = cvRepo.save(cv);
 
             // Detect language and vectorize
             vectorizeAndScore(cv);
@@ -244,7 +244,7 @@ public class CvIngestionService {
 
         try {
             cv.setStatus(CV.CvStatus.PROCESSING);
-            cvRepo.save(cv);
+            cv = cvRepo.save(cv);
             vectorizeAndScore(cv);
         } catch (Exception e) {
             log.error("Error processing manual CV={}: {}", cvId, e.getMessage(), e);
@@ -295,7 +295,7 @@ public class CvIngestionService {
             cv.setParsedSummary(summary);
             cv.setLastScoredAt(Instant.now());
             cv.setStatus(CV.CvStatus.SCORING_DONE);
-            cvRepo.save(cv);
+            cv = cvRepo.save(cv);
         } catch (Exception e) {
             markFailed(cv, "Failed to serialize vectors: " + e.getMessage());
             return;

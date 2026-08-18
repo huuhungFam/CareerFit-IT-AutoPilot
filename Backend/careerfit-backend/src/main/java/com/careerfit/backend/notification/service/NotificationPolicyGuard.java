@@ -1,8 +1,7 @@
 package com.careerfit.backend.notification.service;
 
 import com.careerfit.backend.auth.entity.UserAccount;
-import com.careerfit.backend.automation.entity.AutomationPolicy;
-import com.careerfit.backend.automation.service.AutomationPolicyService;
+import com.careerfit.backend.automation.service.EffectiveAutomationPolicyResolver;
 import com.careerfit.backend.notification.entity.NotificationDeliveryLog;
 import com.careerfit.backend.notification.repository.NotificationDeliveryLogRepository;
 import org.springframework.stereotype.Service;
@@ -14,12 +13,12 @@ import java.time.*;
 @Service
 public class NotificationPolicyGuard {
 
-    private final AutomationPolicyService policyService;
+    private final EffectiveAutomationPolicyResolver policyResolver;
     private final NotificationDeliveryLogRepository deliveryLogRepo;
 
-    public NotificationPolicyGuard(AutomationPolicyService policyService,
+    public NotificationPolicyGuard(EffectiveAutomationPolicyResolver policyResolver,
                                    NotificationDeliveryLogRepository deliveryLogRepo) {
-        this.policyService = policyService;
+        this.policyResolver = policyResolver;
         this.deliveryLogRepo = deliveryLogRepo;
     }
 
@@ -29,17 +28,17 @@ public class NotificationPolicyGuard {
             return Decision.skip("RECIPIENT_MISSING");
         }
 
-        AutomationPolicy policy = policyService.getOrCreate(recipient.getId());
+        var policy = policyResolver.resolve(recipient.getId());
         if (policy == null) {
             return Decision.skip("POLICY_NOT_FOUND");
         }
-        if (!policy.isEmailNotificationsEnabled()) {
+        if (!policy.emailNotificationsEnabled()) {
             return Decision.skip("EMAIL_DISABLED");
         }
 
         ZonedDateTime now = ZonedDateTime.now(zone(policy));
-        if (policy.isQuietHoursEnabled() && isInQuietHours(now.toLocalTime(),
-                policy.getQuietHoursStart(), policy.getQuietHoursEnd())) {
+        if (policy.quietHoursEnabled() && isInQuietHours(now.toLocalTime(),
+                policy.quietHoursStart(), policy.quietHoursEnd())) {
             return Decision.skip("QUIET_HOURS");
         }
 
@@ -49,11 +48,11 @@ public class NotificationPolicyGuard {
                 NotificationDeliveryLog.DeliveryStatus.SENT,
                 dayStart,
                 now.toInstant());
-        if (policy.getMaxEmailPerDay() <= 0 || sentToday >= policy.getMaxEmailPerDay()) {
+        if (policy.maxNotificationsPerDay() <= 0 || sentToday >= policy.maxNotificationsPerDay()) {
             return Decision.skip("DAILY_QUOTA_EXCEEDED");
         }
 
-        int cooldownHours = Math.max(0, policy.getNotificationCooldownHours());
+        int cooldownHours = Math.max(0, policy.notificationCooldownHours());
         if (cooldownHours > 0) {
             Instant since = Instant.now().minus(Duration.ofHours(cooldownHours));
             boolean recent = deliveryLogRepo.existsRecentSent(
@@ -104,9 +103,9 @@ public class NotificationPolicyGuard {
         return !now.isBefore(start) || now.isBefore(end);
     }
 
-    private ZoneId zone(AutomationPolicy policy) {
+    private ZoneId zone(EffectiveAutomationPolicyResolver.EffectivePolicy policy) {
         try {
-            return ZoneId.of(policy.getUserTimezone());
+            return ZoneId.of(policy.userTimezone());
         } catch (Exception ignored) {
             return ZoneId.of("Asia/Ho_Chi_Minh");
         }

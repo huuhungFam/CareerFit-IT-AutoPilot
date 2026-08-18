@@ -35,7 +35,8 @@ class AuthServiceTest {
                 mock(JwtService.class),
                 mock(AppProperties.class),
                 mock(IMailService.class),
-                mock(com.careerfit.backend.automation.service.AutomationPolicyService.class));
+                mock(com.careerfit.backend.automation.service.AutomationPolicyService.class),
+                mock(com.careerfit.backend.auth.service.AccountDeletionService.class));
 
         var request = new AuthDtos.RegisterRequest(
                 "attacker@example.com", "strong-password", "Attacker", "ADMIN");

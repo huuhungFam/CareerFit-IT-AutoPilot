@@ -123,6 +123,7 @@ public class RecommendationService {
                             baseScore,
                             finalScore,
                             m.getLabel().name(),
+                            true,
                             m.isPotential(),
                             extractSkills(m.getJob().getRequiredSkillsJson()),
                             computeMatchingSkills(m.getJob(), desiredSkills),
@@ -138,37 +139,29 @@ public class RecommendationService {
 
     /**
      * Fallback: profile-based recommendations when no CV has been processed.
-     * Returns ACTIVE jobs matching candidate's desired title/location.
+     * Returns ACTIVE jobs even when the candidate has not completed CV scoring.
+     * These entries deliberately do not carry a match score or label: showing a
+     * fabricated 0% match would make the catalog misleading.
      */
     @Transactional(readOnly = true)
     public List<JobRecommendation> getProfileBasedRecommendations(Candidate candidate, int limit) {
-        String desiredTitle = candidate.getDesiredTitle();
         List<Job> activeJobs = jobRepo.findByStatus(Job.JobStatus.ACTIVE);
-
-        List<String> desiredSkills = parseList(candidate.getDesiredSkillsJson());
 
         return activeJobs.stream()
                 .map(job -> {
-                    double score = 0;
-                    if (desiredTitle != null && job.getTitle() != null &&
-                        job.getTitle().toLowerCase().contains(desiredTitle.toLowerCase())) {
-                        score += 40;
-                    }
-                    score += computeSkillBoost(job, desiredSkills);
-                    score += computeLocationBoost(job, candidate.getLocation());
-
                     return new JobRecommendation(
                             job.getId(), job.getTitle(), job.getCompany(),
                             job.getLocation(), job.getSeniorityLevel(),
                             job.getEmploymentType(), job.getSalaryDisplayText(),
-                            job.getLanguage(), score, score, "UNKNOWN",
+                            job.getLanguage(), null, null, null,
+                            false,
                             false, extractSkills(job.getRequiredSkillsJson()),
-                            computeMatchingSkills(job, desiredSkills),
+                            List.of(),
                             job.getCreatedAt()
                     );
                 })
-                .filter(r -> r.finalScore() > 0)
-                .sorted(Comparator.comparingDouble(JobRecommendation::finalScore).reversed())
+                .sorted(Comparator.comparing(JobRecommendation::postedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(limit)
                 .toList();
     }
@@ -203,6 +196,7 @@ public class RecommendationService {
                             j.getLocation(), j.getSeniorityLevel(),
                             j.getEmploymentType(), j.getSalaryDisplayText(),
                             j.getLanguage(), score, score, "SIMILAR",
+                            false,
                             false, jSkills, new ArrayList<>(), j.getCreatedAt()
                     );
                 })
@@ -249,7 +243,8 @@ public class RecommendationService {
                         j.getId(), j.getTitle(), j.getCompany(),
                         j.getLocation(), j.getSeniorityLevel(),
                         j.getEmploymentType(), j.getSalaryDisplayText(),
-                        j.getLanguage(), 30, 30, "SIMILAR",
+                        j.getLanguage(), 30.0, 30.0, "SIMILAR",
+                        false,
                         false, extractSkills(j.getRequiredSkillsJson()),
                         List.of(), j.getCreatedAt()
                 ))
@@ -277,9 +272,10 @@ public class RecommendationService {
         String employmentType,
         String salaryDisplay,
         String language,
-        double matchScore,
-        double finalScore,
+        Double matchScore,
+        Double finalScore,
         String matchLabel,
+        boolean hasMatching,
         boolean isPotential,
         List<String> requiredSkills,
         List<String> matchingSkills,

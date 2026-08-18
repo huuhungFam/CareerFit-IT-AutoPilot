@@ -72,4 +72,36 @@ public class MailService implements IMailService {
             log.error("Failed to send plain email to {}: {}", to, e.getMessage());
         }
     }
+
+    @Override
+    public void deliverOutboxPlainText(String to, String subject, String text) {
+        try {
+            var msg = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(msg, false, StandardCharsets.UTF_8.name());
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(text, false);
+            mailSender.send(msg);
+            log.info("Outbox email delivered to {}", to);
+        } catch (Exception error) {
+            throw new IllegalStateException("Outbox email delivery failed", error);
+        }
+    }
+
+    @Override
+    public void deliverOutboxHtml(String to, String subject, String htmlBody) {
+        try {
+            var msg = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(msg, true, StandardCharsets.UTF_8.name());
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            mailSender.send(msg);
+            log.info("Outbox HTML email delivered to {}", to);
+        } catch (Exception error) {
+            throw new IllegalStateException("Outbox HTML email delivery failed", error);
+        }
+    }
 }

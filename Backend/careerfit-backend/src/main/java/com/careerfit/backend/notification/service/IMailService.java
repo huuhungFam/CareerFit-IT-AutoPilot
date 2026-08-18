@@ -7,4 +7,11 @@ package com.careerfit.backend.notification.service;
 public interface IMailService {
     void sendHtml(String to, String subject, String htmlBody);
     void sendPlainText(String to, String subject, String text);
+
+    /**
+     * Synchronous, exception-propagating delivery used only by the durable outbox.
+     * The dispatcher owns retries, so it must observe transport failures.
+     */
+    void deliverOutboxPlainText(String to, String subject, String text);
+    void deliverOutboxHtml(String to, String subject, String htmlBody);
 }

@@ -58,11 +58,33 @@ try {
   runSql("DROP DATABASE IF EXISTS careerfit_test_disposable;", "postgres");
   runSql("CREATE DATABASE careerfit_test_disposable;", "postgres");
 
-  console.log("\n=== 2. RUNNING FLYWAY ===");
-  flyway("32");
+  console.log("\n=== 2. MIGRATING THROUGH THE PRE-PHASE-5 SCHEMA ===");
+  flyway("33");
 
-  console.log("\n=== 3. VERIFYING SUCCESS ===");
+  console.log("\n=== 3. SEEDING AN IMPORTED-OWNERSHIP SNAPSHOT ===");
+  runSql(`
+    INSERT INTO user_account (id, email, password_hash, role, full_name, account_source)
+    VALUES ('e32116db-1c9d-44a1-89e8-30cc4db430fe', 'phase5-imported@careerfit.local', 'hash', 'RECRUITER', 'Imported recruiter', 'IMPORTED');
+    INSERT INTO job (id, recruiter_id, title, company, original_text, salary_mode, status, source_platform, source_url, external_hash)
+    VALUES ('b021a4eb-3f2e-4f72-9d7e-fc46b16c3d63', 'e32116db-1c9d-44a1-89e8-30cc4db430fe', 'Imported Backend Engineer', 'MB Bank', 'Imported source listing used only to prove Phase 5 preserves baseline ownership.', 'NEGOTIABLE', 'ACTIVE', 'itviec', 'https://example.test/imported-job', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+  `);
+  const ownershipBefore = runSql(`
+    SELECT COUNT(*) || '|' || md5(string_agg(id::text || '|' || recruiter_id::text || '|' || source_url, ',' ORDER BY id))
+    FROM job WHERE external_hash IS NOT NULL;
+  `);
+
+  console.log("\n=== 4. APPLYING PHASE-5 MIGRATION ===");
+  flyway("34");
+
+  console.log("\n=== 5. VERIFYING SUCCESS ===");
   assert(true, "All migrations succeeded on disposable database!");
+  const ownershipAfter = runSql(`
+    SELECT COUNT(*) || '|' || md5(string_agg(id::text || '|' || recruiter_id::text || '|' || source_url, ',' ORDER BY id))
+    FROM job WHERE external_hash IS NOT NULL;
+  `);
+  assert(ownershipAfter === ownershipBefore, "V34 preserves imported job count, IDs, owners, and source URLs");
+  assert(runSql("SELECT source_type FROM job WHERE id = 'b021a4eb-3f2e-4f72-9d7e-fc46b16c3d63';") === "IMPORTED",
+    "V34 marks existing scraped jobs as IMPORTED without changing ownership");
 
 } catch (e) {
   console.error("FATAL ERROR:", e);

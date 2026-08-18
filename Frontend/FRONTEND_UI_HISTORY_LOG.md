@@ -380,3 +380,23 @@ Keep reconstructed chat entries concise. Use this file as a human-readable histo
 - QA browser với backend/database thật: market analytics render hoặc empty state đúng dữ liệu, CV detail/default-delete guard hoạt động, console sạch; sửa modal fixed bị lệch do page animation và tên CV dài gây tràn ngang mobile.
 - Verification cuối: `npm run type-check`, `npm run lint`, Chromium Playwright `20/20` và `npm run build` đều pass.
 - Integration note: backend email-link builder hiện vẫn cần cấu hình/sửa URL đích để mở `/auth/magic-link/verify?token=...`; frontend consume flow đã hoàn chỉnh và có regression test.
+
+### 2026-08-18 +07:00 - Phase 2 UI Regression Review
+
+- Rà soát UI sau đợt cập nhật catalog/Phase 2. Giữ kiến trúc mới: `/candidate/jobs` chuyển về catalog phân trang `/jobs`; trang `Gợi ý` là nơi hiển thị các kết quả matching cá nhân.
+- Khôi phục giao diện và luồng magic-link tại `/auth/magic-link/verify`, gồm gửi link từ trang đăng nhập, kiểm tra token, lưu session và chuyển dashboard đúng role.
+- Sửa catalog để có error state và nút thử lại; Guest bấm ứng tuyển mở popup yêu cầu đăng nhập thay vì bị điều hướng đột ngột.
+- Khôi phục lưu/bỏ lưu JD cho Candidate trên catalog, bao gồm trạng thái `Đã lưu`, loading và thông báo lỗi/thành công.
+- Job card không còn hiển thị `No description provided` khi response danh sách không có nội dung JD; trang chi tiết sử dụng `parseJobDescription` để tách mô tả, trách nhiệm, yêu cầu và quyền lợi ổn định hơn.
+- Khôi phục bộ lọc điểm matching có giá trị số hiển thị, URL query `minScore` và request backend cho danh sách Candidate cũ (được giữ lại làm component dự phòng).
+- Cập nhật regression tests: error state catalog, save JD Candidate, external job CTA và Settings demo notice.
+- Verification: `npm run type-check`, `npm run lint`, Playwright Chromium `22/22`, `npm run build` và `npm run check-bundle` đều pass.
+
+### 2026-08-18 +07:00 - Recruiter Talent Pool
+
+- Khôi phục Talent Pool thành một trang Recruiter riêng tại `/recruiter/talent-pool`, có trong thanh điều hướng và giữ `job`/`view` trên URL để chia sẻ hoặc tải lại vẫn đúng JD và tab đang xem.
+- Talent Pool đọc danh sách CV tiềm năng theo JD từ Candidate Discovery API, tách tab `Đề xuất AI` và `Đã lưu`; hỗ trợ xem CV, gửi lời mời, lưu/bỏ lưu shortlist riêng cho từng JD.
+- Gỡ tab `Ứng viên tiềm năng AI` trùng lặp khỏi chi tiết JD. URL cũ `/recruiter/jobs/:jobId/potential` tự chuyển sang Talent Pool cùng JD.
+- Đồng bộ API frontend cho bookmark Talent Pool và sửa tên field response backend `CvBookmarkResponse` để `bookmarkId`, `jobId`, `candidateId`, `cvId` khớp dữ liệu thực tế.
+- Bổ sung route này vào Playwright recruiter route smoke và regression test xác nhận cả Candidate Discovery API lẫn Bookmark API được gọi.
+- Verification: `npm run type-check`, `npm run lint`, Playwright Chromium `23/23`, `npm run build`, `npm run check-bundle` và backend `mvnw.cmd -DskipTests compile` đều pass.

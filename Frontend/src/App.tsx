@@ -31,7 +31,6 @@ import {
   LogIn,
   LogOut,
   Mail,
-  MailCheck,
   MapPin,
   Plus,
   Save,
@@ -55,6 +54,7 @@ import { JobCard } from './components/JobCard';
 import { StatCard } from './components/StatCard';
 import { ToastMessage as ActionMessage } from './components/ToastMessage';
 import { useLanguage } from './i18n/LanguageProvider';
+import { parseJobDescription } from './lib/jobDescription';
 import { AdminDashboardPage, AdminUsersPage, AdminJobsPage, AdminAuditLogsPage, AdminEmailMonitorPage } from './pages/AdminPages';
 import {
   careerfitApi,
@@ -118,10 +118,10 @@ const jobFilterOptions = {
 } as const;
 
 type JobFilterKey = keyof typeof jobFilterOptions;
-type JobFilters = Record<JobFilterKey, string>;
+type JobFilters = Record<JobFilterKey, string> & { minScore: number };
 type UploadTab = 'parser' | 'manual';
 type ProfileTab = 'cv' | 'profile' | 'portfolio';
-type RecruiterSubview = 'ranking' | 'applicants' | 'potential';
+type RecruiterSubview = 'ranking' | 'applicants';
 type RecruiterMatchFilter = 'all' | 'HIGH' | 'POTENTIAL' | 'HIGH_OR_POTENTIAL' | 'APPLIED' | 'NOT_APPLIED';
 
 const defaultJobFilters: JobFilters = {
@@ -130,6 +130,7 @@ const defaultJobFilters: JobFilters = {
   workModel: 'all',
   salary: 'all',
   domain: 'all',
+  minScore: 0,
 };
 
 const profileTabParamToState: Record<string, ProfileTab> = {
@@ -167,6 +168,7 @@ function getJobFilters(searchParams: URLSearchParams): JobFilters {
     workModel: isOptionValue('workModel', searchParams.get('workModel')) ? searchParams.get('workModel')! : defaultJobFilters.workModel,
     salary: isOptionValue('salary', searchParams.get('salary')) ? searchParams.get('salary')! : defaultJobFilters.salary,
     domain: isOptionValue('domain', searchParams.get('domain')) ? searchParams.get('domain')! : defaultJobFilters.domain,
+    minScore: Math.min(100, Math.max(0, Number(searchParams.get('minScore')) || 0)),
   };
 }
 
@@ -177,11 +179,12 @@ function getOptionLabel(key: JobFilterKey, value: string) {
 function writeJobSearchParams(keyword: string, filters: JobFilters) {
   const params = new URLSearchParams();
   if (keyword.trim()) params.set('keyword', keyword.trim());
-  (Object.keys(filters) as JobFilterKey[]).forEach((key) => {
+  (Object.keys(jobFilterOptions) as JobFilterKey[]).forEach((key) => {
     if (filters[key] !== defaultJobFilters[key]) {
       params.set(key, filters[key]);
     }
   });
+  if (filters.minScore > 0) params.set('minScore', String(filters.minScore));
   return params;
 }
 
@@ -200,7 +203,6 @@ function getRangeDays(searchParams: URLSearchParams) {
 
 function getRecruiterSubview(pathname: string): RecruiterSubview {
   if (pathname.endsWith('/applicants')) return 'applicants';
-  if (pathname.endsWith('/potential')) return 'potential';
   return 'ranking';
 }
 
@@ -295,6 +297,12 @@ export function App() {
     setAccount(null);
   }
 
+  async function handleDeleteAccount() {
+    await careerfitApi.deleteMyAccount();
+    careerfitApi.clearSession();
+    setAccount(null);
+  }
+
   function protectedRoute(role: Role, element: ReactNode) {
     if (!account) {
       return <LoginRequiredPage nextPath={`${location.pathname}${location.search}`} />;
@@ -316,11 +324,11 @@ export function App() {
       <Route path="/automation/result" element={<AutomationResultPage />} />
       <Route element={<AppShell role={account?.role ?? 'guest'} />}>
         <Route index element={<CandidateHomePage isPublic />} />
-        <Route path="/jobs" element={<CandidateJobsPage isPublic />} />
-        <Route path="/jobs/:jobId" element={<JobDetailPage isPublic />} />
+        <Route path="/jobs" element={<CatalogJobsPage isGuest={!account} />} />
+        <Route path="/jobs/:jobId" element={<JobDetailPage isPublic={!account} />} />
         <Route path="/candidate" element={protectedRoute('candidate', <CandidateHomePage />)} />
-        <Route path="/candidate/jobs" element={protectedRoute('candidate', <CandidateJobsPage />)} />
-        <Route path="/candidate/jobs/:jobId" element={protectedRoute('candidate', <JobDetailPage />)} />
+        <Route path="/candidate/jobs" element={protectedRoute('candidate', <CandidateJobsRedirect />)} />
+        <Route path="/candidate/jobs/:jobId" element={protectedRoute('candidate', <CandidateJobDetailRedirect />)} />
         <Route path="/candidate/employers/:employerId" element={<EmployerDetailPage isPublic={!account} />} />
         <Route path="/candidate/upload" element={protectedRoute('candidate', <UploadPage />)} />
         <Route path="/candidate/profile" element={protectedRoute('candidate', <ProfilePage />)} />
@@ -330,20 +338,21 @@ export function App() {
         <Route path="/candidate/automation" element={protectedRoute('candidate', <AutomationPage />)} />
         <Route
           path="/candidate/settings"
-          element={protectedRoute('candidate', <ConnectedSettingsPage role="candidate" onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
+          element={protectedRoute('candidate', <ConnectedSettingsPage role="candidate" onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />)}
         />
         <Route path="/recruiter" element={protectedRoute('recruiter', <RecruiterHomePage />)} />
         <Route path="/recruiter/jobs" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
         <Route path="/recruiter/jobs/:jobId" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
         <Route path="/recruiter/jobs/:jobId/ranking" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
         <Route path="/recruiter/jobs/:jobId/applicants" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
-        <Route path="/recruiter/jobs/:jobId/potential" element={protectedRoute('recruiter', <RecruiterJobsPage />)} />
+        <Route path="/recruiter/jobs/:jobId/potential" element={protectedRoute('recruiter', <RecruiterPotentialRedirect />)} />
+        <Route path="/recruiter/talent-pool" element={protectedRoute('recruiter', <RecruiterTalentPoolPage />)} />
         <Route path="/recruiter/analytics" element={protectedRoute('recruiter', <AnalyticsPage />)} />
         <Route path="/recruiter/advanced-analytics" element={protectedRoute('recruiter', <AdvancedAnalyticsPage role="recruiter" />)} />
         <Route path="/recruiter/automation" element={protectedRoute('recruiter', <AutomationPage />)} />
         <Route
           path="/recruiter/settings"
-          element={protectedRoute('recruiter', <ConnectedSettingsPage role="recruiter" onLogout={handleLogout} onDeleteAccount={handleLogout} />)}
+          element={protectedRoute('recruiter', <ConnectedSettingsPage role="recruiter" onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />)}
         />
         {/* Admin Routes */}
         <Route path="/admin" element={protectedRoute('admin', <AdminDashboardPage />)} />
@@ -402,7 +411,7 @@ function LoginPage({
     setError('');
     setAuthMessage(null);
     if (!username.includes('@')) {
-      setError(language === 'vi' ? 'Hãy nhập một địa chỉ email hợp lệ để nhận liên kết đăng nhập.' : 'Enter a valid email address to receive a sign-in link.');
+      setError(language === 'vi' ? 'Hãy nhập địa chỉ email hợp lệ để nhận liên kết đăng nhập.' : 'Enter a valid email address to receive a sign-in link.');
       return;
     }
     setIsSubmitting(true);
@@ -410,7 +419,7 @@ function LoginPage({
       await careerfitApi.requestPasswordless(username);
       setAuthMessage({
         tone: 'success',
-        text: language === 'vi' ? 'Yêu cầu đã được gửi. Hãy kiểm tra email để tiếp tục đăng nhập.' : 'Request sent. Check your email to continue signing in.',
+        text: language === 'vi' ? 'Đã gửi liên kết đăng nhập. Hãy kiểm tra email để tiếp tục.' : 'Sign-in link sent. Check your email to continue.',
       });
     } catch (requestError) {
       setAuthMessage({
@@ -421,6 +430,7 @@ function LoginPage({
       setIsSubmitting(false);
     }
   }
+
 
   return (
     <main className="auth-page">
@@ -476,8 +486,7 @@ function LoginPage({
         </button>
         {mode === 'login' ? <small>{t('testLoginHint')}</small> : null}
         {mode === 'login' ? (
-          <button className="full" type="button" disabled={isSubmitting} onClick={requestMagicLink}>
-            <MailCheck size={16} />
+          <button className="secondary-action full" type="button" disabled={isSubmitting} onClick={() => void requestMagicLink()}>
             {t('passwordless')}
           </button>
         ) : null}
@@ -489,14 +498,6 @@ function LoginPage({
       </form>
     </main>
   );
-}
-
-function resolvePostLoginPath(account: MockAccount, nextPath: string | null) {
-  if (nextPath?.startsWith('/candidate') && account.role === 'candidate') return nextPath;
-  if (nextPath?.startsWith('/recruiter') && account.role === 'recruiter') return nextPath;
-  if (nextPath?.startsWith('/admin') && account.role === 'admin') return nextPath;
-
-  return getRoleHomePath(account.role);
 }
 
 function MagicLinkPage({ onAuthenticated }: { onAuthenticated: (account: MockAccount) => void }) {
@@ -521,12 +522,8 @@ function MagicLinkPage({ onAuthenticated }: { onAuthenticated: (account: MockAcc
       const account = await careerfitApi.verifyPasswordlessToken(token);
       onAuthenticated(account);
       navigate(getRoleHomePath(account.role), { replace: true });
-    } catch (error) {
-      setVerifyError(readableError(
-        error,
-        language === 'vi' ? 'Liên kết đăng nhập không hợp lệ hoặc đã hết hạn.' : 'This sign-in link is invalid or has expired.',
-        language,
-      ));
+    } catch (requestError) {
+      setVerifyError(readableError(requestError, language === 'vi' ? 'Liên kết đăng nhập không hợp lệ hoặc đã hết hạn.' : 'This sign-in link is invalid or has expired.', language));
     } finally {
       setIsVerifying(false);
     }
@@ -542,30 +539,23 @@ function MagicLinkPage({ onAuthenticated }: { onAuthenticated: (account: MockAcc
       <section className="auth-hero">
         <p className="eyebrow">CareerFit</p>
         <h1>{language === 'vi' ? 'Xác nhận đăng nhập' : 'Confirm sign in'}</h1>
-        <p>{language === 'vi' ? 'Kiểm tra liên kết bảo mật trước khi mở không gian làm việc của bạn.' : 'Verify this secure link before opening your workspace.'}</p>
+        <p>{language === 'vi' ? 'Kiểm tra liên kết bảo mật trước khi mở không gian làm việc.' : 'Verify this secure link before opening your workspace.'}</p>
       </section>
       <section className="auth-card magic-link-card">
-        {inspection.isLoading ? (
-          <div className="magic-link-state"><Clock3 size={24} /><strong>{language === 'vi' ? 'Đang kiểm tra liên kết...' : 'Checking your link...'}</strong></div>
-        ) : invalidToken ? (
-          <>
-            <ActionMessage tone="error" text={language === 'vi' ? 'Liên kết không hợp lệ hoặc đã hết hạn.' : 'This link is invalid or has expired.'} />
-            <button type="button" onClick={() => navigate('/login')}>{language === 'vi' ? 'Quay lại đăng nhập' : 'Back to sign in'}</button>
-          </>
-        ) : (
-          <>
-            <div className="magic-link-state"><ShieldCheck size={26} /><strong>{language === 'vi' ? 'Liên kết hợp lệ' : 'Link verified'}</strong></div>
-            <p>{inspection.data}</p>
-            {verifyError ? <ActionMessage tone="error" text={verifyError} /> : null}
-            <button className="primary-action full" type="button" disabled={isVerifying} onClick={completeLogin}>
-              <LogIn size={17} />
-              {isVerifying ? (language === 'vi' ? 'Đang đăng nhập...' : 'Signing in...') : (language === 'vi' ? 'Tiếp tục đăng nhập' : 'Continue signing in')}
-            </button>
-          </>
-        )}
+        {inspection.isLoading ? <div className="magic-link-state"><Clock3 size={24} /><strong>{language === 'vi' ? 'Đang kiểm tra liên kết...' : 'Checking your link...'}</strong></div> : null}
+        {invalidToken && !inspection.isLoading ? <><ActionMessage tone="error" text={language === 'vi' ? 'Liên kết không hợp lệ hoặc đã hết hạn.' : 'This sign-in link is invalid or has expired.'} /><button type="button" onClick={() => navigate('/login')}>{language === 'vi' ? 'Quay lại đăng nhập' : 'Back to sign in'}</button></> : null}
+        {!inspection.isLoading && !invalidToken ? <><div className="magic-link-state"><ShieldCheck size={26} /><strong>{language === 'vi' ? 'Liên kết hợp lệ' : 'Link verified'}</strong></div><p>{inspection.data}</p>{verifyError ? <ActionMessage tone="error" text={verifyError} /> : null}<button className="primary-action full" type="button" disabled={isVerifying} onClick={() => void completeLogin()}><LogIn size={17} />{isVerifying ? (language === 'vi' ? 'Đang đăng nhập...' : 'Signing in...') : (language === 'vi' ? 'Tiếp tục đăng nhập' : 'Continue signing in')}</button></> : null}
       </section>
     </main>
   );
+}
+
+function resolvePostLoginPath(account: MockAccount, nextPath: string | null) {
+  if (nextPath?.startsWith('/candidate') && account.role === 'candidate') return nextPath;
+  if (nextPath?.startsWith('/recruiter') && account.role === 'recruiter') return nextPath;
+  if (nextPath?.startsWith('/admin') && account.role === 'admin') return nextPath;
+
+  return getRoleHomePath(account.role);
 }
 
 function getRoleHomePath(role: Role) {
@@ -709,7 +699,132 @@ function CandidateHomePage({ isPublic = false }: { isPublic?: boolean }) {
   );
 }
 
-function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
+function CandidateJobsRedirect() {
+  const location = useLocation();
+  return <Navigate to={{ pathname: '/jobs', search: location.search }} replace />;
+}
+
+function CandidateJobDetailRedirect() {
+  const { jobId = '' } = useParams();
+  return <Navigate to={`/jobs/${jobId}`} replace />;
+}
+
+function CatalogJobsPage({ isGuest }: { isGuest: boolean }) {
+  const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const keyword = searchParams.get('keyword') ?? '';
+  const [query, setQuery] = useState(keyword);
+  const [pages, setPages] = useState<CandidateJobPage[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [savingJobId, setSavingJobId] = useState<string | null>(null);
+  const isCandidate = careerfitApi.restoreAccount()?.role === 'candidate';
+  const savedJobIdsQuery = useQuery({
+    queryKey: ['saved-job-ids'],
+    queryFn: () => careerfitApi.getSavedJobIds(),
+    enabled: isCandidate,
+    retry: 1,
+  });
+  const filters = useMemo(() => getJobFilters(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const catalogQuery = useQuery({
+    queryKey: ['catalog-jobs', keyword],
+    queryFn: () => careerfitApi.searchJobsPage(keyword, 0, 20),
+    retry: 1,
+  });
+
+  useEffect(() => { setQuery(keyword); }, [keyword]);
+  useEffect(() => {
+    if (catalogQuery.data) setPages([catalogQuery.data]);
+  }, [catalogQuery.data]);
+
+  const catalogRows = pages.flatMap((page) => page.jobs);
+  const keywordFilteredJobs = useFilteredJobs(catalogRows, query);
+  const jobs = useMemo(
+    () => sortJobsStable(applyJobFilters(keywordFilteredJobs, filters)),
+    [filters, keywordFilteredJobs],
+  );
+  const lastPage = pages[pages.length - 1];
+  const canLoadMore = Boolean(lastPage && lastPage.page + 1 < lastPage.totalPages);
+  const total = lastPage?.total ?? catalogQuery.data?.total ?? 0;
+
+  function runSearch() {
+    setSearchParams(writeJobSearchParams(query.trim(), filters));
+  }
+  function applyFilters(nextFilters: JobFilters, nextKeyword = query) {
+    setQuery(nextKeyword);
+    setSearchParams(writeJobSearchParams(nextKeyword, nextFilters));
+    setFilterOpen(false);
+  }
+  async function apply(job: Job) {
+    if (job.applicationMode === 'EXTERNAL') {
+      if (job.sourceUrl) {
+        window.open(job.sourceUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setApplyError(language === 'vi' ? 'Việc làm này được đăng từ nguồn bên ngoài.' : 'This job is hosted by an external source.');
+      }
+      return;
+    }
+    if (isGuest) {
+      setIsLoginPromptOpen(true);
+      return;
+    }
+    setApplyError(null);
+    try {
+      await careerfitApi.submitApplication(job.id);
+      await queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      navigate('/candidate/applications');
+    } catch (error) {
+      setApplyError(readableError(error, language === 'vi' ? 'Không thể ứng tuyển công việc này.' : 'Could not submit this application.', language));
+    }
+  }
+
+  async function toggleSavedJob(job: Job) {
+    if (!isCandidate || savingJobId) return;
+    const isSaved = (savedJobIdsQuery.data ?? []).includes(job.id);
+    setSavingJobId(job.id);
+    try {
+      if (isSaved) await careerfitApi.removeSavedJob(job.id);
+      else await careerfitApi.saveJob(job.id);
+      await queryClient.invalidateQueries({ queryKey: ['saved-job-ids'] });
+    } catch (error) {
+      setApplyError(readableError(error, language === 'vi' ? 'Không thể cập nhật việc làm đã lưu.' : 'Could not update saved jobs.', language));
+    } finally {
+      setSavingJobId(null);
+    }
+  }
+  async function loadMore() {
+    if (!lastPage || !canLoadMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const next = await careerfitApi.searchJobsPage(keyword, lastPage.page + 1, 20);
+      setPages((current) => current.some((item) => item.page === next.page) ? current : [...current, next]);
+    } finally { setLoadingMore(false); }
+  }
+
+  return <div className="page-stack">
+    <section className="result-search-hero">
+      <div className="result-search-input"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && runSearch()} placeholder={t('searchPlaceholder')} /></div>
+      <button className="primary-action" onClick={runSearch}><Search size={17} />{t('search')}</button>
+      <button className="filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={16} />{t('filter')}</button>
+    </section>
+    <section className="search-results-page">
+      <div className="result-heading"><h2>{total} <span>{query || 'IT'}</span> {t('jobsInVietnam')}</h2><p className="result-subtitle">{language === 'vi' ? `Đang hiển thị ${pages.flatMap((page) => page.jobs).length} / ${total} việc làm` : `Showing ${pages.flatMap((page) => page.jobs).length} / ${total} jobs`}</p></div>
+      {catalogQuery.isError ? <section className="empty-state" role="alert"><h3>{language === 'vi' ? 'Không thể tải danh sách việc làm' : 'Could not load jobs'}</h3><p>{language === 'vi' ? 'Kiểm tra kết nối rồi thử lại.' : 'Check your connection and try again.'}</p><button type="button" onClick={() => void catalogQuery.refetch()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button></section> : <>
+      {applyError ? <ActionMessage tone="error" text={applyError} /> : null}
+      <JobListWithPreview jobs={jobs} isLoading={catalogQuery.isLoading} onOpen={(job) => navigate(`/jobs/${job.id}`)} onApply={apply} onSave={isCandidate ? toggleSavedJob : undefined} isSaved={(jobId) => (savedJobIdsQuery.data ?? []).includes(jobId)} savingJobId={savingJobId} showMatchMeta={false} emptyTitle={language === 'vi' ? 'Không có việc làm phù hợp bộ lọc.' : 'No jobs match these filters.'} />
+      {canLoadMore ? <div className="load-more-row"><button className="primary-action" disabled={loadingMore} onClick={loadMore}>{loadingMore ? (language === 'vi' ? 'Đang tải...' : 'Loading...') : (language === 'vi' ? 'Xem thêm 20 việc làm' : 'Load 20 more jobs')}</button></div> : null}
+      </>}
+    </section>
+    {filterOpen ? <FilterModal filters={filters} keyword={query} onApply={applyFilters} onReset={() => applyFilters(defaultJobFilters, query)} onClose={() => setFilterOpen(false)} /> : null}
+    {isLoginPromptOpen ? <LoginPromptModal onClose={() => setIsLoginPromptOpen(false)} /> : null}
+  </div>;
+}
+
+function CandidateJobsPageUnused({ isPublic = false }: { isPublic?: boolean }) {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -727,6 +842,13 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   const [candidatePages, setCandidatePages] = useState<CandidateJobPage[]>([]);
   const [isLoadingMoreJobs, setIsLoadingMoreJobs] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [savingJobId, setSavingJobId] = useState<string | null>(null);
+  const savedJobIdsQuery = useQuery({
+    queryKey: ['saved-job-ids'],
+    queryFn: () => careerfitApi.getSavedJobIds(),
+    enabled: !isPublic,
+    retry: 1,
+  });
   const {
     data: publicJobs = [],
     isLoading: isPublicJobsLoading,
@@ -745,9 +867,9 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
     isError: candidateJobsFailed,
     refetch: refetchCandidateJobs,
   } = useQuery({
-    queryKey: ['candidate-jobs-page', 0],
+    queryKey: ['candidate-jobs-page', 0, filters.minScore],
     enabled: !isPublic,
-    queryFn: () => careerfitApi.getCandidateJobsPage({ page: 0, size: 20 }),
+    queryFn: () => careerfitApi.getCandidateJobsPage({ page: 0, size: 20, minScore: filters.minScore || undefined }),
     refetchInterval: 60_000,
     retry: 1,
   });
@@ -765,7 +887,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
   );
   const filteredJobs = useMemo(() => sortJobsStable(applyJobFilters(keywordFilteredJobs, filters)), [keywordFilteredJobs, filters]);
   const scoreCounts = useMemo(() => getScoreCounts(filteredJobs), [filteredJobs]);
-  const activeFilterCount = (Object.keys(filters) as JobFilterKey[]).filter((key) => filters[key] !== defaultJobFilters[key]).length;
+  const activeFilterCount = (Object.keys(jobFilterOptions) as JobFilterKey[]).filter((key) => filters[key] !== defaultJobFilters[key]).length + (filters.minScore > 0 ? 1 : 0);
   const hasActiveSearchOrFilters = Boolean(query.trim()) || activeFilterCount > 0;
   const lowMatchOnly = !isPublic && filteredJobs.length > 0 && filteredJobs.every(isLowMatchJob);
   const suggestions = useSearchSuggestions(query);
@@ -849,6 +971,34 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
     }
   }
 
+  async function toggleSavedJob(job: Job) {
+    if (isPublic || savingJobId) return;
+    const isSaved = (savedJobIdsQuery.data ?? []).includes(job.id);
+    setSavingJobId(job.id);
+    setActionMessage(null);
+    try {
+      if (isSaved) {
+        await careerfitApi.removeSavedJob(job.id);
+      } else {
+        await careerfitApi.saveJob(job.id);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['saved-job-ids'] });
+      setActionMessage({
+        tone: 'success',
+        text: language === 'vi'
+          ? (isSaved ? 'Đã bỏ lưu việc làm.' : 'Đã lưu việc làm.')
+          : (isSaved ? 'Job removed from saved jobs.' : 'Job saved.'),
+      });
+    } catch (error) {
+      setActionMessage({
+        tone: 'error',
+        text: readableError(error, language === 'vi' ? 'Không thể cập nhật việc làm đã lưu.' : 'Could not update saved jobs.', language),
+      });
+    } finally {
+      setSavingJobId(null);
+    }
+  }
+
   async function loadMoreCandidateJobs() {
     if (!lastCandidatePage || !canLoadMoreCandidateJobs || isLoadingMoreJobs) return;
     setIsLoadingMoreJobs(true);
@@ -857,6 +1007,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
       const nextPage = await careerfitApi.getCandidateJobsPage({
         page: lastCandidatePage.page + 1,
         size: 20,
+        minScore: filters.minScore || undefined,
       });
       setCandidatePages((current) => {
         if (current.some((page) => page.page === nextPage.page)) return current;
@@ -966,6 +1117,9 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
           onOpen={(job) => navigate(isPublic ? `/jobs/${job.id}` : `/candidate/jobs/${job.id}`)}
           onSkip={skipJob}
           onApply={applyToJob}
+          onSave={isPublic ? undefined : toggleSavedJob}
+          isSaved={(jobId) => (savedJobIdsQuery.data ?? []).includes(jobId)}
+          savingJobId={savingJobId}
           showMatchMeta={!isPublic}
           scoreCounts={scoreCounts}
           emptyTitle={t('noMatchingJobs')}
@@ -1010,6 +1164,7 @@ function CandidateJobsPage({ isPublic = false }: { isPublic?: boolean }) {
         <FilterModal
           filters={filters}
           keyword={query}
+          showScoreFilter={!isPublic}
           onApply={applyFilters}
           onReset={resetFilters}
           onClose={() => setIsFilterOpen(false)}
@@ -1182,6 +1337,14 @@ function JobDetailPage({ isPublic = false }: { isPublic?: boolean }) {
   const currentJob = job;
 
   async function applyToCurrentJob() {
+    if (currentJob.applicationMode === 'EXTERNAL') {
+      if (currentJob.sourceUrl) {
+        window.open(currentJob.sourceUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      setApplyError(language === 'vi' ? 'Việc làm này được đăng từ nguồn bên ngoài.' : 'This job is hosted by an external source.');
+      return;
+    }
     if (isPublic) {
       setIsLoginPromptOpen(true);
       return;
@@ -1747,6 +1910,12 @@ function ProfilePage() {
     enabled: Boolean(selectedCvId),
     retry: false,
   });
+  const cvMatches = useQuery({
+    queryKey: ['candidate-cv-matches', selectedCvId],
+    queryFn: () => careerfitApi.getCandidateJobsPage({ page: 0, size: 20, cvId: selectedCvId! }),
+    enabled: Boolean(selectedCvId) && cvDetail.data?.status === 'SCORING_DONE',
+    retry: false,
+  });
   const profileTab = profileTabParamToState[searchParams.get('tab') ?? ''] ?? 'cv';
   function setProfileTab(tab: ProfileTab) {
     const params = new URLSearchParams(searchParams);
@@ -2052,6 +2221,14 @@ function ProfilePage() {
                   <h3>{language === 'vi' ? 'Tóm tắt hồ sơ' : 'Profile summary'}</h3>
                   <p>{cvDetail.data.parsedSummary || (language === 'vi' ? 'Chưa có tóm tắt.' : 'No summary available.')}</p>
                 </div>
+                <div className="cv-matches-section">
+                  <h3>{language === 'vi' ? 'Việc làm phù hợp với CV này' : 'Jobs matched to this CV'}</h3>
+                  {cvDetail.data.status !== 'SCORING_DONE' ? <p>{language === 'vi' ? 'CV cần hoàn tất chấm điểm trước khi có kết quả matching.' : 'This CV must finish scoring before matches are available.'}</p> : null}
+                  {cvMatches.isLoading ? <p>{language === 'vi' ? 'Đang tải việc làm phù hợp...' : 'Loading matched jobs...'}</p> : null}
+                  {cvMatches.isError ? <ActionMessage tone="error" text={language === 'vi' ? 'Không thể tải matching cho CV này.' : 'Could not load matches for this CV.'} /> : null}
+                  {cvMatches.data && cvMatches.data.jobs.length === 0 ? <p>{language === 'vi' ? 'Chưa có việc làm phù hợp cho CV này.' : 'No matched jobs for this CV yet.'}</p> : null}
+                  {cvMatches.data?.jobs.map((job) => <button className="cv-match-link" type="button" key={job.id} onClick={() => navigate(`/jobs/${job.id}`)}>{job.title} · {job.company} · {job.normalizedScore}%</button>)}
+                </div>
                 {cvDetail.data.failureReason ? <ActionMessage tone="error" text={cvDetail.data.failureReason} /> : null}
                 <div>
                   <h3>{language === 'vi' ? 'Nội dung đã trích xuất' : 'Extracted content'}</h3>
@@ -2273,7 +2450,7 @@ function RecommendationsPage() {
   const cvMessage = recommendationsQuery.data?.message;
 
   const isRefetching = recommendationsQuery.isFetching;
-  const lastRefresh = new Date(recommendationsQuery.dataUpdatedAt || Date.now());
+  const lastRefresh = recommendationsQuery.dataUpdatedAt ? new Date(recommendationsQuery.dataUpdatedAt) : null;
 
   async function applyToJob(job: Job) {
     setActionMessage(null);
@@ -2321,7 +2498,7 @@ function RecommendationsPage() {
           <RefreshCcw size={16} /> {language === 'vi' ? 'Làm mới' : 'Refresh'}
         </button>
         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {lastRefresh.toLocaleTimeString()}
+          {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {lastRefresh?.toLocaleTimeString() ?? '-'}
           {isRefetching && ' (Đang tải...)'}
         </span>
       </div>
@@ -2501,12 +2678,12 @@ function CandidateSettingsPageUnused({
   onDeleteAccount,
 }: {
   onLogout: () => void;
-  onDeleteAccount: () => void;
+  onDeleteAccount: () => Promise<void>;
 }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  return <ConnectedSettingsPage role="candidate" onLogout={() => { onLogout(); navigate('/'); }} onDeleteAccount={() => { onDeleteAccount(); navigate('/'); }} />;
+  return <ConnectedSettingsPage role="candidate" onLogout={() => { onLogout(); navigate('/'); }} onDeleteAccount={async () => { await onDeleteAccount(); navigate('/'); }} />;
 
   /* Legacy static markup retained below only for translation reference. */
   /* c8 ignore start */
@@ -2609,12 +2786,12 @@ function RecruiterSettingsPageUnused({
   onDeleteAccount,
 }: {
   onLogout: () => void;
-  onDeleteAccount: () => void;
+  onDeleteAccount: () => Promise<void>;
 }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  return <ConnectedSettingsPage role="recruiter" onLogout={() => { onLogout(); navigate('/'); }} onDeleteAccount={() => { onDeleteAccount(); navigate('/'); }} />;
+  return <ConnectedSettingsPage role="recruiter" onLogout={() => { onLogout(); navigate('/'); }} onDeleteAccount={async () => { await onDeleteAccount(); navigate('/'); }} />;
 
   /* Legacy static markup retained below only for translation reference. */
   return (
@@ -2725,7 +2902,7 @@ function RecruiterSettingsPageUnused({
 
 function DemoModeSettings({
   data,
-  role,
+  role: _role,
   onUpdate
 }: {
   data: any;
@@ -2759,11 +2936,11 @@ function DemoModeSettings({
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <div className="action-message tone-warning" style={{ marginBottom: 16 }}>
+      <p className="settings-inline-note" style={{ marginBottom: 16 }}>
         {vi
           ? 'Chế độ Demo đang được kiểm soát từ trang Settings này.'
           : 'Demo Mode is controlled from this Settings page.'}
-      </div>
+      </p>
       <SettingsSection icon={<Zap size={20} />} title="Demo Mode">
         {error && <p className="form-error">{error}</p>}
         <div className="settings-option-grid">
@@ -2783,8 +2960,9 @@ function DemoModeSettings({
   );
 }
 
-function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'candidate' | 'recruiter'; onLogout: () => void; onDeleteAccount: () => void }) {
+function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'candidate' | 'recruiter'; onLogout: () => void; onDeleteAccount: () => Promise<void> }) {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const vi = language === 'vi';
   const [draft, setDraft] = useState<Record<string, string | number | boolean>>({});
@@ -2813,7 +2991,7 @@ function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'can
     sideTitle={vi ? 'Trạng thái lưu trữ' : 'Persistence status'}
     sideItems={[[vi ? 'Vai trò' : 'Role', role], [vi ? 'Cập nhật gần nhất' : 'Last updated', (data as any)?.updatedAt ? new Date((data as any).updatedAt).toLocaleString() : '-']]}
     onSave={save} saving={saving}
-    accountActions={<AccountDangerActions onLogout={onLogout} onDeleteAccount={onDeleteAccount} deleteDisabled />}
+    accountActions={<AccountDangerActions onLogout={onLogout} onDeleteAccount={async () => { await onDeleteAccount(); navigate('/'); }} />}
   >
     {message ? <ActionMessage {...message} /> : null}
     {isLoading ? <p>{vi ? 'Đang tải cài đặt...' : 'Loading settings...'}</p> : null}
@@ -2829,7 +3007,7 @@ function ConnectedSettingsPage({ role, onLogout, onDeleteAccount }: { role: 'can
         <div className="settings-grid"><label>{vi ? 'Ngưỡng cảnh báo' : 'Alert threshold'}<input type="number" min="0" max="100" value={Number(draft.alertThreshold ?? 90)} onChange={(e) => setValue('alertThreshold', Number(e.target.value))} /></label><label>{vi ? 'Giờ tổng hợp' : 'Digest time'}<input type="time" value={String(draft.digestTime ?? '08:00')} onChange={(e) => setValue('digestTime', e.target.value)} /></label></div>
       </SettingsSection>
       <SettingsSection icon={<ShieldCheck size={20} />} title={vi ? 'Quyền riêng tư' : 'Privacy'}><div className="settings-option-grid">{toggle('showPortfolioAfterApply', vi ? 'Hiện portfolio sau apply' : 'Show portfolio after apply', vi ? 'Cho recruiter xem portfolio sau khi ứng tuyển.' : 'Reveal portfolio after applying.')}{toggle('allowPotentialDiscovery', vi ? 'Cho phép tìm ứng viên tiềm năng' : 'Allow potential discovery', vi ? 'Xuất hiện trong discovery tiềm năng.' : 'Appear in potential discovery.')}{toggle('hidePhoneUntilInvite', vi ? 'Ẩn số điện thoại' : 'Hide phone until invite', vi ? 'Chỉ hiện số điện thoại sau lời mời.' : 'Reveal phone only after invite.')}</div></SettingsSection>
-      <SettingsSection icon={<KeyRound size={20} />} title={vi ? 'Phiên đăng nhập' : 'Login session'}><div className="settings-option-grid">{toggle('passwordlessEnabled', vi ? 'Đăng nhập không mật khẩu' : 'Passwordless login', vi ? 'Cho phép magic link.' : 'Allow magic-link login.')}</div><div className="settings-grid"><label>{vi ? 'Thời hạn phiên (ngày)' : 'Session duration (days)'}<input type="number" min="1" max="90" value={Number(draft.sessionTimeoutDays ?? 30)} onChange={(e) => setValue('sessionTimeoutDays', Number(e.target.value))} /></label></div></SettingsSection>
+      <SettingsSection icon={<KeyRound size={20} />} title={vi ? 'Phiên đăng nhập' : 'Login session'}><div className="settings-grid"><label>{vi ? 'Thời hạn phiên (ngày)' : 'Session duration (days)'}<input type="number" min="1" max="90" value={Number(draft.sessionTimeoutDays ?? 30)} onChange={(e) => setValue('sessionTimeoutDays', Number(e.target.value))} /></label></div></SettingsSection>
     </> : null}
     {!isLoading && !error && role === 'recruiter' ? <>
       <SettingsSection icon={<Users size={20} />} title={vi ? 'Quy trình tuyển dụng' : 'Recruiting workflow'}><div className="settings-option-grid">{toggle('hiringManagerReview', vi ? 'Hiring manager duyệt' : 'Hiring manager review', vi ? 'Yêu cầu bước duyệt nội bộ.' : 'Require internal review.')}{toggle('sharedCandidateNotes', vi ? 'Chia sẻ ghi chú' : 'Shared candidate notes', vi ? 'Cho nhóm xem ghi chú ứng viên.' : 'Share candidate notes with team.')}{toggle('restrictSalaryVisibility', vi ? 'Giới hạn xem lương' : 'Restrict salary visibility', vi ? 'Ẩn lương với thành viên không được phép.' : 'Limit salary visibility.')}</div></SettingsSection>
@@ -2899,13 +3077,27 @@ function SettingsSurface({
 function AccountDangerActions({
   onLogout,
   onDeleteAccount,
-  deleteDisabled = false,
 }: {
   onLogout: () => void;
-  onDeleteAccount: () => void;
-  deleteDisabled?: boolean;
+  onDeleteAccount: () => Promise<void> | void;
 }) {
   const { language, t } = useLanguage();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const vi = language === 'vi';
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDeleteAccount();
+    } catch (error) {
+      setDeleteError(readableError(error, vi ? 'Không thể xóa tài khoản.' : 'Could not delete account.', language));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="account-danger-actions">
@@ -2915,13 +3107,27 @@ function AccountDangerActions({
       </button>
       <button
         className="danger-action"
-        onClick={onDeleteAccount}
-        disabled={deleteDisabled}
-        title={deleteDisabled ? (language === 'vi' ? 'Backend chưa hỗ trợ xóa tài khoản.' : 'Account deletion is not supported by the backend yet.') : undefined}
+        onClick={() => { setDeleteError(null); setConfirming(true); }}
       >
         <Trash2 size={17} />
         {t('deleteAccount')}
       </button>
+      {confirming ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={vi ? 'Xác nhận xóa tài khoản' : 'Confirm account deletion'} onMouseDown={(event) => !deleting && event.target === event.currentTarget && setConfirming(false)}>
+          <section className="candidate-review-modal portfolio-confirm-modal">
+            <div>
+              <p className="eyebrow">CareerFit</p>
+              <h2>{vi ? 'Xóa vĩnh viễn tài khoản?' : 'Permanently delete account?'}</h2>
+              <p>{vi ? 'CV hoặc JD, hồ sơ, ứng tuyển, dữ liệu đã lưu và cài đặt thuộc tài khoản sẽ bị xóa. Bạn có thể đăng ký lại bằng cùng email sau đó.' : 'Your CVs or jobs, profile, applications, saved data, and settings will be deleted. You can register again with the same email afterwards.'}</p>
+              {deleteError ? <p className="form-error">{deleteError}</p> : null}
+            </div>
+            <div className="filter-modal-actions">
+              <button type="button" disabled={deleting} onClick={() => setConfirming(false)}>{vi ? 'Hủy' : 'Cancel'}</button>
+              <button className="danger-action" type="button" disabled={deleting} onClick={deleteAccount}><Trash2 size={17} />{deleting ? (vi ? 'Đang xóa...' : 'Deleting...') : (vi ? 'Xóa tài khoản' : 'Delete account')}</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2957,7 +3163,7 @@ function SettingToggle({
         <strong>{title}</strong>
         <small>{detail}</small>
       </span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange?.(event.target.checked)} readOnly={!onChange} />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange?.(event.target.checked)} readOnly={!onChange} />
     </label>
   );
 }
@@ -3113,6 +3319,141 @@ function CreateJobModal({ language, onClose, onSubmit, submitting, initial }: {
         </div>
       </form>
     </div>
+  );
+}
+
+function RecruiterPotentialRedirect() {
+  const { jobId } = useParams();
+  return <Navigate to={`/recruiter/talent-pool${jobId ? `?job=${encodeURIComponent(jobId)}` : ''}`} replace />;
+}
+
+function RecruiterTalentPoolPage() {
+  const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const { data: recruiterJobs = [], isLoading: isJobsLoading, isError: jobsLoadFailed, refetch: refetchJobs } = useRecruiterJobs();
+  const selectedJobId = searchParams.get('job') ?? recruiterJobs[0]?.id ?? '';
+  const selectedJob = recruiterJobs.find((job) => job.id === selectedJobId) ?? recruiterJobs[0] ?? null;
+  const activeTab = searchParams.get('view') === 'saved' ? 'saved' : 'suggested';
+  const [selectedCandidate, setSelectedCandidate] = useState<RecruiterCandidateItem | null>(null);
+  const [updatingCandidateId, setUpdatingCandidateId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+
+  const { data: suggestedCandidates = [], isLoading: isCandidatesLoading, isError: candidatesLoadFailed, refetch: refetchCandidates } = useQuery<RecruiterCandidateItem[]>({
+    queryKey: ['recruiter-talent-pool', selectedJob?.id],
+    enabled: Boolean(selectedJob?.id),
+    queryFn: () => careerfitApi.getRecruiterCandidates(selectedJob!.id, {
+      isPotential: true,
+      applicationStatus: 'NONE',
+      sort: 'score_desc',
+      page: 0,
+      size: 50,
+    }).then((page) => page.candidates),
+    refetchInterval: 60_000,
+  });
+  const { data: bookmarks = [], isLoading: isBookmarksLoading, isError: bookmarksLoadFailed, refetch: refetchBookmarks } = useQuery({
+    queryKey: ['recruiter-talent-bookmarks', selectedJob?.id],
+    enabled: Boolean(selectedJob?.id),
+    queryFn: () => careerfitApi.getRecruiterTalentBookmarks(selectedJob!.id),
+  });
+  const bookmarkedCandidateIds = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.candidateId)), [bookmarks]);
+  const visibleCandidates = useMemo(
+    () => activeTab === 'saved' ? suggestedCandidates.filter((item) => bookmarkedCandidateIds.has(item.candidateId)) : suggestedCandidates,
+    [activeTab, bookmarkedCandidateIds, suggestedCandidates],
+  );
+
+  function updatePoolQuery(key: 'job' | 'view', value: string) {
+    const params = new URLSearchParams(searchParams);
+    if ((key === 'view' && value === 'suggested') || !value) params.delete(key);
+    else params.set(key, value);
+    setSearchParams(params);
+  }
+
+  async function toggleBookmark(candidate: RecruiterCandidateItem) {
+    if (!selectedJob) return;
+    setUpdatingCandidateId(candidate.candidateId);
+    setActionMessage(null);
+    try {
+      if (bookmarkedCandidateIds.has(candidate.candidateId)) {
+        await careerfitApi.removeRecruiterCandidateBookmark(selectedJob.id, candidate.candidateId);
+        setActionMessage({ tone: 'success', text: language === 'vi' ? `Đã bỏ lưu ${candidate.name} khỏi Talent Pool.` : `${candidate.name} removed from the Talent Pool.` });
+      } else {
+        await careerfitApi.bookmarkRecruiterCandidate(selectedJob.id, candidate.candidateId);
+        setActionMessage({ tone: 'success', text: language === 'vi' ? `Đã lưu ${candidate.name} vào Talent Pool.` : `${candidate.name} saved to the Talent Pool.` });
+      }
+      await queryClient.invalidateQueries({ queryKey: ['recruiter-talent-bookmarks', selectedJob.id] });
+    } catch (error) {
+      setActionMessage({ tone: 'error', text: readableError(error, language === 'vi' ? 'Không thể cập nhật Talent Pool.' : 'Could not update the Talent Pool.', language) });
+    } finally {
+      setUpdatingCandidateId(null);
+    }
+  }
+
+  async function inviteCandidate(candidate: RecruiterCandidateItem) {
+    if (!selectedJob) return;
+    setUpdatingCandidateId(candidate.candidateId);
+    setActionMessage(null);
+    try {
+      await careerfitApi.inviteCandidate(selectedJob.id, candidate.candidateId);
+      await refetchCandidates();
+      setActionMessage({ tone: 'success', text: language === 'vi' ? `Đã gửi lời mời đến ${candidate.name}.` : `Invitation sent to ${candidate.name}.` });
+    } catch (error) {
+      setActionMessage({ tone: 'error', text: readableError(error, language === 'vi' ? 'Không thể gửi lời mời.' : 'Could not send invitation.', language) });
+    } finally {
+      setUpdatingCandidateId(null);
+    }
+  }
+
+  if (isJobsLoading) return <section className="panel empty-state"><p>{t('loading')}</p></section>;
+  if (jobsLoadFailed) return <section className="panel empty-state"><h2>{language === 'vi' ? 'Không thể tải các JD' : 'Could not load jobs'}</h2><button onClick={() => refetchJobs()}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button></section>;
+  if (!selectedJob) return <section className="panel empty-state"><h2>{language === 'vi' ? 'Chưa có JD để tạo Talent Pool' : 'No job available for a Talent Pool'}</h2><p>{language === 'vi' ? 'Hãy đăng một JD trước khi xem các ứng viên tiềm năng.' : 'Post a job before reviewing potential candidates.'}</p></section>;
+
+  const isLoading = isCandidatesLoading || isBookmarksLoading;
+  const hasError = candidatesLoadFailed || bookmarksLoadFailed;
+  return (
+    <section className="talent-pool-page">
+      <header className="talent-pool-header">
+        <div>
+          <p className="eyebrow">Recruiter</p>
+          <h2>{t('talentPool')}</h2>
+          <p>{language === 'vi' ? 'Các CV được AI nhận diện là tiềm năng cho từng JD. Lưu shortlist nội bộ hoặc gửi lời mời khi phù hợp.' : 'AI-identified potential CVs for each job. Save an internal shortlist or send an invitation when ready.'}</p>
+        </div>
+        <label className="talent-job-picker">
+          <span>{language === 'vi' ? 'JD đang xem' : 'Selected job'}</span>
+          <select value={selectedJob.id} onChange={(event) => updatePoolQuery('job', event.target.value)}>
+            {recruiterJobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
+          </select>
+        </label>
+      </header>
+
+      <div className="talent-pool-summary">
+        <div><Users size={19} /><span>{language === 'vi' ? 'Ứng viên tiềm năng AI' : 'AI potential candidates'}</span><strong>{suggestedCandidates.length}</strong></div>
+        <div><Bookmark size={19} /><span>{language === 'vi' ? 'Đã lưu cho JD này' : 'Saved for this job'}</span><strong>{bookmarks.length}</strong></div>
+        <button onClick={() => navigate(`/recruiter/jobs/${selectedJob.id}/applicants`)}>{language === 'vi' ? 'Xem CV đã ứng tuyển' : 'View applied CVs'}</button>
+      </div>
+
+      <div className="talent-pool-tabs" role="tablist" aria-label={t('talentPool')}>
+        <button className={activeTab === 'suggested' ? 'active' : ''} onClick={() => updatePoolQuery('view', 'suggested')} role="tab" aria-selected={activeTab === 'suggested'}>{language === 'vi' ? 'Đề xuất AI' : 'AI suggestions'} ({suggestedCandidates.length})</button>
+        <button className={activeTab === 'saved' ? 'active' : ''} onClick={() => updatePoolQuery('view', 'saved')} role="tab" aria-selected={activeTab === 'saved'}>{language === 'vi' ? 'Đã lưu' : 'Saved'} ({bookmarks.length})</button>
+      </div>
+
+      {actionMessage ? <ActionMessage {...actionMessage} /> : null}
+      <div className="recruiter-candidate-list">
+        {isLoading ? <section className="empty-state recruiter-empty-state"><p>{t('loading')}</p></section> : null}
+        {!isLoading && hasError ? <section className="empty-state recruiter-empty-state"><h3>{language === 'vi' ? 'Không thể tải Talent Pool' : 'Could not load the Talent Pool'}</h3><button onClick={() => { void refetchCandidates(); void refetchBookmarks(); }}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button></section> : null}
+        {!isLoading && !hasError && visibleCandidates.length === 0 ? <section className="empty-state recruiter-empty-state"><h3>{activeTab === 'saved' ? (language === 'vi' ? 'Chưa có CV nào được lưu' : 'No saved CVs yet') : (language === 'vi' ? 'Chưa có ứng viên tiềm năng' : 'No potential candidates yet')}</h3><p>{activeTab === 'saved' ? (language === 'vi' ? 'Các CV bạn lưu sẽ chỉ hiển thị cho JD đang chọn.' : 'Saved CVs are private to the selected job.') : (language === 'vi' ? 'Kết quả sẽ xuất hiện sau khi hệ thống chấm điểm thêm CV phù hợp.' : 'Results appear after more matching CVs are scored.')}</p></section> : null}
+        {!isLoading && !hasError && visibleCandidates.map((item) => {
+          const isSaved = bookmarkedCandidateIds.has(item.candidateId);
+          return <article className="candidate-review-card talent-candidate-card" key={item.candidateId}>
+            <div className="candidate-review-main"><div className="candidate-avatar">{item.initials}</div><div><h4>{item.name}</h4><p>{item.title}</p><small>{item.location ?? (language === 'vi' ? 'Chưa cập nhật địa điểm' : 'Location not provided')}</small><PotentialBadge /></div></div>
+            <div className="candidate-score-block"><span>{t('matchScore')}</span><div><i><b style={{ width: `${item.score}%` }} /></i><strong>{item.score}%</strong></div></div>
+            <div className="candidate-review-actions"><button className={isSaved ? 'saved-talent-action' : ''} disabled={updatingCandidateId === item.candidateId} onClick={() => toggleBookmark(item)}><Bookmark size={16} />{isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : (language === 'vi' ? 'Lưu CV' : 'Save CV')}</button><button onClick={() => setSelectedCandidate(item)}>{t('viewCv')}</button>{!item.hasApplied ? <button disabled={updatingCandidateId === item.candidateId} onClick={() => inviteCandidate(item)}>{t('invite')}</button> : null}</div>
+          </article>;
+        })}
+      </div>
+      {selectedCandidate ? <CandidateReviewModal candidate={selectedCandidate} onClose={() => setSelectedCandidate(null)} /> : null}
+    </section>
   );
 }
 
@@ -3443,8 +3784,9 @@ function RecruiterJobsPage() {
             <button className={recruiterSubview === 'applicants' || recruiterSubview === 'ranking' ? 'active' : ''} onClick={() => navigateRecruiterSubview(selectedJob, 'applicants')}>
               {t('appliedCvs')} ({selectedJob.applicantCount ?? 0})
             </button>
-            <button className={recruiterSubview === 'potential' ? 'active' : ''} onClick={() => navigateRecruiterSubview(selectedJob, 'potential')}>
-              {t('aiPotentialMatches')} ({selectedJob.matchCount ?? 0})
+            <button className="candidate-tabs-link" onClick={() => navigate(`/recruiter/talent-pool?job=${encodeURIComponent(selectedJob.id)}`)}>
+              <Users size={16} />
+              {t('talentPool')}
             </button>
           </div>
 
@@ -3972,6 +4314,9 @@ function JobListWithPreview({
   onOpen,
   onSkip,
   onApply,
+  onSave,
+  isSaved,
+  savingJobId,
   showMatchMeta = true,
   scoreCounts,
   emptyTitle,
@@ -3983,6 +4328,9 @@ function JobListWithPreview({
   onOpen: (job: Job) => void;
   onSkip?: (id: string, options?: { feedbackSaved?: boolean }) => void;
   onApply?: (job: Job) => void;
+  onSave?: (job: Job) => void;
+  isSaved?: (jobId: string) => boolean;
+  savingJobId?: string | null;
   showMatchMeta?: boolean;
   scoreCounts?: Map<number, number>;
   emptyTitle?: string;
@@ -4039,6 +4387,9 @@ function JobListWithPreview({
             onOpen={onOpen}
             onSkip={onSkip}
             onApply={onApply}
+            onSave={onSave}
+            isSaved={isSaved?.(job.id)}
+            isSaving={savingJobId === job.id}
             showMatchMeta={showMatchMeta}
             feedbackSlot={
               <>
@@ -4136,12 +4487,14 @@ function JobHoverPreview({ job, onOpen, onApply }: { job: Job; onOpen: (job: Job
 function FilterModal({
   filters,
   keyword,
+  showScoreFilter = false,
   onApply,
   onReset,
   onClose,
 }: {
   filters: JobFilters;
   keyword: string;
+  showScoreFilter?: boolean;
   onApply: (filters: JobFilters, keyword: string) => void;
   onReset: () => void;
   onClose: () => void;
@@ -4185,10 +4538,12 @@ function FilterModal({
               ))}
             </select>
           </label>
-          <label>
-            {t('minimumScore')}
-            <input type="range" min="60" max="100" defaultValue="85" />
-          </label>
+          {showScoreFilter ? (
+            <label>
+              <span>{t('minimumScore')}: {draftFilters.minScore || 0}%</span>
+              <input type="range" min="0" max="100" step="5" value={draftFilters.minScore} onChange={(event) => setDraftFilters((current) => ({ ...current, minScore: Number(event.target.value) }))} />
+            </label>
+          ) : null}
           <label>
             {t('salaryRange')}
             <select value={draftFilters.salary} onChange={(event) => updateDraftFilter('salary', event.target.value)}>
@@ -4414,6 +4769,12 @@ function SearchSuggestions({
 
 function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; showMatchMeta?: boolean; onApply?: () => void }) {
   const { language, t } = useLanguage();
+  const description = useMemo(() => parseJobDescription(job.description), [job.description]);
+
+  function renderDescriptionLines(lines: string[], fallback: string) {
+    if (!lines.length) return <p>{fallback}</p>;
+    return <ul>{lines.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ul>;
+  }
 
   return (
     <article className="jd-detail-page">
@@ -4458,25 +4819,20 @@ function JobDetailContent({ job, showMatchMeta = true, onApply }: { job: Job; sh
       <section className="jd-content-grid">
         <div className="jd-main-content">
           <h2>{t('jobDescription')}</h2>
-          <p>{job.description}</p>
-          <ul>
-            <li>{t('jdDetailTaskOne')}</li>
-            <li>{t('jdDetailTaskTwo')}</li>
-            <li>{t('jdDetailTaskThree')}</li>
-            <li>{t('jdDetailTaskFour')}</li>
-          </ul>
+          {renderDescriptionLines(description.overview, language === 'vi' ? 'Nhà tuyển dụng chưa cập nhật mô tả chi tiết.' : 'The recruiter has not added a detailed description yet.')}
+          <h2>{language === 'vi' ? 'Trách nhiệm chính' : 'Key responsibilities'}</h2>
+          {renderDescriptionLines(description.responsibilities, language === 'vi' ? 'Nội dung trách nhiệm được trình bày trong phần mô tả.' : 'Responsibilities are included in the description.')}
           <h2>{t('jobRequirements')}</h2>
-          <ReasonChips reasons={job.requiredSkills} />
-          <p>{t('jdRequirementCopy')}</p>
+          {description.requirements.length ? renderDescriptionLines(description.requirements, '') : <ReasonChips reasons={job.requiredSkills} />}
           <h2>{t('benefits')}</h2>
-          <ul>
-            <li>{t('benefitOne')}</li>
-            <li>{t('benefitTwo')}</li>
-            <li>{t('benefitThree')}</li>
-          </ul>
+          {renderDescriptionLines(description.benefits, language === 'vi' ? 'Nhà tuyển dụng chưa cập nhật quyền lợi.' : 'Benefits have not been added yet.')}
         </div>
         <aside className="jd-side-content">
-          <button className="primary-action full" onClick={onApply}>{t('apply')}</button>
+          <button className="primary-action full" onClick={onApply}>
+            {job.applicationMode === 'EXTERNAL'
+              ? (language === 'vi' ? 'Mở nguồn tuyển dụng' : 'Open source listing')
+              : t('apply')}
+          </button>
           {showMatchMeta && job.matchingId ? (
             <FeedbackBar matchingId={job.matchingId} initialFeedback={job.feedback} />
           ) : null}
@@ -4851,6 +5207,7 @@ function applyJobFilters(sourceJobs: Job[], filters: JobFilters) {
       const domainNeedle = filters.domain === 'data-ai' ? 'data' : filters.domain === 'qa' ? 'test' : filters.domain;
       if (!haystack.includes(domainNeedle)) return false;
     }
+    if (filters.minScore > 0 && job.normalizedScore < filters.minScore) return false;
     return true;
   });
 }

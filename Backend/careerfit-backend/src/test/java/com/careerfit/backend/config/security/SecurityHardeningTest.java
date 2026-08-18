@@ -54,6 +54,7 @@ class SecurityHardeningTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Frame-Options", "DENY"))
                 .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().string("Content-Security-Policy", containsString("sandbox allow-forms allow-same-origin")))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"));
     }
 

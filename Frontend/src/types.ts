@@ -35,6 +35,8 @@ export interface Job {
   description: string;
   normalizedScore: number;
   label: MatchLabel;
+  /** False when this is an unscored catalog entry rather than a CV matching. */
+  hasMatching?: boolean;
   isPotential: boolean;
   reasons: string[];
   feedback?: MatchFeedback;
@@ -56,6 +58,8 @@ export interface Job {
   employmentType?: string;
   domain?: string;
   recruiterLogin?: string;
+  applicationMode?: 'INTERNAL' | 'EXTERNAL';
+  sourceUrl?: string;
 }
 
 export interface RankingTieMeta {

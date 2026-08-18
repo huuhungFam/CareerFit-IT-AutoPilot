@@ -43,4 +43,11 @@ public class AuthController {
             @AuthenticationPrincipal String email) {
         return ResponseEntity.ok(ApiResponse.ok(authService.getMe(email)));
     }
+
+    @DeleteMapping("/me")
+    @Operation(summary = "Permanently delete the current candidate or recruiter account")
+    public ResponseEntity<ApiResponse<AuthDtos.AccountDeletionResponse>> deleteMe(
+            @AuthenticationPrincipal String email) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.deleteCurrentAccount(email)));
+    }
 }

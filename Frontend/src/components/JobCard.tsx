@@ -9,11 +9,14 @@ interface JobCardProps {
   onSkip?: (id: string) => void;
   onOpen?: (job: Job) => void;
   onApply?: (job: Job) => void;
+  onSave?: (job: Job) => void;
+  isSaved?: boolean;
+  isSaving?: boolean;
   showMatchMeta?: boolean;
   feedbackSlot?: ReactNode;
 }
 
-export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, feedbackSlot }: JobCardProps) {
+export function JobCard({ job, onSkip, onOpen, onApply, onSave, isSaved = false, isSaving = false, showMatchMeta = true, feedbackSlot }: JobCardProps) {
   const { language, t } = useLanguage();
   const companyMark = job.company
     .split(/\s+/)
@@ -53,7 +56,7 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
             </p>
           </div>
         </div>
-        {showMatchMeta ? (
+        {showMatchMeta && job.hasMatching !== false ? (
           <div className="badge-stack">
             <MatchingBadge score={job.normalizedScore} label={job.label} />
             {job.isPotential ? <PotentialBadge /> : null}
@@ -63,7 +66,7 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
 
       <ReasonChips reasons={[...job.requiredSkills.slice(0, 4), ...job.reasons.slice(0, 1)]} />
 
-      <p className="job-description">{job.description}</p>
+      {job.description ? <p className="job-description">{job.description}</p> : null}
 
       <div className="job-insight-row">
         <span>
@@ -88,9 +91,17 @@ export function JobCard({ job, onSkip, onOpen, onApply, showMatchMeta = true, fe
           <Send size={16} />
           {t('apply')}
         </button>
-        <button disabled title={language === 'vi' ? 'Backend chưa hỗ trợ lưu việc làm.' : 'Saving jobs is not supported by the backend yet.'} onClick={stopAction}>
+        <button
+          className={isSaved ? 'saved-job-action' : ''}
+          disabled={!onSave || isSaving}
+          title={!onSave ? (language === 'vi' ? 'Đăng nhập bằng tài khoản ứng viên để lưu việc làm.' : 'Sign in as a candidate to save jobs.') : undefined}
+          onClick={(event) => {
+            stopAction(event);
+            onSave?.(job);
+          }}
+        >
           <Bookmark size={16} />
-          {t('save')}
+          {isSaving ? (language === 'vi' ? 'Đang lưu...' : 'Saving...') : isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : t('save')}
         </button>
         <button
           disabled={!onSkip}

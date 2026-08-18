@@ -48,6 +48,7 @@ public class JobService {
     private final QualityValidationService qualityValidationService;
     private final ApplicationRepository applicationRepo;
     private final AfterCommitExecutor afterCommitExecutor;
+    private final JobDuplicateProtectionService duplicateProtection;
 
     public JobService(JobRepository jobRepo,
                       UserAccountRepository userRepo,
@@ -58,7 +59,8 @@ public class JobService {
                       ObjectMapper objectMapper,
                       QualityValidationService qualityValidationService,
                       ApplicationRepository applicationRepo,
-                      AfterCommitExecutor afterCommitExecutor) {
+                      AfterCommitExecutor afterCommitExecutor,
+                      JobDuplicateProtectionService duplicateProtection) {
         this.jobRepo = jobRepo;
         this.userRepo = userRepo;
         this.employerRepo = employerRepo;
@@ -69,12 +71,18 @@ public class JobService {
         this.qualityValidationService = qualityValidationService;
         this.applicationRepo = applicationRepo;
         this.afterCommitExecutor = afterCommitExecutor;
+        this.duplicateProtection = duplicateProtection;
     }
 
     // ── Create Job ────────────────────────────────────────────────────────
 
     @Transactional
     public JobDtos.JobDetailResponse createJob(UUID userId, JobDtos.CreateJobRequest req) {
+        return createJob(userId, req, false);
+    }
+
+    @Transactional
+    public JobDtos.JobDetailResponse createJob(UUID userId, JobDtos.CreateJobRequest req, boolean confirmNearDuplicate) {
         var recruiter = userRepo.findById(userId)
                 .orElseThrow(() -> AppException.notFound("User", userId));
         if (recruiter.getRole() != UserAccount.Role.RECRUITER) {
@@ -90,6 +98,7 @@ public class JobService {
         }
 
         var job = new Job(recruiter, req.title(), req.company(), req.originalText(), salaryMode);
+        job.setSourceType(Job.SourceType.INTERNAL);
 
         applyRequiredFields(job, req);
 
@@ -103,10 +112,12 @@ public class JobService {
         // Vectorize JD immediately (sync — JDs are usually short)
         vectorizeJob(job);
 
+        // New jobs are ACTIVE by default; draft edits are intentionally not blocked.
+        duplicateProtection.assertCanActivate(job, confirmNearDuplicate);
+
         jobRepo.save(job);
 
-        UUID jobId = job.getId();
-        afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(jobId));
+        enqueueMatchingAfterCommitIfActive(job);
 
         log.info("Job created: id={} title='{}' by recruiter={}", job.getId(), job.getTitle(), userId);
         return toDetail(job, employerRepo.findByRecruiterId(userId).orElse(null));
@@ -116,10 +127,18 @@ public class JobService {
 
     @Transactional
     public JobDtos.JobDetailResponse updateJob(UUID jobId, UUID userId, JobDtos.UpdateJobRequest req) {
+        return updateJob(jobId, userId, req, false);
+    }
+
+    @Transactional
+    public JobDtos.JobDetailResponse updateJob(UUID jobId, UUID userId, JobDtos.UpdateJobRequest req,
+                                                boolean confirmNearDuplicate) {
         Job job = findAndAuthorize(jobId, userId);
         boolean shouldRevectorize = false;
+        boolean matchingRelevantChange = false;
+        Job.JobStatus previousStatus = job.getStatus();
 
-        if (req.title()        != null) job.setTitle(req.title());
+        if (req.title()        != null) { job.setTitle(req.title()); matchingRelevantChange = true; }
         if (req.location()     != null) job.setLocation(req.location());
         if (req.seniorityLevel()!= null) job.setSeniorityLevel(req.seniorityLevel());
         if (req.employmentType()!= null) job.setEmploymentType(req.employmentType());
@@ -144,6 +163,7 @@ public class JobService {
         if (req.requiredSkills() != null) {
             try { job.setRequiredSkillsJson(objectMapper.writeValueAsString(req.requiredSkills())); }
             catch (Exception ignored) {}
+            matchingRelevantChange = true;
         }
         if (req.niceToHaveSkills() != null) {
             try { job.setNiceToHaveSkillsJson(objectMapper.writeValueAsString(req.niceToHaveSkills())); }
@@ -154,6 +174,7 @@ public class JobService {
         if (req.originalText() != null && !req.originalText().isBlank()) {
             job.setOriginalText(req.originalText());
             shouldRevectorize = true;
+            matchingRelevantChange = true;
         }
 
         if (req.status() != null) {
@@ -170,10 +191,15 @@ public class JobService {
             vectorizeJob(job);
         }
 
+        if ((previousStatus != Job.JobStatus.ACTIVE && job.getStatus() == Job.JobStatus.ACTIVE)
+                || (job.getStatus() == Job.JobStatus.ACTIVE && (shouldRevectorize || matchingRelevantChange))) {
+            duplicateProtection.assertCanActivate(job, confirmNearDuplicate);
+        }
+
         jobRepo.save(job);
-        if (shouldRevectorize) {
-            UUID persistedJobId = job.getId();
-            afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(persistedJobId));
+        if ((previousStatus != Job.JobStatus.ACTIVE && job.getStatus() == Job.JobStatus.ACTIVE)
+                || (job.getStatus() == Job.JobStatus.ACTIVE && (shouldRevectorize || matchingRelevantChange))) {
+            enqueueMatchingAfterCommitIfActive(job);
         }
         return toDetail(job, employerRepo.findByRecruiterId(userId).orElse(null));
     }
@@ -182,13 +208,26 @@ public class JobService {
 
     @Transactional
     public JobDtos.JobStatusUpdateResponse updateStatus(UUID jobId, UUID userId, String newStatus) {
+        return updateStatus(jobId, userId, newStatus, false);
+    }
+
+    @Transactional
+    public JobDtos.JobStatusUpdateResponse updateStatus(UUID jobId, UUID userId, String newStatus,
+                                                         boolean confirmNearDuplicate) {
         Job job = findAndAuthorize(jobId, userId);
+        Job.JobStatus previousStatus = job.getStatus();
         try {
             job.setStatus(parseRecruiterStatus(newStatus));
         } catch (IllegalArgumentException e) {
             throw AppException.badRequest("Invalid status: " + newStatus);
         }
+        if (previousStatus != Job.JobStatus.ACTIVE && job.getStatus() == Job.JobStatus.ACTIVE) {
+            duplicateProtection.assertCanActivate(job, confirmNearDuplicate);
+        }
         jobRepo.save(job);
+        if (previousStatus != Job.JobStatus.ACTIVE && job.getStatus() == Job.JobStatus.ACTIVE) {
+            enqueueMatchingAfterCommitIfActive(job);
+        }
         return new JobDtos.JobStatusUpdateResponse(job.getId().toString(), job.getStatus().name(), job.getUpdatedAt());
     }
 
@@ -323,6 +362,34 @@ public class JobService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public JobDtos.DuplicateCheckResponse checkDuplicates(UUID userId, JobDtos.DuplicateCheckRequest req) {
+        UserAccount recruiter = userRepo.findById(userId)
+                .orElseThrow(() -> AppException.notFound("User", userId));
+        if (recruiter.getRole() != UserAccount.Role.RECRUITER) {
+            throw AppException.forbidden("Only recruiters can check job duplicates");
+        }
+        Job candidate = new Job(recruiter, req.title(), req.company(), req.originalText(), Job.SalaryMode.NEGOTIABLE);
+        candidate.setEmploymentType(req.employmentType());
+        candidate.setLocation(req.location());
+        candidate.setSourceType(Job.SourceType.INTERNAL);
+        var result = duplicateProtection.check(candidate);
+        return new JobDtos.DuplicateCheckResponse(result.fingerprint(), result.exactDuplicate(),
+                JobDuplicateProtectionService.NEAR_DUPLICATE_THRESHOLD,
+                result.nearDuplicates().stream()
+                        .map(item -> new JobDtos.NearDuplicateResponse(item.jobId(), item.title(), item.similarity()))
+                        .toList());
+    }
+
+    /** The primary matching path; work is emitted only after the job transaction commits. */
+    private void enqueueMatchingAfterCommitIfActive(Job job) {
+        if (job.getStatus() != Job.JobStatus.ACTIVE) return;
+        job.setMatchingRecoveryNeeded(true);
+        jobRepo.save(job);
+        UUID jobId = job.getId();
+        afterCommitExecutor.execute(() -> matchingService.scoreJobAgainstAllCvs(jobId));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private Job findAndAuthorize(UUID jobId, UUID userId) {
@@ -390,6 +457,8 @@ public class JobService {
                 job.getLanguage(),
                 job.getStatus().name(),
                 job.getCreatedAt(),
+                job.isInternalApplication() ? "INTERNAL" : "EXTERNAL",
+                job.getSourceUrl(),
                 qualityValidationService.analyzeJob(job)
         );
     }
@@ -416,6 +485,8 @@ public class JobService {
                 job.getStatus().name(),
                 job.getCreatedAt(),
                 job.getUpdatedAt(),
+                job.isInternalApplication() ? "INTERNAL" : "EXTERNAL",
+                job.getSourceUrl(),
                 qualitySignals
         );
     }

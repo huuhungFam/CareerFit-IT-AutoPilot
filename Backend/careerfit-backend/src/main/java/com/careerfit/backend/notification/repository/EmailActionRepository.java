@@ -1,7 +1,9 @@
 package com.careerfit.backend.notification.repository;
 
 import com.careerfit.backend.notification.entity.EmailAction;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,11 @@ import java.util.UUID;
 public interface EmailActionRepository extends JpaRepository<EmailAction, UUID> {
 
     Optional<EmailAction> findByTokenHash(String tokenHash);
+
+    /** Locks a pending token through its feedback/outbox transaction to make redemption exactly-once. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM EmailAction e WHERE e.tokenHash = :tokenHash")
+    Optional<EmailAction> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
     List<EmailAction> findByMatchingId(UUID matchingId);
 

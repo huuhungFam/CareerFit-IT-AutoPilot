@@ -67,9 +67,10 @@ public class JobController {
     @Operation(summary = "Create a new job posting (RECRUITER only)")
     public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> createJob(
             @Valid @RequestBody JobDtos.CreateJobRequest req,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
             @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(jobService.createJob(userId, req)));
+                .body(ApiResponse.ok(jobService.createJob(userId, req, confirmNearDuplicate)));
     }
 
     @PatchMapping("/{id}")
@@ -77,8 +78,9 @@ public class JobController {
     public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> updateJob(
             @PathVariable UUID id,
             @Valid @RequestBody JobDtos.UpdateJobRequest req,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
             @RequestAttribute("userId") UUID userId) {
-        return ResponseEntity.ok(ApiResponse.ok(jobService.updateJob(id, userId, req)));
+        return ResponseEntity.ok(ApiResponse.ok(jobService.updateJob(id, userId, req, confirmNearDuplicate)));
     }
 
     @PatchMapping("/{id}/status")
@@ -86,8 +88,17 @@ public class JobController {
     public ResponseEntity<ApiResponse<JobDtos.JobStatusUpdateResponse>> updateStatus(
             @PathVariable UUID id,
             @RequestParam String status,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
             @RequestAttribute("userId") UUID userId) {
-        return ResponseEntity.ok(ApiResponse.ok(jobService.updateStatus(id, userId, status)));
+        return ResponseEntity.ok(ApiResponse.ok(jobService.updateStatus(id, userId, status, confirmNearDuplicate)));
+    }
+
+    @PostMapping("/duplicate-check")
+    @Operation(summary = "Check exact and warning-only near duplicates before publishing a job")
+    public ResponseEntity<ApiResponse<JobDtos.DuplicateCheckResponse>> checkDuplicates(
+            @Valid @RequestBody JobDtos.DuplicateCheckRequest req,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.checkDuplicates(userId, req)));
     }
 
     @DeleteMapping("/{id}")

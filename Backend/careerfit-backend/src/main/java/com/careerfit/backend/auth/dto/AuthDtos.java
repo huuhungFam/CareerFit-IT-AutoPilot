@@ -41,4 +41,6 @@ public class AuthDtos {
         boolean emailVerified,
         String preferredLanguage
     ) {}
+
+    public record AccountDeletionResponse(String message) {}
 }

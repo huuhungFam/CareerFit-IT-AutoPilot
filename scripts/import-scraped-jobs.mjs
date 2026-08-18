@@ -1,6 +1,12 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
+import crypto from "node:crypto";
+import {
+  analyzeAliases,
+  companySlug,
+  normalizeCompanyName,
+  recruiterEmail,
+} from "./company-alias-map.mjs";
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
@@ -95,21 +101,22 @@ function numberOrNull(value) {
 }
 
 function hashFor(row) {
+  // Import identity must not depend on a mutable display name.  A source URL is
+  // the stable identity supplied by both crawlers; the fallback only serves
+  // malformed legacy rows that have no URL.
+  const identity = row.sourceUrl
+    ? `${row.source}|${row.sourceUrl.trim()}`
+    : `${row.source}|${row.title.toLowerCase()}|${row.company.toLowerCase()}`;
   return crypto
     .createHash("sha256")
-    .update([
-      row.sourceUrl,
-      row.source,
-      row.title.toLowerCase(),
-      row.company.toLowerCase(),
-      row.originalText.slice(0, 500).toLowerCase(),
-    ].join("|"))
+    .update(identity)
     .digest("hex");
 }
 
 function normalizeRow(row) {
   const title = cleanString(row.title);
-  const company = cleanString(row.company);
+  const rawCompany = cleanString(row.company);
+  const company = normalizeCompanyName(rawCompany);
   const originalText = cleanString(row.originalText);
   if (!title || !company || !originalText || originalText.length < 80) {
     stats.missingRequired++;
@@ -123,6 +130,12 @@ function normalizeRow(row) {
   const normalized = {
     title: title.slice(0, 255),
     company: company.slice(0, 255),
+    canonicalSlug: companySlug(company),
+    // Employer slugs share a global namespace with seeded/local profiles.  Keep
+    // the canonical slug as the source and add a deterministic imported suffix
+    // so an imported company can never claim a local profile's public route.
+    profileSlug: `${companySlug(company).slice(0, 240)}-imported`,
+    recruiterEmail: recruiterEmail(company),
     originalText,
     requiredSkills: cleanList(row.requiredSkills),
     niceToHaveSkills: cleanList(row.niceToHaveSkills),
@@ -170,6 +183,11 @@ for (const raw of rawRows) {
 }
 stats.imported = rows.length;
 
+const aliasAnalysis = analyzeAliases(rows.map((row) => row.company));
+if (aliasAnalysis.canonicalCount !== new Set(rows.map((row) => row.canonicalSlug)).size) {
+  throw new Error("Canonical company slug collision detected before import.");
+}
+
 printStats();
 
 if (dryRun) {
@@ -206,37 +224,48 @@ function buildSql(importRows) {
 WITH companies AS (
     SELECT DISTINCT
         payload->>'company' AS company,
-        md5(lower(trim(payload->>'company'))) AS company_hash
+        payload->>'canonicalSlug' AS canonical_slug,
+        payload->>'profileSlug' AS profile_slug,
+        payload->>'recruiterEmail' AS recruiter_email
     FROM scraped_job_stage
 ),
 upsert_users AS (
     INSERT INTO user_account (
-        email, role, full_name, is_active, email_verified, preferred_language, created_at, updated_at
+        email, role, full_name, password_hash, is_active, email_verified,
+        preferred_language, account_source, created_at, updated_at
     )
     SELECT
-        'scraped+' || company_hash || '@careerfit.local',
+        recruiter_email,
         'RECRUITER',
         company || ' Recruiting Team',
+        '$2a$10$Zq8pkdahfd6.2P/iseYLA.3i43HY5ZVPJmlIWyVY3MwjemD8sgsmi',
         TRUE,
         FALSE,
         'vi',
+        'IMPORTED',
         NOW(),
         NOW()
     FROM companies
     ON CONFLICT (email) DO UPDATE
     SET full_name = EXCLUDED.full_name,
+        password_hash = EXCLUDED.password_hash,
         is_active = TRUE,
+        email_verified = FALSE,
+        preferred_language = 'vi',
+        account_source = 'IMPORTED',
         updated_at = NOW()
     RETURNING id, email
 ),
 company_users AS (
     SELECT
         c.company,
-        c.company_hash,
+        c.canonical_slug,
+        c.profile_slug,
+        c.recruiter_email,
         u.id AS recruiter_id
     FROM companies c
     JOIN upsert_users u
-      ON u.email = 'scraped+' || c.company_hash || '@careerfit.local'
+      ON u.email = c.recruiter_email
 ),
 upsert_employers AS (
     INSERT INTO employer_profile (
@@ -246,7 +275,7 @@ upsert_employers AS (
     SELECT
         recruiter_id,
         company,
-        lower(regexp_replace(company, '[^a-zA-Z0-9]+', '-', 'g')) || '-' || left(company_hash, 8),
+        profile_slug,
         'Imported from scraped Vietnamese IT job postings.',
         'This employer profile was generated from scraped job data to make CareerFit demo data closer to real market supply.',
         'Technology',
@@ -258,8 +287,28 @@ upsert_employers AS (
         NOW(),
         NOW()
     FROM company_users
-    ON CONFLICT (slug) DO UPDATE
+    ON CONFLICT (recruiter_id) DO UPDATE
     SET company_name = EXCLUDED.company_name,
+        slug = EXCLUDED.slug,
+        updated_at = NOW()
+),
+upsert_policies AS (
+    INSERT INTO automation_policy (
+        user_id, auto_apply_enabled, auto_invite_enabled, daily_digest_enabled,
+        job_scan_enabled, high_match_email_enabled, email_action_enabled,
+        email_notifications_enabled, demo_mode_enabled, created_at, updated_at
+    )
+    SELECT recruiter_id, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NOW(), NOW()
+    FROM company_users
+    ON CONFLICT (user_id) DO UPDATE
+    SET auto_apply_enabled = FALSE,
+        auto_invite_enabled = FALSE,
+        daily_digest_enabled = FALSE,
+        job_scan_enabled = FALSE,
+        high_match_email_enabled = FALSE,
+        email_action_enabled = FALSE,
+        email_notifications_enabled = FALSE,
+        demo_mode_enabled = FALSE,
         updated_at = NOW()
 ),
 normalized_jobs AS (
@@ -292,6 +341,7 @@ INSERT INTO job (
     status,
     source_platform,
     source_url,
+    source_type,
     scraped_at,
     external_hash,
     created_at,
@@ -320,13 +370,15 @@ SELECT
     'ACTIVE',
     payload->>'source',
     payload->>'sourceUrl',
+    'IMPORTED',
     NULLIF(payload->>'scrapedAt', '')::timestamptz,
     payload->>'externalHash',
     NOW(),
     NOW()
 FROM normalized_jobs
 ON CONFLICT (external_hash) WHERE external_hash IS NOT NULL DO UPDATE
-SET title = EXCLUDED.title,
+SET recruiter_id = EXCLUDED.recruiter_id,
+    title = EXCLUDED.title,
     company = EXCLUDED.company,
     original_text = EXCLUDED.original_text,
     required_skills = EXCLUDED.required_skills,
@@ -346,6 +398,7 @@ SET title = EXCLUDED.title,
     language = EXCLUDED.language,
     source_platform = EXCLUDED.source_platform,
     source_url = EXCLUDED.source_url,
+    source_type = 'IMPORTED',
     scraped_at = EXCLUDED.scraped_at,
     updated_at = NOW();
 COMMIT;

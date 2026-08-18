@@ -17,7 +17,7 @@ test('Public jobs API failure shows a retryable error state', async ({ page }) =
   await expect(page.getByText(/không có việc làm phù hợp|no matching jobs/i)).toHaveCount(0);
 });
 
-test('Candidate feedback follows the backend query-parameter contract', async ({ page }) => {
+test('Candidate can save a job from the catalog', async ({ page }) => {
   await page.addInitScript(() => {
     window.sessionStorage.setItem('careerfit.accessToken', 'candidate-contract-token');
     window.sessionStorage.setItem('careerfit.account', JSON.stringify({
@@ -34,40 +34,37 @@ test('Candidate feedback follows the backend query-parameter contract', async ({
       data: { id: 'candidate-1', email: 'candidate@example.com', fullName: 'Candidate Contract Test', role: 'CANDIDATE', emailVerified: true, preferredLanguage: 'vi' },
     }),
   }));
-  await page.route('**/api/matches/me/cards?**', (route) => route.fulfill({
+  await page.route('**/api/jobs/search?**', (route) => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({
       success: true,
       data: {
         jobs: [{
-          matchingId: 'matching-1', id: 'job-1', title: 'Backend Engineer',
-          company: 'CareerFit', location: 'Can Tho', seniorityLevel: 'Junior',
-          salaryDisplay: 'Negotiable', requiredSkills: ['Java'], optionalSkills: [],
-          normalizedScore: 88, label: 'HIGH', isPotential: false,
-          reasons: ['Java overlap'], matchedAt: '2026-07-18T00:00:00Z',
+          id: 'job-1', title: 'Backend Engineer', company: 'CareerFit',
+          location: 'Can Tho', seniorityLevel: 'Junior', requiredSkills: ['Java'],
+          status: 'ACTIVE', createdAt: '2026-07-18T00:00:00Z',
         }],
         total: 1, page: 0, size: 20, totalPages: 1,
       },
     }),
   }));
-  await page.route('**/api/matches/matching-1/feedback?**', (route) => route.fulfill({
+  await page.route('**/api/candidates/me/saved-jobs', (route) => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: [] }),
+  }));
+  await page.route('**/api/candidates/me/saved-jobs/job-1', (route) => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ success: true, data: null }),
   }));
 
   await page.goto('/candidate/jobs');
-  const feedbackRequest = page.waitForRequest((request) =>
-    request.url().includes('/api/matches/matching-1/feedback')
+  await expect(page).toHaveURL('/jobs');
+  const saveRequest = page.waitForRequest((request) =>
+    request.method() === 'PUT' && request.url().includes('/api/candidates/me/saved-jobs/job-1'),
   );
-  await page.locator('.feedback-bar').getByRole('button', { name: /rất phù hợp|great match/i }).click();
+  await page.getByRole('button', { name: /^lưu$|^save$/i }).click();
 
-  const request = await feedbackRequest;
-  const url = new URL(request.url());
-  expect(request.method()).toBe('POST');
-  expect(request.postData()).toBeNull();
-  expect(url.searchParams.get('type')).toBe('GOOD_MATCH');
-  expect(url.searchParams.get('channel')).toBe('WEB');
-  expect(url.searchParams.has('role')).toBe(false);
+  await saveRequest;
 });
 
 test('Admin dashboard API failure does not stay in loading state', async ({ page }) => {
