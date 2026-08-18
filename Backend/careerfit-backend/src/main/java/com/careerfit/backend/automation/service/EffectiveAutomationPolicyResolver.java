@@ -23,14 +23,14 @@ public class EffectiveAutomationPolicyResolver {
             return null;
         }
         
-        boolean isImported = stored.getUser().isImported();
-        
-        boolean effDemoMode = isImported ? false : stored.isDemoModeEnabled();
-        boolean effAutoApply = isImported ? false : stored.isAutoApplyEnabled();
-        boolean effEmailNotifications = isImported ? false : stored.isEmailNotificationsEnabled();
-        boolean effDigest = isImported ? false : stored.isDigestEnabled();
-        boolean effEmailAction = isImported ? false : stored.isEmailActionEnabled();
-        boolean effAutopilot = isImported ? false : stored.isAutopilotEnabled();
+        // IMPORTED identifies the data origin only. Those accounts participate
+        // in the same CareerFit automation workflow as locally registered users.
+        boolean effDemoMode = stored.isDemoModeEnabled();
+        boolean effAutoApply = stored.isAutoApplyEnabled();
+        boolean effEmailNotifications = stored.isEmailNotificationsEnabled();
+        boolean effDigest = stored.isDigestEnabled();
+        boolean effEmailAction = stored.isEmailActionEnabled();
+        boolean effAutopilot = stored.isAutopilotEnabled();
         
         if (effDemoMode) {
             return new EffectivePolicy(

@@ -1,7 +1,7 @@
 -- ==========================================
 -- V4 Migration: Seed Data
 -- Passwords for email accounts are: password
--- Short demo accounts use: ca / 1 and re / 1
+-- All baseline demo accounts use password: 12345678 (enforced by V36).
 -- ==========================================
 
 -- BCrypt hash for "password" (cost 10)
@@ -21,7 +21,7 @@ VALUES
 ('33333333-3333-3333-3333-333333333333', 'candidate1@careerfit.dev', '$2a$10$wK1k6i/3GMyh/U/2D0QWQuI4U.6L.4q6G4KzN.Z9X5V9L9T9x9u62', 'Nguyen Van A', 'CANDIDATE', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('44444444-4444-4444-4444-444444444444', 'candidate2@careerfit.dev', '$2a$10$wK1k6i/3GMyh/U/2D0QWQuI4U.6L.4q6G4KzN.Z9X5V9L9T9x9u62', 'Tran Thi B', 'CANDIDATE', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- Short demo login accounts: ca / 1, re / 1
+-- Short demo login accounts: ca / 12345678, re / 12345678
 ('12121212-1212-1212-1212-121212121212', 'ca', '$2a$10$Zq8pkdahfd6.2P/iseYLA.3i43HY5ZVPJmlIWyVY3MwjemD8sgsmi', 'Demo Candidate', 'CANDIDATE', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('23232323-2323-2323-2323-232323232323', 're', '$2a$10$Zq8pkdahfd6.2P/iseYLA.3i43HY5ZVPJmlIWyVY3MwjemD8sgsmi', 'Demo Recruiter', 'RECRUITER', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 

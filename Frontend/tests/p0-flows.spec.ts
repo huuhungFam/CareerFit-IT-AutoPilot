@@ -10,7 +10,7 @@ test.describe('P0 Flows', () => {
     let status = 0;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       await page.getByPlaceholder('ca / re / ad').fill(username);
-      await page.locator('input[type="password"]').fill('1');
+      await page.locator('input[type="password"]').fill('12345678');
       const loginPromise = page.waitForResponse(response => response.url().includes('/api/auth/login'));
       await page.locator('button[type="submit"]').click();
       status = (await loginPromise).status();
@@ -56,7 +56,7 @@ test.describe('P0 Flows', () => {
     const usernameInput = page.getByPlaceholder('ca / re / ad');
     await expect(usernameInput).toBeVisible({ timeout: 10000 });
     await usernameInput.fill('ca');
-    await page.locator('input[type="password"]').fill('1');
+    await page.locator('input[type="password"]').fill('12345678');
     const loginPromise = page.waitForResponse(response => response.url().includes('/api/auth/login') && response.status() === 200);
     await page.locator('button[type="submit"]').click();
     await loginPromise;
@@ -119,7 +119,7 @@ test.describe('P0 Flows', () => {
     const usernameInput = page.getByPlaceholder('ca / re / ad');
     await expect(usernameInput).toBeVisible({ timeout: 10000 });
     await usernameInput.fill('re');
-    await page.locator('input[type="password"]').fill('1');
+    await page.locator('input[type="password"]').fill('12345678');
     const loginPromise = page.waitForResponse(response => response.url().includes('/api/auth/login') && response.status() === 200);
     await page.locator('button[type="submit"]').click();
     await loginPromise;
@@ -186,7 +186,7 @@ test.describe('P0 Flows', () => {
     const usernameInput = page.getByPlaceholder('ca / re / ad');
     await expect(usernameInput).toBeVisible({ timeout: 10000 });
     await usernameInput.fill('ad');
-    await page.locator('input[type="password"]').fill('1');
+    await page.locator('input[type="password"]').fill('12345678');
     const loginPromise = page.waitForResponse(response => response.url().includes('/api/auth/login') && response.status() === 200);
     await page.locator('button[type="submit"]').click();
     await loginPromise;

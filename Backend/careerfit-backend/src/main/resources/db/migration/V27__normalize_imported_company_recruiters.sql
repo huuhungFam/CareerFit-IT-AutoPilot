@@ -7,7 +7,7 @@
 -- Chiến lược:
 -- 1. Tạo bảng tạm chứa alias mapping (canonical → aliases)
 -- 2. Tạo/upsert canonical recruiter account với email mới (recruiter.<slug>@careerfit.local)
---    và password hash cho mật khẩu "1"
+--    và password hash cho mật khẩu demo baseline (V36 chuẩn hóa thành "12345678")
 -- 3. Chuyển ownership JD từ alias recruiter sang canonical recruiter
 -- 4. Cập nhật job.company sang canonical name
 -- 5. Upsert employer_profile với canonical slug

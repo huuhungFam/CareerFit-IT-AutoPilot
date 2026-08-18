@@ -34,7 +34,7 @@ async function login(identifier, expectedRole) {
   const result = await request("/api/auth/login", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: identifier, password: "1" }),
+    body: JSON.stringify({ email: identifier, password: "12345678" }),
   });
   const data = assertSuccess(result, `login ${identifier}`);
   if (data?.user?.role !== expectedRole || !data?.accessToken) {
@@ -60,6 +60,29 @@ function queryNonOwnedJobId() {
   const id = result.stdout.trim();
   if (!id) fail("database has no job owned by a recruiter other than quick-login re");
   return id;
+}
+
+function queryImportedRecruiterJob() {
+  const sql = `
+    SELECT j.id || '|' || u.email
+    FROM job j
+    JOIN user_account u ON u.id = j.recruiter_id
+    WHERE j.source_type = 'IMPORTED'
+      AND j.external_hash IS NOT NULL
+      AND u.account_source = 'IMPORTED'
+      AND u.is_active
+      AND u.email_verified
+    ORDER BY j.created_at, j.id
+    LIMIT 1;
+  `;
+  const result = spawnSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "careerfit", "-d", "careerfit", "-t", "-A", "-v", "ON_ERROR_STOP=1"], {
+    input: sql,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) fail("could not query an imported recruiter-owned job for the internal-flow smoke check");
+  const [jobId, recruiterEmail] = result.stdout.trim().split("|");
+  if (!jobId || !recruiterEmail) fail("database has no active verified imported recruiter-owned job");
+  return { jobId, recruiterEmail };
 }
 
 function assertNonOwnedJob(jobId) {
@@ -97,6 +120,14 @@ async function main() {
   await authorized(`/api/recruiter/jobs/${ownJobId}/ranking`, recruiterToken, "recruiter ranking");
   await authorized(`/api/recruiter/jobs/${ownJobId}/applicants`, recruiterToken, "recruiter applicants");
   await authorized(`/api/recruiter/talent/jobs/${ownJobId}/bookmarks`, recruiterToken, "recruiter bookmarks");
+
+  const imported = queryImportedRecruiterJob();
+  const importedRecruiterToken = await login(imported.recruiterEmail, "RECRUITER");
+  const importedJob = await authorized(`/api/jobs/${imported.jobId}`, importedRecruiterToken, "imported job detail");
+  if (importedJob?.applicationMode !== "INTERNAL") {
+    fail("imported job must use the internal CareerFit application workflow");
+  }
+  await authorized(`/api/recruiter/jobs/${imported.jobId}/applicants`, importedRecruiterToken, "imported recruiter applicants");
 
   const otherJobId = queryNonOwnedJobId();
   assertNonOwnedJob(otherJobId);

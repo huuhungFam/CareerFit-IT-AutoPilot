@@ -13,7 +13,7 @@ async function settle(page) {
 async function login(page, username) {
   await page.goto(`${baseURL}/login`);
   await page.getByPlaceholder('ca / re / ad').fill(username);
-  await page.locator('input[type="password"]').fill('1');
+  await page.locator('input[type="password"]').fill('12345678');
   const response = page.waitForResponse((item) => item.url().includes('/api/auth/login'));
   await page.locator('button[type="submit"]').click();
   const loginResponse = await response;

@@ -1,6 +1,6 @@
 -- ============================================================
 -- V7__demo_candidate_default_cv.sql
--- Ensures the short demo Candidate account (ca / 1) can render
+-- Ensures the short demo Candidate account (ca / 12345678) can render
 -- the personalized job-card feed without requiring manual setup.
 -- ============================================================
 
@@ -107,4 +107,3 @@ SET raw_score = EXCLUDED.raw_score,
     needs_recompute = false,
     recruiter_label = EXCLUDED.recruiter_label,
     updated_at = NOW();
-

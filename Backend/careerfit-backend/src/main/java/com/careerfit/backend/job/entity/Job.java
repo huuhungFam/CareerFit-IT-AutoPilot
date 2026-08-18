@@ -234,7 +234,12 @@ public class Job {
     public void setDuplicateFingerprint(String value)    { this.duplicateFingerprint = value; }
     public SourceType getSourceType()                    { return sourceType; }
     public void setSourceType(SourceType value)          { this.sourceType = value; }
-    public boolean isInternalApplication()               { return sourceType == SourceType.INTERNAL; }
+    /**
+     * Source type records where a listing originated, not whether CareerFit owns
+     * its application workflow. Imported listings are demo-owned listings too:
+     * their generated recruiter account receives applications in CareerFit.
+     */
+    public boolean isInternalApplication()               { return sourceType == SourceType.INTERNAL || sourceType == SourceType.IMPORTED; }
     public Instant getCreatedAt()                        { return createdAt; }
     private int pendingReportCount;
     public int getPendingReportCount() { return pendingReportCount; }

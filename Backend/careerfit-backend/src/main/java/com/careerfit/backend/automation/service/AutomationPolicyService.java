@@ -26,20 +26,10 @@ public class AutomationPolicyService {
         this.userRepo = userRepo;
     }
 
-    /**
-     * Factory method for creating an account-source-aware default policy.
-     */
+    /** Creates the normal default policy for every active CareerFit account. */
     public AutomationPolicy createDefaultPolicy(UserAccount user) {
         var policy = new AutomationPolicy(user);
-        if (user.isImported()) {
-            policy.setEmailNotificationsEnabled(false);
-            policy.setDigestEnabled(false);
-            policy.setAutoApplyEnabled(false);
-            policy.setAutoInviteEnabled(false);
-            policy.setJobScanEnabled(false);
-            policy.setHighMatchEmailEnabled(false);
-            policy.setEmailActionEnabled(false);
-        } else if (user.getRole() == UserAccount.Role.CANDIDATE || user.getRole() == UserAccount.Role.RECRUITER) {
+        if (user.getRole() == UserAccount.Role.CANDIDATE || user.getRole() == UserAccount.Role.RECRUITER) {
             policy.setDemoModeEnabled(true);
         }
         return policy;
@@ -103,18 +93,6 @@ public class AutomationPolicyService {
         }
         if (req.pausedUntil()          != null) policy.setPausedUntil(req.pausedUntil());
 
-        // Enforce invariant for IMPORTED accounts
-        if (policy.getUser().isImported()) {
-            policy.setDemoModeEnabled(false);
-            policy.setEmailNotificationsEnabled(false);
-            policy.setDigestEnabled(false);
-            policy.setAutoApplyEnabled(false);
-            policy.setAutoInviteEnabled(false);
-            policy.setJobScanEnabled(false);
-            policy.setHighMatchEmailEnabled(false);
-            policy.setEmailActionEnabled(false);
-        }
-
         return policyRepo.save(policy);
     }
 
@@ -124,11 +102,7 @@ public class AutomationPolicyService {
         if (policy == null) {
             throw AppException.forbidden("Automation policy is not available for this role.");
         }
-        if (policy.getUser().isImported()) {
-            policy.setEmailNotificationsEnabled(false);
-        } else {
-            policy.setEmailNotificationsEnabled(enabled);
-        }
+        policy.setEmailNotificationsEnabled(enabled);
         policyRepo.save(policy);
         return getSummary(userId);
     }

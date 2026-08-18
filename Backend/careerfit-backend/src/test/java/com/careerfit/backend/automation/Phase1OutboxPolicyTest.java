@@ -87,21 +87,21 @@ public class Phase1OutboxPolicyTest extends BaseIntegrationTest {
         userRepo.save(impUser);
         AutomationPolicy p3 = policyService.getOrCreate(impUser.getId());
         assertThat(policyRepo.findByUserId(impUser.getId())).isPresent();
-        assertThat(p3.isDemoModeEnabled()).isFalse();
-        assertThat(p3.isEmailNotificationsEnabled()).isFalse();
+        assertThat(p3.isDemoModeEnabled()).isTrue();
+        assertThat(p3.isEmailNotificationsEnabled()).isTrue();
         assertThat(p3.isAutoInviteEnabled()).isFalse();
     }
 
     @Test
     @Transactional
-    public void testImportedInvariant_UpdateIgnored() {
+    public void testImportedAccountCanUpdateItsOwnAutomationPolicy() {
         UserAccount impUser = new UserAccount(UUID.randomUUID() + "@test.com", "hash", UserAccount.Role.RECRUITER, "IMP2");
         impUser.setSource(UserAccount.AccountSource.IMPORTED);
         userRepo.save(impUser);
 
         AutomationPolicy policy = policyService.getOrCreate(impUser.getId());
         
-        // Deliberately set all outbound-related flags to TRUE in the DB to test the invariant overriding them
+        // IMPORTED is account provenance only; all automation controls stay usable.
         policy.setDemoModeEnabled(true);
         policy.setEmailNotificationsEnabled(true);
         policy.setDigestEnabled(true);
@@ -113,7 +113,7 @@ public class Phase1OutboxPolicyTest extends BaseIntegrationTest {
         policy.setAutopilotEnabled(true);
         policyRepo.save(policy);
 
-        // Call real service update with a valid request trying to set some to true
+        // Call the real service with normal recruiter preferences.
         AutomationPolicyService.PolicyUpdateRequest req = new AutomationPolicyService.PolicyUpdateRequest(
             true, true, true, 80.0, true, true, "DAILY", 90.0, true, true, 3, 24, false, 
             LocalTime.of(22, 0), LocalTime.of(6, 0), true, 10, null
@@ -121,21 +121,21 @@ public class Phase1OutboxPolicyTest extends BaseIntegrationTest {
         policyService.update(impUser.getId(), req);
 
         AutomationPolicy stored = policyRepo.findByUserId(impUser.getId()).orElseThrow();
-        assertThat(stored.isDemoModeEnabled()).isFalse();
-        assertThat(stored.isEmailNotificationsEnabled()).isFalse();
-        assertThat(stored.isDigestEnabled()).isFalse();
-        assertThat(stored.isAutoApplyEnabled()).isFalse();
-        assertThat(stored.isAutoInviteEnabled()).isFalse();
-        assertThat(stored.isJobScanEnabled()).isFalse();
-        assertThat(stored.isHighMatchEmailEnabled()).isFalse();
-        assertThat(stored.isEmailActionEnabled()).isFalse();
+        assertThat(stored.isDemoModeEnabled()).isTrue();
+        assertThat(stored.isEmailNotificationsEnabled()).isTrue();
+        assertThat(stored.isDigestEnabled()).isTrue();
+        assertThat(stored.isAutoApplyEnabled()).isTrue();
+        assertThat(stored.isAutoInviteEnabled()).isTrue();
+        assertThat(stored.isJobScanEnabled()).isTrue();
+        assertThat(stored.isHighMatchEmailEnabled()).isTrue();
+        assertThat(stored.isEmailActionEnabled()).isTrue();
 
         EffectiveAutomationPolicyResolver.EffectivePolicy eff = effectiveResolver.resolve(impUser.getId());
-        assertThat(eff.emailNotificationsEnabled()).isFalse();
-        assertThat(eff.digestEnabled()).isFalse();
-        assertThat(eff.autoApplyEnabled()).isFalse();
-        assertThat(eff.emailActionEnabled()).isFalse();
-        assertThat(eff.autopilotEnabled()).isFalse();
+        assertThat(eff.emailNotificationsEnabled()).isTrue();
+        assertThat(eff.digestEnabled()).isTrue();
+        assertThat(eff.autoApplyEnabled()).isTrue();
+        assertThat(eff.emailActionEnabled()).isTrue();
+        assertThat(eff.autopilotEnabled()).isTrue();
     }
 
     @Test

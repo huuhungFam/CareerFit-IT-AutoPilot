@@ -76,25 +76,38 @@ class ApplicationOwnershipAndSourceTest {
     }
 
     @Test
-    void importedJobCannotCreateAnInternalApplicationAndReturnsItsSourceRoute() {
+    void importedJobCreatesAnInternalApplicationForItsGeneratedRecruiter() {
         ApplicationRepository applications = mock(ApplicationRepository.class);
         CandidateRepository candidates = mock(CandidateRepository.class);
         JobRepository jobs = mock(JobRepository.class);
-        Candidate candidate = mock(Candidate.class);
-        when(candidates.findByUserId(any())).thenReturn(Optional.of(candidate));
-        Job imported = mock(Job.class);
-        when(imported.getStatus()).thenReturn(Job.JobStatus.ACTIVE);
-        when(imported.isInternalApplication()).thenReturn(false);
-        when(imported.getSourceUrl()).thenReturn("https://example.test/external-job");
+        CVRepository cvs = mock(CVRepository.class);
+        UUID candidateUserId = UUID.randomUUID();
+        UUID candidateId = UUID.randomUUID();
+        UUID cvId = UUID.randomUUID();
         UUID jobId = UUID.randomUUID();
+        UserAccount candidateUser = new UserAccount("candidate@test.local", "hash", UserAccount.Role.CANDIDATE, "Candidate");
+        ReflectionTestUtils.setField(candidateUser, "id", candidateUserId);
+        Candidate candidate = new Candidate(candidateUser);
+        ReflectionTestUtils.setField(candidate, "id", candidateId);
+        CV cv = new CV(candidate, "Candidate CV", CV.CvSource.UPLOAD);
+        ReflectionTestUtils.setField(cv, "id", cvId);
+        UserAccount recruiter = new UserAccount("recruiter@test.local", "hash", UserAccount.Role.RECRUITER, "Recruiter");
+        Job imported = new Job(recruiter, "Imported Backend Engineer", "Imported Co", "Java Spring Boot", Job.SalaryMode.NEGOTIABLE);
+        imported.setSourceType(Job.SourceType.IMPORTED);
+        imported.setStatus(Job.JobStatus.ACTIVE);
+        ReflectionTestUtils.setField(imported, "id", jobId);
+        when(candidates.findByUserId(candidateUserId)).thenReturn(Optional.of(candidate));
         when(jobs.findByIdWithRecruiter(jobId)).thenReturn(Optional.of(imported));
-        ApplicationService service = service(applications, candidates, jobs, mock(CVRepository.class));
+        when(applications.existsByCandidateIdAndJobId(candidateId, jobId)).thenReturn(false);
+        when(cvs.findByCandidateIdAndIsDefaultTrue(candidateId)).thenReturn(Optional.of(cv));
+        when(applications.saveAndFlush(any(Application.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        ApplicationService service = service(applications, candidates, jobs, cvs);
 
-        assertThatThrownBy(() -> service.submit(UUID.randomUUID(),
-                new ApplicationDtos.SubmitApplicationRequest(jobId, null, null)))
-                .isInstanceOf(AppException.class)
-                .hasMessageContaining("https://example.test/external-job");
-        verify(applications, never()).saveAndFlush(any());
+        ApplicationDtos.MyApplicationResponse submitted = service.submit(candidateUserId,
+                new ApplicationDtos.SubmitApplicationRequest(jobId, null, null));
+
+        assertThat(submitted.jobId()).isEqualTo(jobId);
+        verify(applications).saveAndFlush(any(Application.class));
     }
 
     @Test

@@ -144,14 +144,14 @@ try {
     Assert-Scalar "SELECT COUNT(DISTINCT lower(BTRIM(company))) FROM job WHERE external_hash IS NOT NULL;" '433' 'canonical imported company count'
     Assert-Scalar "SELECT COUNT(*) FROM (SELECT source_platform, source_url FROM job WHERE external_hash IS NOT NULL GROUP BY source_platform, source_url HAVING COUNT(*) > 1) d;" '0' 'duplicate imported source identities'
     Assert-Scalar "SELECT COUNT(*) FROM (SELECT external_hash FROM job WHERE external_hash IS NOT NULL GROUP BY external_hash HAVING COUNT(*) > 1) d;" '0' 'duplicate imported external hashes'
-    Assert-Scalar "SELECT COUNT(*) FROM job j JOIN user_account u ON u.id = j.recruiter_id WHERE j.external_hash IS NOT NULL AND (u.account_source <> 'IMPORTED' OR NOT u.is_active);" '0' 'imported ownership policy violations'
+    Assert-Scalar "SELECT COUNT(*) FROM job j JOIN user_account u ON u.id = j.recruiter_id WHERE j.external_hash IS NOT NULL AND (u.account_source <> 'IMPORTED' OR NOT u.is_active OR NOT u.email_verified);" '0' 'imported recruiter accounts are active and verified'
     Assert-Scalar "SELECT COUNT(*) FROM user_account WHERE email IN ('ca', 're', 'ad') AND is_active;" '3' 'quick-login active accounts'
     Assert-Scalar "SELECT COUNT(*) FROM user_account WHERE (email = 'ca' AND role = 'CANDIDATE') OR (email = 're' AND role = 'RECRUITER') OR (email = 'ad' AND role = 'ADMIN');" '3' 'quick-login roles'
     Assert-Scalar "SELECT COUNT(*) FROM automation_policy p JOIN user_account u ON u.id = p.user_id WHERE u.email IN ('ca', 're') AND p.demo_mode_enabled;" '2' 'quick-login Demo Mode defaults'
     Assert-Scalar "SELECT COUNT(*) FROM user_account WHERE email IN ('hungb2203557@student.ctu.edu.vn', 'phamhuuhung216@gmail.com');" '0' 'absence of live-demo accounts'
-    Assert-Scalar "SELECT COUNT(*) FROM automation_policy p JOIN user_account u ON u.id = p.user_id WHERE u.account_source = 'IMPORTED' AND (p.demo_mode_enabled OR p.email_notifications_enabled OR p.daily_digest_enabled OR p.auto_apply_enabled OR p.auto_invite_enabled OR p.job_scan_enabled OR p.high_match_email_enabled OR p.email_action_enabled);" '0' 'imported automation/email policy violations'
+    Assert-Scalar "SELECT COUNT(*) FROM user_account WHERE password_hash <> '$2a$10$IXfEB8pLaeAUqwZ8ftZUC.KMl9FoaUGNn5pB5sinVpjyki/oj1unm';" '0' 'all baseline accounts use the demo password'
     Assert-Scalar "SELECT COUNT(*) FROM notification_outbox o JOIN user_account u ON u.id = o.recipient_user_id WHERE u.email IN ('hungb2203557@student.ctu.edu.vn', 'phamhuuhung216@gmail.com');" '0' 'orphan live-demo outbox rows'
-    Assert-Scalar "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1;" '35' 'latest Flyway migration'
+    Assert-Scalar "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1;" '36' 'latest Flyway migration'
 
     $newPostgres = Get-VolumeMetadata $postgresVolumeName
     $newStorage = Get-VolumeMetadata $storageVolumeName

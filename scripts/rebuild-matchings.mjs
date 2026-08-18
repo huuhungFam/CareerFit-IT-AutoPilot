@@ -1,6 +1,6 @@
 const baseUrl = process.env.CAREERFIT_API_URL ?? 'http://localhost:8080';
 const email = process.env.CAREERFIT_ADMIN_EMAIL ?? 'ad';
-const password = process.env.CAREERFIT_ADMIN_PASSWORD ?? '1';
+const password = process.env.CAREERFIT_ADMIN_PASSWORD ?? '12345678';
 const pageSize = Math.min(200, Math.max(1, Number(process.env.MATCHING_BATCH_SIZE ?? 100)));
 
 async function request(path, options = {}) {

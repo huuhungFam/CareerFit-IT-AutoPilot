@@ -238,9 +238,9 @@ upsert_users AS (
         recruiter_email,
         'RECRUITER',
         company || ' Recruiting Team',
-        '$2a$10$Zq8pkdahfd6.2P/iseYLA.3i43HY5ZVPJmlIWyVY3MwjemD8sgsmi',
+        '$2a$10$IXfEB8pLaeAUqwZ8ftZUC.KMl9FoaUGNn5pB5sinVpjyki/oj1unm',
         TRUE,
-        FALSE,
+        TRUE,
         'vi',
         'IMPORTED',
         NOW(),
@@ -250,7 +250,7 @@ upsert_users AS (
     SET full_name = EXCLUDED.full_name,
         password_hash = EXCLUDED.password_hash,
         is_active = TRUE,
-        email_verified = FALSE,
+        email_verified = TRUE,
         preferred_language = 'vi',
         account_source = 'IMPORTED',
         updated_at = NOW()
@@ -301,15 +301,7 @@ upsert_policies AS (
     SELECT recruiter_id, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NOW(), NOW()
     FROM company_users
     ON CONFLICT (user_id) DO UPDATE
-    SET auto_apply_enabled = FALSE,
-        auto_invite_enabled = FALSE,
-        daily_digest_enabled = FALSE,
-        job_scan_enabled = FALSE,
-        high_match_email_enabled = FALSE,
-        email_action_enabled = FALSE,
-        email_notifications_enabled = FALSE,
-        demo_mode_enabled = FALSE,
-        updated_at = NOW()
+    SET updated_at = NOW()
 ),
 normalized_jobs AS (
     SELECT
