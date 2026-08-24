@@ -146,7 +146,7 @@ Start from the checked-in examples only:
 - `Frontend/.env.example` for the Vite frontend.
 - `.env.prod.example` for production-like deployment.
 
-Copy values into local-only files (`.env`, `Frontend/.env`, or `.env.prod`) and never commit them. The local-only [PRIVATE_CONFIGURATION.md](PRIVATE_CONFIGURATION.md) explains each sensitive setting and exactly where to place it for local, SMTP, and production runs.
+Copy values into local-only files (`.env`, `Frontend/.env`, or `.env.prod`) and never commit them. Maintainers may keep a local, Git-ignored `PRIVATE_CONFIGURATION.md` beside `.env` to record the placement of their own settings; it is intentionally not part of a clone or the public repository.
 
 For production-like Docker Compose, create `.env.prod` from the example and pass it explicitly:
 
