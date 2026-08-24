@@ -1,0 +1,12 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Maven wrapper launcher for Unix-like environments.
+# ----------------------------------------------------------------------------
+
+BASE_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+WRAPPER_JAR="$BASE_DIR/.mvn/wrapper/maven-wrapper.jar"
+WRAPPER_LAUNCHER="org.apache.maven.wrapper.MavenWrapperMain"
+
+exec java -classpath "$WRAPPER_JAR" \
+  "-Dmaven.multiModuleProjectDirectory=$BASE_DIR" \
+  "$WRAPPER_LAUNCHER" "$@"

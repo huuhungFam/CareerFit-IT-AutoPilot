@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+vite-dev*.log
+vite.config.js
+vite.config.d.ts
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

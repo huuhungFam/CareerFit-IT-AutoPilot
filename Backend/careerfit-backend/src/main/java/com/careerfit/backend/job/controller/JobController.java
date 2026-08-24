@@ -1,0 +1,150 @@
+package com.careerfit.backend.job.controller;
+
+import com.careerfit.backend.common.response.ApiResponse;
+import com.careerfit.backend.job.dto.JobDtos;
+import com.careerfit.backend.job.service.JobService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/jobs")
+@Tag(name = "Jobs", description = "Public job search and job management")
+public class JobController {
+
+    private final JobService jobService;
+
+    public JobController(JobService jobService) {
+        this.jobService = jobService;
+    }
+
+    // ── Public: Search ────────────────────────────────────────────────────
+
+    @GetMapping({"", "/search"})
+    @Operation(summary = "Search active jobs with multi-filter (keyword, location, level, language)")
+    public ResponseEntity<ApiResponse<JobDtos.JobListResponse>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String level,
+            @RequestParam(required = false) String remoteType,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String salaryMode,
+            @RequestParam(required = false) java.math.BigDecimal salaryMin,
+            @RequestParam(required = false) String domain,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "recent") String sort) {
+
+        var req = new JobDtos.JobSearchRequest(
+                keyword, location, level, remoteType, language,
+                salaryMode, salaryMin, null, domain,
+                page, size, sort);
+
+        return ResponseEntity.ok(ApiResponse.ok(jobService.search(req)));
+    }
+
+    @GetMapping({"/suggestions", "/search/suggestions"})
+    @Operation(summary = "Autocomplete suggestions for job titles, company names and skills")
+    public ResponseEntity<ApiResponse<JobDtos.SuggestionsResponse>> suggestions(
+            @RequestParam(required = false) String keyword) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.getSuggestions(keyword)));
+    }
+
+    // ── Public: Get by ID ─────────────────────────────────────────────────
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get job detail by ID (public)")
+    public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.getById(id)));
+    }
+
+    // ── Recruiter: CRUD ───────────────────────────────────────────────────
+
+    @PostMapping
+    @Operation(summary = "Create a new job posting (RECRUITER only)")
+    public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> createJob(
+            @Valid @RequestBody JobDtos.CreateJobRequest req,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(jobService.createJob(userId, req, confirmNearDuplicate)));
+    }
+
+    @PostMapping("/drafts")
+    @Operation(summary = "Save an incomplete job draft without publishing or matching")
+    public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> saveDraft(
+            @RequestBody JobDtos.SaveJobDraftRequest req,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(jobService.saveDraft(userId, req)));
+    }
+
+    @PostMapping("/quality-preview")
+    @Operation(summary = "Preview non-blocking JD quality signals while editing")
+    public ResponseEntity<ApiResponse<JobDtos.JobQualityPreviewResponse>> previewQuality(
+            @RequestBody JobDtos.JobQualityPreviewRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.previewQuality(req)));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Update a job (RECRUITER only, partial update)")
+    public ResponseEntity<ApiResponse<JobDtos.JobDetailResponse>> updateJob(
+            @PathVariable UUID id,
+            @Valid @RequestBody JobDtos.UpdateJobRequest req,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.updateJob(id, userId, req, confirmNearDuplicate)));
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Change job status: ACTIVE | CLOSED | DRAFT")
+    public ResponseEntity<ApiResponse<JobDtos.JobStatusUpdateResponse>> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam String status,
+            @RequestParam(defaultValue = "false") boolean confirmNearDuplicate,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.updateStatus(id, userId, status, confirmNearDuplicate)));
+    }
+
+    @PatchMapping("/{id}/urgency")
+    @Operation(summary = "Set whether a job is urgent (RECRUITER only)")
+    public ResponseEntity<ApiResponse<JobDtos.JobUrgencyUpdateResponse>> updateUrgency(
+            @PathVariable UUID id,
+            @RequestParam boolean urgent,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.updateUrgency(id, userId, urgent)));
+    }
+
+    @PostMapping("/duplicate-check")
+    @Operation(summary = "Check exact and warning-only near duplicates before publishing a job")
+    public ResponseEntity<ApiResponse<JobDtos.DuplicateCheckResponse>> checkDuplicates(
+            @Valid @RequestBody JobDtos.DuplicateCheckRequest req,
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.checkDuplicates(userId, req)));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a job posting (RECRUITER only)")
+    public ResponseEntity<ApiResponse<Void>> deleteJob(
+            @PathVariable UUID id,
+            @RequestAttribute("userId") UUID userId) {
+        jobService.deleteJob(id, userId);
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv")
+    @Operation(summary = "Export all jobs owned by the authenticated recruiter as UTF-8 CSV")
+    public ResponseEntity<byte[]> exportJobs(@RequestAttribute("userId") UUID userId) {
+        byte[] csv = jobService.exportMyJobsCsv(userId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=careerfit-jobs.csv")
+                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
+    }
+}

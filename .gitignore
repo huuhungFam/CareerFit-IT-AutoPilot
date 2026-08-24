@@ -1,0 +1,73 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Personal configuration index. It may name private settings but must never be committed.
+/PRIVATE_CONFIGURATION.md
+
+# Local CV/file storage
+storage/
+
+# Frontend build/dependency output
+Frontend/node_modules/
+Frontend/dist/
+
+# Backend build output
+Backend/target/
+Backend/careerfit-backend/target/
+Backend/build/
+
+# IDE/system files
+.idea/
+.vscode/
+*.log
+*.bak
+~$*.docx
+Thumbs.db
+
+evidence/*.txt
+evidence/*.pid
+backups/
+
+# Agent working notes/prompts that should not be published by default
+*PROMPT*.md
+*HANDOVER*.md
+AGENT_*_REPORT.md
+AGENT_*_LOG.md
+FINAL_REMEDIATION_*.md
+FINAL_REVIEW_REPORT.md
+QA_*_REPORT.md
+task.md
+implementation_plan.md
+staged_files.txt
+
+# Thesis and QA artifacts are published on the documentation branch, not the
+# runnable application branch.
+/*.md
+!/README.md
+Doc/
+docs/
+evaluation/
+evidence/
+scraped-data/
+scripts/
+ui-references/
+code-examples/
+demo/
+prompt-gemini/
+scratch/
+temp/
+tmp/
+Frontend/scripts/
+fix_*.py
+run_*.ps1
+test_out.txt
+Backend/*implementation-guide.md
+Backend/careerfit-backend/*GUIDE*.md
+Backend/careerfit-backend/*HISTORY*.md
+Frontend/*GUIDE*.md
+Frontend/*HISTORY*.md
+Frontend/*COVERAGE*.md
+Frontend/*API*.md
+Frontend/main-design.md

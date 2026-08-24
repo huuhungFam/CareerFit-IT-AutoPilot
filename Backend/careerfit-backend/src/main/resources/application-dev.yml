@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false} # Use NoOpMailService in DEV unless explicitly enabled
+
+logging:
+  level:
+    com.careerfit: DEBUG
+    org.springframework.security: DEBUG

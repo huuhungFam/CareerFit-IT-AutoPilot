@@ -1,0 +1,44 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+app:
+  magic-link:
+    expose-token-in-response: false
+
+  mail:
+    enabled: ${APP_MAIL_ENABLED:true}
+
+logging:
+  level:
+    com.careerfit: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+  file:
+    name: /app/logs/careerfit.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+  forward-headers-strategy: framework
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  health:
+    mail:
+      enabled: false
